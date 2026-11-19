@@ -9,7 +9,7 @@ Solo hobby project by Brendan (software engineer). He wants Claude to do most of
 - `docs/gdd.md`: slice design, tuning values, acceptance criteria
 - `docs/architecture.md`: layers, classes, folder layout, frame flow
 - `docs/milestones.md`: milestones and task IDs
-- `docs/adr/`: architecture decisions (ADR-0001 to 0004)
+- `docs/adr/`: architecture decisions (ADR-0001 to 0005)
 - `docs/lessons-learned.md`: why the prototype failed (don't repeat it)
 
 @docs/architecture.md
@@ -17,7 +17,7 @@ Solo hobby project by Brendan (software engineer). He wants Claude to do most of
 Read `gdd.md` and the relevant milestone before starting a task. When a decision changes, update the docs in the same change. Never edit an accepted ADR's decision; write a new ADR that supersedes it.
 
 ## Stack
-TypeScript (strict) · Vite · Babylon.js (rendering, VFX, audio) · Rapier (physics, simulation only) · Vitest · ESLint + Prettier · npm · GitHub Actions.
+TypeScript (strict) · Vite · Babylon.js (rendering, VFX, audio) · Rapier 2D (physics, simulation only; ADR-0005) · Vitest · ESLint + Prettier · npm · GitHub Actions.
 
 ## Commands
 _(Created in milestone M0. Update this list if they change.)_

@@ -1,6 +1,6 @@
 # ADR-0002: Technology stack — Babylon.js + Rapier + TypeScript
 
-- **Status:** Accepted
+- **Status:** Accepted. Physics row superseded by [ADR-0005](0005-rapier-2d-physics.md) (`rapier2d-compat`).
 - **Date:** 2026-11-18
 
 ## Context

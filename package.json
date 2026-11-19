@@ -29,6 +29,7 @@
     "vitest": "5.1.1"
   },
   "dependencies": {
-    "@babylonjs/core": "9.34.0"
+    "@babylonjs/core": "9.34.0",
+    "@dimforge/rapier2d-compat": "0.21.0"
   }
 }

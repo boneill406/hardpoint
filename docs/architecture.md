@@ -1,6 +1,6 @@
 # Architecture
 
-_Working title: **Hardpoint**. Last updated 2026-11-18. Decisions referenced: ADR-0001 to ADR-0004._
+_Working title: **Hardpoint**. Last updated 2026-11-19. Decisions referenced: ADR-0001 to ADR-0005._
 
 ## 1. Layers
 
@@ -10,7 +10,7 @@ flowchart TB
   net["Network (future)<br/>remote commands"] -.->|VehicleCommand| sim
   subgraph sim["Simulation — src/sim (pure TypeScript)"]
     rules["Game rules<br/>vehicles, combat, AI"]
-    phys["PhysicsWorld<br/>Rapier adapter"]
+    phys["PhysicsWorld<br/>Rapier 2D adapter"]
   end
   sim -->|state + events| render["Renderer — Babylon.js<br/>views, VFX, camera, audio"]
   sim -->|state + events| ui["HUD / menus<br/>HTML overlay"]
@@ -30,7 +30,7 @@ src/
     combat/      Weapon, Projectile, ArmorProfile, Health, DamageResolver
       limiters/     FireLimiter (interface), ReloadLimiter, HeatLimiter
     ai/          Pathfinder (grid A*), behavior states
-    physics/     PhysicsWorld (interface), RapierPhysicsWorld
+    physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005)
     arena/       Arena, ArenaDef
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
