@@ -37,6 +37,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M1-2 · `FixedClock`
+**Built:** `src/sim/core/FixedClock.ts`: the fixed-timestep accumulator. `advance(elapsedSeconds)` returns how many 60 Hz steps to run (0..5); `alpha` is the leftover fraction of a step for render interpolation. It never reads a clock; the caller passes elapsed time. Zero, negative or NaN elapsed time is ignored. Options for step length and cap (validated, like T-35). `src/sim/core/time.ts` holds `TICK_RATE` / `TICK_SECONDS` for `Simulation` (M1-5) to share. 12 tests.
+**Trade-offs:** T-36, T-37.
+**Issues:**
+- Float rounding: 144 frames of 1/144 s give 59 steps with alpha ≈ 0.99999999, not 60 steps. Harmless (the next frame runs the step), so the test checks steps + alpha ≈ elapsed / step instead of an exact count.
+- After a stall the whole-step backlog is dropped but the fractional remainder is kept, so alpha stays in [0, 1) and its phase is unchanged.
+
 ## 2026-11-19 · M1 · Branch cleanup and merge workflow
 **Built:** deleted 13 merged task branches on GitHub and 14 locally (each checked as merged into `main` first; none were unmerged). CLAUDE.md workflow step 4 and README now say: after green CI and the fast-forward merge, delete the branch on GitHub and locally; tag unmerged spikes before deleting.
 **Trade-offs:** T-27 updated.
