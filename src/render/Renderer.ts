@@ -9,7 +9,9 @@ import {
   StandardMaterial,
   Vector3,
 } from '@babylonjs/core';
+import type { Entity } from '../sim/core/Entity';
 import { SliceCamera } from './camera/SliceCamera';
+import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 
 /**
  * Arena side length in units (GDD §6). Temporary: from M2-4 the floor is built
@@ -20,16 +22,17 @@ const ARENA_SIZE = 46;
 const GRID_STEP = 2;
 
 /**
- * Owns the Babylon engine and scene. Presentation only (ADR-0003): it will read
- * simulation state through RenderBridge, never write it. The app layer owns the
- * frame loop and calls `render()` once per animation frame.
+ * Owns the Babylon engine and scene. Presentation only (ADR-0003): it reads
+ * simulation state through `RenderBridge`, never writes it. The app layer owns
+ * the frame loop and calls `render()` once per animation frame, after the ticks.
  */
 export class Renderer {
   private readonly engine: Engine;
   private readonly scene: Scene;
   private readonly sliceCamera: SliceCamera;
+  private readonly bridge: RenderBridge;
 
-  constructor(canvas: HTMLCanvasElement) {
+  constructor(canvas: HTMLCanvasElement, options: RenderBridgeOptions) {
     // antialias on; adaptToDeviceRatio so it renders crisply on Retina screens.
     this.engine = new Engine(canvas, true, undefined, true);
     this.scene = new Scene(this.engine);
@@ -40,10 +43,13 @@ export class Renderer {
 
     this.sliceCamera = new SliceCamera(this.scene);
     this.sliceCamera.lookAt(Vector3.Zero());
+
+    this.bridge = new RenderBridge(this.scene, options);
   }
 
-  /** Draws one frame. */
-  render(): void {
+  /** Draws one frame: `alpha` (0..1) is how far real time is into the next tick (`FixedClock`). */
+  render(entities: readonly Entity[], alpha: number): void {
+    this.bridge.sync(entities, alpha);
     this.scene.render();
   }
 
@@ -53,6 +59,7 @@ export class Renderer {
   }
 
   dispose(): void {
+    this.bridge.dispose();
     this.scene.dispose();
     this.engine.dispose();
   }
