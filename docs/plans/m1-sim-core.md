@@ -39,7 +39,7 @@ Interpolation shows the sim up to one tick (16.7 ms) late, in exchange for smoot
 | Order | Task | Branch | Status |
 |---|---|---|---|
 | 1 | M1-1 Math: `Vec2` (immutable), `angles.ts` (`wrapAngle`, `angleDelta`, `lerpAngle`), heading convention in docs | `m1-1-math` | ✅ |
-| 2 | M1-3 `Rng`: mulberry32; `next`, `range`, `int`, `chance`, `pick`; `getState` / `setState` | `m1-3-rng` | ⬜ |
+| 2 | M1-3 `Rng`: mulberry32; `next`, `range`, `int`, `chance`, `pick`; `getState` / `setState` | `m1-3-rng` | ✅ |
 | 3 | M1-2 `FixedClock`: accumulator, `alpha`, max 5 catch-up steps then drop time; takes elapsed seconds (never reads a clock) | `m1-2-fixed-clock` | ⬜ |
 | 4 | M1-4 `EventBus` + `SimEvents` (`EntitySpawned`, `EntityDestroyed`), typed by event-name → payload map, buffered | `m1-4-event-bus` | ⬜ |
 | 5 | M1-5 `Entity` (id, `transform`, `previousTransform`), `World` (ids from 1, `ofType(Class)` in insertion order, deferred `remove`), `Simulation` (`constructor({ seed, physics, populate })`, `tick(commands: Map<playerId, VehicleCommand>)`, `snapshot()`), `VehicleCommand` type, `DebugMover`. Simulation owns physics (resolves T-26) | `m1-5-world-simulation` | ⬜ |

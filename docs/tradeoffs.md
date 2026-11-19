@@ -68,6 +68,8 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 |---|---|---|---|---|---|---|
 | T-32 | Immutable `Vec2` class; every operation returns a new instance (M1-1) | Mutable vectors or in-place `addInPlace`-style methods | No aliasing bugs: a stored position or `previousTransform` can't change behind your back | One small allocation per operation; negligible at slice scale (tens of entities) | Profiling shows vector allocation / GC as a hotspot | Active |
 | T-33 | Trig via `Math.sin` / `cos` / `atan2` (M1-1) | Deterministic software trig or fixed-point math | Fast and simple. Determinism holds on one JS engine, which is all M1-7 tests and solo play need | The spec lets engines differ in the last bits of `Math.sin` etc., so Chrome vs. Firefox runs of the same seed may drift apart | Lockstep co-op/networking or cross-browser replays (`RemoteController`) | Active |
+| T-34 | **mulberry32** PRNG, one 32-bit state word (M1-3) | xoshiro128** / sfc32 (128-bit state), or a library | Tiny, fast, integer-only (identical on every JS engine, unlike T-33); state snapshots are one number | Period 2^32 and weaker statistics than modern generators; fine for spread, spawns and AI choices, not for anything needing high-quality randomness | A test or game feature shows visible patterns, or far more than ~4 billion draws per run | Active |
+| T-35 | `Rng` throws on invalid input (non-integer seed, reversed `int` bounds, empty `pick`) (M1-3) | Clamping or returning a default | These are always caller bugs; failing fast surfaces a bad def immediately instead of quietly skewing a run | A bad def crashes the sim rather than degrading | — | Active |
 
 ## Process and docs
 

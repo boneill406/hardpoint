@@ -37,6 +37,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M1-3 · Seeded `Rng`
+**Built:** `src/sim/core/Rng.ts`: mulberry32 with `next` ([0, 1)), `range` ([min, max)), `int` ([min, max], both ends included), `chance(p)`, `pick(list)`, and `getState` / `setState` (the whole state is one uint32). 14 tests in `tests/sim/core/Rng.test.ts`, including golden values from the reference mulberry32 so an accidental algorithm change can't silently alter seeded runs.
+**Trade-offs:** T-34, T-35.
+**Issues:** `pick` needs a cast (`as T`) because `noUncheckedIndexedAccess` (T-07) types `items[i]` as `T | undefined` even when the index is provably in bounds. Checking `item === undefined` instead would wrongly throw for lists that legitimately contain `undefined`; the cast is commented.
+
 ## 2026-11-19 · M1-1 · Math: `Vec2` and angle helpers
 **Built:** `src/sim/core/Vec2.ts`: immutable ground-plane vector (`fromHeading`, `heading`, `add`, `sub`, `scale`, `dot`, `length`, `lengthSquared`, `distanceTo`, `normalize`, `rotate`, `lerp`, `ZERO`). `src/sim/core/angles.ts`: `wrapAngle` (→ [-π, π)), `angleDelta` (signed shortest turn), `lerpAngle` (short arc), `degToRad` (the GDD uses degrees). Heading convention (D3) documented in `architecture.md` §9 with a diagram and in CLAUDE.md conventions. 22 tests in `tests/sim/core/`. Deleted the `src/sim/core/index.ts` placeholder (T-12).
 **Trade-offs:** T-32, T-33.
