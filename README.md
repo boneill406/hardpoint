@@ -74,4 +74,4 @@ TypeScript (strict) · Vite · [Babylon.js](https://www.babylonjs.com/) (renderi
 
 ## Workflow
 
-One branch per milestone task (`m2-3-collision`), commits prefixed with the task ID (`M2-3: …`). A task is done when lint, typecheck, tests and build pass, docs are updated, and its dev-log entry is written. Details in [CLAUDE.md](CLAUDE.md).
+One branch per milestone task (`m2-3-collision`), commits prefixed with the task ID (`M2-3: …`), fast-forward merged after green CI, then deleted. A task is done when lint, typecheck, tests and build pass, docs are updated, and its dev-log entry is written. Details in [CLAUDE.md](CLAUDE.md).

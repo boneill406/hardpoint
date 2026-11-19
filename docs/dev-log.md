@@ -37,6 +37,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M1 · Branch cleanup and merge workflow
+**Built:** deleted 13 merged task branches on GitHub and 14 locally (each checked as merged into `main` first; none were unmerged). CLAUDE.md workflow step 4 and README now say: after green CI and the fast-forward merge, delete the branch on GitHub and locally; tag unmerged spikes before deleting.
+**Trade-offs:** T-27 updated.
+**Issues:** `m0-5-watch-eslint-config` existed only locally. Its single commit (`84cc1fe`) was fast-forwarded into `main` 36 s after it was made, before CI existed, so it reached GitHub through `main`; only the branch name was never pushed. Nothing was lost.
+
 ## 2026-11-19 · M1-3 · Seeded `Rng`
 **Built:** `src/sim/core/Rng.ts`: mulberry32 with `next` ([0, 1)), `range` ([min, max)), `int` ([min, max], both ends included), `chance(p)`, `pick(list)`, and `getState` / `setState` (the whole state is one uint32). 14 tests in `tests/sim/core/Rng.test.ts`, including golden values from the reference mulberry32 so an accidental algorithm change can't silently alter seeded runs.
 **Trade-offs:** T-34, T-35.
