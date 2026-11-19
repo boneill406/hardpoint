@@ -13,6 +13,7 @@ Solo hobby project by Brendan (software engineer). He wants Claude to do most of
 - `docs/lessons-learned.md`: why the prototype failed (don't repeat it)
 - `docs/dev-log.md`: per-task log of what was built, issues and resolutions; open follow-ups; known environment issues
 - `docs/tradeoffs.md`: register of every deliberate trade-off (`T-nn`), with what was given up and when to revisit
+- `docs/plans/`: approved plan per milestone (decisions, build order, task status). Read the current one before starting a task
 
 @docs/architecture.md
 
@@ -54,7 +55,7 @@ _(Update this list if they change; README.md has the same table.)_
 - Rendering code isn't unit-tested; verify it by running the game.
 
 ## Workflow
-1. **Plan first.** For each task, state the plan (files, classes, tests) and wait for approval before writing code.
+1. **Plan first.** For each task, state the plan (files, classes, tests) and wait for approval before writing code. Save approved milestone plans in `docs/plans/` and keep their task status current.
 2. **Ask before:** adding a dependency, changing an interface listed above, or deviating from the GDD/architecture.
 3. **Flag scope creep.** If something isn't in the current milestone or the GDD, say so and propose adding it to the post-slice backlog instead.
 4. Work on a branch per task (`m2-3-collision`). Small commits; messages start with the task ID (`M2-3: oriented hull collision`).
