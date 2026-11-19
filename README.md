@@ -13,6 +13,7 @@ Requires **Node.js 22.12 or later** (CI uses the version in [`.nvmrc`](.nvmrc), 
 ```sh
 npm ci          # install the exact versions in package-lock.json
 npm run dev     # start the dev server, then open the printed URL
+# debug: append ?fps=20 (cap frame rate) and/or ?interp=off (no interpolation)
 ```
 
 You should see the arena floor from the game's high-angle camera. The browser console logs `Physics ready: Rapier 2D`.

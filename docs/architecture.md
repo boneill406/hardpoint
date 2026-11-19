@@ -35,7 +35,7 @@ src/
     arena/       Arena, ArenaDef
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
-  render/        RenderBridge, views/, vfx/, camera/, audio/
+  render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, DebugMoverView), vfx/, camera/, audio/
   input/         InputManager, KeyboardMouseDevice, GamepadDevice
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
@@ -147,7 +147,8 @@ classDiagram
 
 ## 6. Render layer
 
-- **`RenderBridge`:** creates and destroys views as entities appear and disappear; maps entity id → view.
+- **`RenderBridge`:** maps entity id → view. Each frame it diffs the world's ids against its views (creating and disposing views) rather than listening to spawn/destroy events, so it can't fall out of step; then places each view at `lerp(previousTransform, transform, alpha)` (heading via `lerpAngle`). An entity type with no view throws.
+- **Debug URL params** (`src/app/debugParams.ts`): `?fps=N` caps the render rate to mimic a slow machine; `?interp=off` draws raw ticks to show what interpolation hides.
 - **Views** (`VehicleView`, `ProjectileView`, `PropView`): own Babylon meshes; read-only access to entity state. A future `WalkerView` owns a procedural `LegRig` (2-bone IK, foot planting). The legs are cosmetic, with no simulation impact.
 - **VFX:** Babylon particle systems (presets and Node Particle Editor assets) triggered by events, plus "juice": screen shake, hit-stop, muzzle-flash lights, bloom.
 - **Camera:** high angle between top-down and isometric, smoothed follow.

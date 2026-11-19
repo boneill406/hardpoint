@@ -19,6 +19,8 @@ Debt taken on deliberately, each with the condition that clears it.
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `SimSnapshot` holds only id and transform per entity | — | M2: `Vehicle` overrides `snapshot()` to add health, heat, reload state so M1-7-style determinism checks cover them | M1-5 |
 | Determinism test's scripted command stream has no effect yet (M1 entities ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
+| Visual check: movers render smoothly at any frame rate (M1 done-when) | T-47 | Brendan runs `npm run dev`, with and without `?fps=20` and `?interp=off` | M1-6 |
+| Debug scene constants in `main.ts`; `DebugMover` / `DebugMoverView` | T-41, T-49 | M2: player tank replaces them; delete both | M1-6 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -38,6 +40,20 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M1-6 · `RenderBridge`, coordinate conversion, fixed-step loop
+**Built:**
+- `render/coords.ts`: `toBabylonPosition` ((x, z) → (x, height, z)) and `toBabylonRotationY` (identity, per §9). The only sim → Babylon conversion.
+- `render/views/EntityView.ts` (interface: `update(transform)`, `dispose()`) and `DebugMoverView` (orange box with a white nose on +z).
+- `render/RenderBridge.ts`: `sync(entities, alpha)` diffs ids against views, creates/disposes, places each view at the interpolated transform (or the raw one with `?interp=off`). `Renderer.render(entities, alpha)` owns it.
+- `app/debugParams.ts`: `?fps=N`, `?interp=off`. `main.ts`: rAF → frame gate (fps cap) → `FixedClock.advance` → n × `tick` → `events.flush()` → `render(world, alpha)`. Two `DebugMover`s circle the origin in opposite directions (radii 6.7 u and 10 u).
+- Deleted the `src/render/views/index.ts` placeholder (T-12). README and `architecture.md` §2/§6 updated.
+**Trade-offs:** T-46, T-47, T-48, T-49.
+**Acceptance:** headless Chrome screenshots of the built game show both movers on the arena with noses along their direction of travel (inner turning right, outer turning left), with and without `?fps=20&interp=off`; console clean. Smoothness can't be judged headless (see issues) → open follow-up for Brendan's visual check.
+**Issues:**
+- Under `--virtual-time-budget`, headless Chrome fires animation frames rarely, so each frame hits the 5-tick cap (T-36) and the movers advance well under a second in 6 s. Expected, not a bug; it means headless screenshots can verify placement and orientation, not motion.
+- The `?fps` gate first resynced to "now" after a long pause, letting one extra frame through; fixed to resync then schedule one interval ahead. Note: rAF only fires on display refreshes, so a cap like 24 on a 60 Hz screen alternates 33/50 ms frames that average out to the target, which is realistic stutter for a slow machine.
+- Chrome's log flattens objects (`[object Object]`); the debug line is now a plain string.
 
 ## 2026-11-19 · M1-7 · Determinism test
 **Built:** `tests/sim/core/determinism.test.ts` (4 tests, real Rapier). The scenario's `populate` places 12 `DebugMover`s with positions, headings, speeds and turn rates drawn from `simulation.rng`, so the seed decides the whole world; a scripted command stream (own seed) is passed every tick.

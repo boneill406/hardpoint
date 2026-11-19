@@ -1,6 +1,6 @@
 # M1 Plan — Simulation core
 
-_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **in progress** (update the task table as work lands)._
+_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **all tasks built**; done-when "renders smoothly at any frame rate" awaits Brendan's visual check (headless Chrome can't show smoothness) (update the task table as work lands)._
 
 **Goal:** the fixed-step engine room, fully tested, with a debug view.
 **Done when:** a test entity moves at a fixed speed and renders smoothly at any frame rate; all core classes have tests.
@@ -44,7 +44,7 @@ Interpolation shows the sim up to one tick (16.7 ms) late, in exchange for smoot
 | 4 | M1-4 `EventBus` + `SimEvents` (`EntitySpawned`, `EntityDestroyed`), typed by event-name → payload map, buffered | `m1-4-event-bus` | ✅ |
 | 5 | M1-5 `Entity` (id, `transform`, `previousTransform`), `World` (ids from 1, `ofType(Class)` in insertion order, deferred `remove`), `Simulation` (`constructor({ seed, physics, populate })`, `tick(commands: Map<playerId, VehicleCommand>)`, `snapshot()`), `VehicleCommand` type, `DebugMover`. Simulation owns physics (resolves T-26) | `m1-5-world-simulation` | ✅ |
 | 6 | M1-7 Determinism: same seed → identical snapshots after 600 ticks; different seed → different. Command-stream part extended in M2-2 | `m1-7-determinism` | ✅ |
-| 7 | M1-6 `render/coords.ts`, `RenderBridge`, `EntityView` interface, `DebugMoverView` (box with a nose); `main.ts` loop; debug URL params `?fps=N`, `?interp=off` | `m1-6-render-bridge` | ⬜ |
+| 7 | M1-6 `render/coords.ts`, `RenderBridge`, `EntityView` interface, `DebugMoverView` (box with a nose); `main.ts` loop; debug URL params `?fps=N`, `?interp=off` | `m1-6-render-bridge` | ✅ |
 
 ## Tests (`tests/sim/core/`, fixed seeds, no real timers)
 | Area | Behaviors |

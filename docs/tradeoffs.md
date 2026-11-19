@@ -51,6 +51,10 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 | T-19 | Camera: 58° elevation, 34 u distance, narrow FOV 0.75 rad (M0-3) | Wider FOV / other values | First guess; narrow FOV reduces perspective distortion at a high angle | Untuned | M2-5 (real tank on screen) | Temporary |
 | T-20 | `ARENA_SIZE` constant and 2 u debug grid inside `Renderer` (M0-3) | Building the floor from `ArenaDef` | `ArenaDef` doesn't exist yet | Tuning number outside `defs/` (CLAUDE.md rule 8) | M2-4 | Temporary |
 | T-21 | Vite chunk warning raised to just above the current size (10.5 MB) (M0-3, M0-4) | Silencing it or code-splitting | ADR-0002 accepts a large bundle; a tight limit still flags real growth | Must be bumped deliberately when a big dependency is added | Each large dependency | Active |
+| T-46 | `RenderBridge` diffs world ids against views every frame (M1-6) | Creating/disposing views from `EntitySpawned` / `EntityDestroyed` events | Can't desync: no missed, doubled or out-of-order event can leave a ghost or missing view | O(n) pass over all entities per frame | Profiling shows it (hundreds of entities) | Active |
+| T-47 | **Interpolate** between the last two ticks (M1-6, rule 6) | Drawing the latest tick, or extrapolating ahead | Smooth motion at any frame rate with no guessing | The screen shows the sim up to one tick (16.7 ms) late | Input latency feels bad in M2 (then consider extrapolating the player only) | Active |
+| T-48 | `RenderBridge.createView` throws for an entity type with no view (M1-6) | Skipping it silently | Fail fast (like T-35): an invisible entity is always a bug | One missing view stops the game | — | Active |
+| T-49 | Debug scene (`DEBUG_MOVERS` speeds, turn rates) as constants in `main.ts` (M1-6) | Defs in `src/sim/defs/` (rule 8) | Temporary scaffolding, not game content | A rule-8 exception in app code | M2: replaced by the player tank from `VehicleDef` | Temporary |
 
 ## Physics
 
