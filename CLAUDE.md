@@ -24,7 +24,7 @@ _(Created in milestone M0. Update this list if they change.)_
 - `npm run dev`: dev server
 - `npm run build`: production build
 - `npm test`: Vitest
-- `npm run lint` / `npm run typecheck` / `npm run format`
+- `npm run lint` / `npm run typecheck` / `npm run format` (`format:check` in CI; Prettier skips `*.md`)
 
 ## Hard architecture rules
 1. **`src/sim/` is pure TypeScript.** It must not import from `src/render/`, `src/input/`, `src/ui/`, `src/app/`, `@babylonjs/*`, or browser APIs (`window`, `document`). ESLint enforces this; never disable that rule.

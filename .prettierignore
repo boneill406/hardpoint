@@ -1,0 +1,7 @@
+dist/
+coverage/
+node_modules/
+package-lock.json
+
+# Hand-written docs: keep tables compact and diffs small.
+*.md
