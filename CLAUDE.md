@@ -44,7 +44,7 @@ _(Update this list if they change; README.md has the same table.)_
 - No barrel files: import each module directly (`../core/Rng`), not via a folder `index.ts`. The M0-2 placeholder `index.ts` files are deleted when a folder gets its first real module.
 - Interfaces have no `I` prefix (`Locomotion`, not `ILocomotion`).
 - No `any`. Prefer `readonly` and explicit return types on public methods.
-- Units: distance in units (`u`), time in seconds, angles in radians. Sim uses ground-plane `Vec2` (x, z) + heading. Conversion to Babylon coordinates happens only in `src/render/coords.ts`.
+- Units: distance in units (`u`), time in seconds, angles in radians. Sim uses ground-plane `Vec2` (x, z) + heading. Heading 0 = +z, positive turns toward +x (clockwise from above); see `architecture.md` §9. Conversion to Babylon coordinates happens only in `src/render/coords.ts`.
 - Short JSDoc on public classes and methods explaining *why*, not *what*.
 - Keep functions small; avoid clever one-liners.
 

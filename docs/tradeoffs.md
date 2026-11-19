@@ -62,6 +62,13 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 | T-25 | Private constructor + async `create()` for `RapierPhysicsWorld` (M0-4) | Public constructor + separate `init()` | A world can't exist before WASM loads | Callers must `await` | — | Active |
 | T-26 | `main.ts` creates a physics world directly as a smoke check (M0-4) | Waiting for `Simulation` | Proves Rapier loads in the browser in M0 | App wiring touches a sim internal | M1-5 (`Simulation` owns physics) | Temporary |
 
+## Simulation core
+
+| ID | Decision (task) | Instead of | Why | Cost / risk | Revisit when | Status |
+|---|---|---|---|---|---|---|
+| T-32 | Immutable `Vec2` class; every operation returns a new instance (M1-1) | Mutable vectors or in-place `addInPlace`-style methods | No aliasing bugs: a stored position or `previousTransform` can't change behind your back | One small allocation per operation; negligible at slice scale (tens of entities) | Profiling shows vector allocation / GC as a hotspot | Active |
+| T-33 | Trig via `Math.sin` / `cos` / `atan2` (M1-1) | Deterministic software trig or fixed-point math | Fast and simple. Determinism holds on one JS engine, which is all M1-7 tests and solo play need | The spec lets engines differ in the last bits of `Math.sin` etc., so Chrome vs. Firefox runs of the same seed may drift apart | Lockstep co-op/networking or cross-browser replays (`RemoteController`) | Active |
+
 ## Process and docs
 
 | ID | Decision (task) | Instead of | Why | Cost / risk | Revisit when | Status |

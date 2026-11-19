@@ -1,6 +1,6 @@
 # M1 Plan — Simulation core
 
-_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **not started** (update the task table as work lands)._
+_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **in progress** (update the task table as work lands)._
 
 **Goal:** the fixed-step engine room, fully tested, with a debug view.
 **Done when:** a test entity moves at a fixed speed and renders smoothly at any frame rate; all core classes have tests.
@@ -38,7 +38,7 @@ Interpolation shows the sim up to one tick (16.7 ms) late, in exchange for smoot
 ## Tasks (build order)
 | Order | Task | Branch | Status |
 |---|---|---|---|
-| 1 | M1-1 Math: `Vec2` (immutable), `angles.ts` (`wrapAngle`, `angleDelta`, `lerpAngle`), heading convention in docs | `m1-1-math` | ⬜ |
+| 1 | M1-1 Math: `Vec2` (immutable), `angles.ts` (`wrapAngle`, `angleDelta`, `lerpAngle`), heading convention in docs | `m1-1-math` | ✅ |
 | 2 | M1-3 `Rng`: mulberry32; `next`, `range`, `int`, `chance`, `pick`; `getState` / `setState` | `m1-3-rng` | ⬜ |
 | 3 | M1-2 `FixedClock`: accumulator, `alpha`, max 5 catch-up steps then drop time; takes elapsed seconds (never reads a clock) | `m1-2-fixed-clock` | ⬜ |
 | 4 | M1-4 `EventBus` + `SimEvents` (`EntitySpawned`, `EntityDestroyed`), typed by event-name → payload map, buffered | `m1-4-event-bus` | ⬜ |

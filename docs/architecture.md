@@ -167,3 +167,22 @@ classDiagram
   - The AI finds a path around a crate.
   - The same seed and command stream produce the same final state.
 - CI: lint (including import boundaries), typecheck, tests, build.
+
+## 9. Coordinates and angles
+
+The simulation is planar: positions are `Vec2` (x, z) on the ground plane, in units; rotation is a single **heading** in radians.
+
+```
+            +z  (up-screen, heading 0)
+             ▲
+             │
+   -x ───────┼──────▶ +x  (heading +π/2)
+             │
+             ▼
+            -z  (heading ±π)
+```
+
+- **Heading 0 faces +z.** Positive headings turn toward +x: clockwise seen from above (M1 plan, D3).
+- **Forward = `(sin h, cos h)`** (`Vec2.fromHeading`); `Vec2.heading()` is the inverse (`atan2(x, z)`).
+- This matches Babylon's `rotation.y`, so `render/coords.ts` passes the heading through unchanged and only maps `(x, z)` → `(x, 0, z)`. Rapier's rotation turns +x toward +y (sim +z), the opposite sense; that conversion lives only in `RapierPhysicsWorld` (M2-3).
+- Angle helpers (`src/sim/core/angles.ts`): `wrapAngle` → [-π, π); `angleDelta(from, to)` is the signed shortest turn (positive = clockwise); `lerpAngle` blends along the shortest arc. Defs may write `degToRad(45)`, since the GDD states angles in degrees.

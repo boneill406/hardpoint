@@ -37,6 +37,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M1-1 · Math: `Vec2` and angle helpers
+**Built:** `src/sim/core/Vec2.ts`: immutable ground-plane vector (`fromHeading`, `heading`, `add`, `sub`, `scale`, `dot`, `length`, `lengthSquared`, `distanceTo`, `normalize`, `rotate`, `lerp`, `ZERO`). `src/sim/core/angles.ts`: `wrapAngle` (→ [-π, π)), `angleDelta` (signed shortest turn), `lerpAngle` (short arc), `degToRad` (the GDD uses degrees). Heading convention (D3) documented in `architecture.md` §9 with a diagram and in CLAUDE.md conventions. 22 tests in `tests/sim/core/`. Deleted the `src/sim/core/index.ts` placeholder (T-12).
+**Trade-offs:** T-32, T-33.
+**Issues:**
+- `Vec2.heading()` uses `atan2`, which returns (-π, π], while `wrapAngle` returns [-π, π). They differ only at exactly ±π; documented on each rather than forcing one range, since callers compare headings through `angleDelta`.
+- `rotate` uses the heading sense (positive turns +z toward +x), the opposite of the textbook counter-clockwise rotation. Tested that `fromHeading(a).rotate(b)` equals `fromHeading(a + b)`.
+
 ## 2026-11-19 · M0-8 · README — M0 complete
 **Built:** `README.md`: one-liner and status, quick start, scripts table, a one-minute architecture summary (sim/render split and why), folder layout, tech stack, a docs index with what each doc is for, and the workflow. CI badge. CLAUDE.md commands list gains `preview`.
 **Trade-offs:** none new.
