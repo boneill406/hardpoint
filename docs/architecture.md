@@ -38,7 +38,7 @@ src/
   input/         InputManager, KeyboardMouseDevice, GamepadDevice
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
-tests/           mirrors src/sim/
+tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules)
 docs/            this folder
 ```
 

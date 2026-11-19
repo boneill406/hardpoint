@@ -23,7 +23,7 @@ TypeScript (strict) · Vite · Babylon.js (rendering, VFX, audio) · Rapier (phy
 _(Created in milestone M0. Update this list if they change.)_
 - `npm run dev`: dev server
 - `npm run build`: production build
-- `npm test`: Vitest
+- `npm test`: Vitest (single run); `npm run test:watch` re-runs on save
 - `npm run lint` / `npm run typecheck` / `npm run format` (`format:check` in CI; Prettier skips `*.md`)
 
 ## Hard architecture rules
