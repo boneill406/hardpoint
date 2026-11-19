@@ -66,5 +66,8 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 
 | ID | Decision (task) | Instead of | Why | Cost / risk | Revisit when | Status |
 |---|---|---|---|---|---|---|
-| T-27 | Branch per task, fast-forward merged to `main` by Claude, no PRs (M0) | A PR per task | Solo project; review happens in conversation before merge | No PR history or CI gate before merge (CI runs after push) | CI is set up (M0-7), or collaborators join | Active |
+| T-27 | Branch per task, fast-forward merged to `main` by Claude, no PRs or branch protection (M0; updated M0-7) | A PR per task with required CI checks | Solo project; review happens in conversation before merge. Since M0-7, CI runs on every pushed branch, and Claude waits for green before merging | A red `main` is still possible if someone merges without waiting | Collaborators join, or a red `main` happens | Active |
 | T-28 | `docs/dev-log.md` + this register, no `CHANGELOG.md` (M0) | A changelog | No releases or outside players; a changelog would duplicate `git log` | — | First shareable build (M7) | Active |
+| T-29 | GitHub Actions pinned to commit SHAs (M0-7) | Version tags (`@v7`) | A tag can be moved to different code; a SHA can't (supply-chain safety, like T-02) | Updates are manual; no Dependabot | Updating pins becomes a chore → add Dependabot for actions | Active |
+| T-30 | One sequential CI job (lint → format → typecheck → test → build) (M0-7) | Parallel jobs per check | Simple; the whole run takes about a minute; one `npm ci` | First failure hides later ones (e.g., a lint error skips tests) | CI takes more than ~5 minutes | Active |
+| T-31 | CI runs on every branch push, not only `main` / PRs (M0-7) | `main` + PRs only | There are no PRs (T-27), so branch runs are the only check before merge | Uses more Actions minutes (free for public repos) | PRs are introduced | Active |

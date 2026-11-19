@@ -29,13 +29,21 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 | Dev server in the sandbox fails with `listen EPERM` | Fixed: `sandbox.network.allowLocalBinding: true` in `.claude/settings.local.json` (gitignored) |
 | Headless Chrome (used for screenshot/console checks) can't start in the sandbox | Run just that command outside the sandbox; stop the dev server by its PID |
 | `gh` can't read the macOS keychain from the sandbox | Run `gh` commands outside the sandbox. `gh auth status` works in a normal terminal |
-| `git push -u` can't write upstream tracking to `.git/config` from the sandbox | Push succeeds; run `git branch --set-upstream-to=origin/<branch>` in a normal terminal if needed |
+| Git commands that write `.git/config` (`push -u`, `branch -D`) warn "could not lock config file" in the sandbox | The main action still succeeds. Run `git branch --set-upstream-to=origin/<branch>` in a normal terminal if tracking is needed |
 | npm 11 skips `fsevents`'s install script (asks for approval) | Harmless: the prebuilt binary works. Optional: `npm install-scripts approve fsevents`. Review any newly flagged package before approving |
 | Local Node must be ≥ 22.12 (Vite); CI uses `.nvmrc` | Brendan upgraded Homebrew Node 23 → 26 (Active LTS). An old Node 20 install in `/usr/local/bin` (pkg installer) may shadow Homebrew in some tools; removal recommended |
 
 ---
 
 ## Entries
+
+## 2026-11-19 · M0-7 · GitHub Actions CI
+**Built:** `.github/workflows/ci.yml`: on every push and PR, `npm ci` → lint → format check → typecheck → test → build, on Node from `.nvmrc` with npm cache. Read-only token, superseded runs cancelled, 15-minute timeout.
+**Trade-offs:** T-29, T-30, T-31; T-27 updated (CI now runs before merge).
+**Acceptance:**
+- First run on `m0-7-ci` green (all steps passed).
+- Deliberate violation: a throwaway branch added `Math.random()` to `src/sim/core/index.ts`. CI failed at **Lint** with `'Math.random' is restricted… Use the simulation Rng (ADR-0001)`; later steps were skipped. The branch was deleted locally and on GitHub; the red run remains in Actions history as evidence.
+**Issues:** the GitHub REST API returned an empty response (likely the unauthenticated rate limit) when resolving action SHAs → used `git ls-remote` instead.
 
 ## 2026-11-19 · M0 · Trade-offs register
 **Built:** [`tradeoffs.md`](tradeoffs.md) with T-01 to T-28, backfilled from M0 so far, including three trade-offs that were mentioned in conversation but never recorded (T-10, T-15, T-27). Dev-log entries now cite IDs instead of repeating trade-off text.
