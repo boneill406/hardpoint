@@ -18,6 +18,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `SimSnapshot` holds only id and transform per entity | — | M2: `Vehicle` overrides `snapshot()` to add health, heat, reload state so M1-7-style determinism checks cover them | M1-5 |
+| Determinism test's scripted command stream has no effect yet (M1 entities ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -37,6 +38,16 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M1-7 · Determinism test
+**Built:** `tests/sim/core/determinism.test.ts` (4 tests, real Rapier). The scenario's `populate` places 12 `DebugMover`s with positions, headings, speeds and turn rates drawn from `simulation.rng`, so the seed decides the whole world; a scripted command stream (own seed) is passed every tick.
+- Same seed → identical snapshots every 60 ticks for 600 ticks, and the same event log. `toEqual` compares numbers with `Object.is`, so floats must be bit-identical.
+- Different seeds → different entity states (not merely different `rngState`).
+- Two runs stepped alternately match a run stepped alone: no hidden state shared between simulations.
+- Movers really move, so equal snapshots aren't trivially equal.
+**Trade-offs:** T-45.
+**Acceptance:** planted hidden shared state (a module-level counter nudging `DebugMover` speed by 1e-12 per call): the same-seed and alternating-runs tests both failed; reverted.
+**Issues:** nothing in the sim draws from `Rng` during a tick yet, so a "different seed" test would have passed on `rngState` alone; the seeded `populate` fixes that. New follow-up: the command stream is ignored until M2-2.
 
 ## 2026-11-19 · M1-5 · `Entity`, `World`, `Simulation`
 **Built:**
