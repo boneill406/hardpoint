@@ -42,7 +42,7 @@ Interpolation shows the sim up to one tick (16.7 ms) late, in exchange for smoot
 | 2 | M1-3 `Rng`: mulberry32; `next`, `range`, `int`, `chance`, `pick`; `getState` / `setState` | `m1-3-rng` | ✅ |
 | 3 | M1-2 `FixedClock`: accumulator, `alpha`, max 5 catch-up steps then drop time; takes elapsed seconds (never reads a clock) | `m1-2-fixed-clock` | ✅ |
 | 4 | M1-4 `EventBus` + `SimEvents` (`EntitySpawned`, `EntityDestroyed`), typed by event-name → payload map, buffered | `m1-4-event-bus` | ✅ |
-| 5 | M1-5 `Entity` (id, `transform`, `previousTransform`), `World` (ids from 1, `ofType(Class)` in insertion order, deferred `remove`), `Simulation` (`constructor({ seed, physics, populate })`, `tick(commands: Map<playerId, VehicleCommand>)`, `snapshot()`), `VehicleCommand` type, `DebugMover`. Simulation owns physics (resolves T-26) | `m1-5-world-simulation` | ⬜ |
+| 5 | M1-5 `Entity` (id, `transform`, `previousTransform`), `World` (ids from 1, `ofType(Class)` in insertion order, deferred `remove`), `Simulation` (`constructor({ seed, physics, populate })`, `tick(commands: Map<playerId, VehicleCommand>)`, `snapshot()`), `VehicleCommand` type, `DebugMover`. Simulation owns physics (resolves T-26) | `m1-5-world-simulation` | ✅ |
 | 6 | M1-7 Determinism: same seed → identical snapshots after 600 ticks; different seed → different. Command-stream part extended in M2-2 | `m1-7-determinism` | ⬜ |
 | 7 | M1-6 `render/coords.ts`, `RenderBridge`, `EntityView` interface, `DebugMoverView` (box with a nose); `main.ts` loop; debug URL params `?fps=N`, `?interp=off` | `m1-6-render-bridge` | ⬜ |
 

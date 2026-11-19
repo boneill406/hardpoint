@@ -15,9 +15,9 @@ Debt taken on deliberately, each with the condition that clears it.
 | `ARENA_SIZE` constant and debug grid in `Renderer` | T-20 | M2-4: build the floor from `ArenaDef`; keep the grid only behind a debug toggle | M0-3 |
 | `SliceCamera` angle/distance are first guesses | T-19 | M2-5: tune with a real tank on screen, then record values in the GDD | M0-3 |
 | `PhysicsWorld` only has `step` / `dispose`; physics behavior untested | T-24, T-16 | M2-3: add bodies, colliders, ray and shape casts, with tests | M0-4 |
-| `main.ts` creates a physics world directly (smoke check) | T-26 | M1-5: `Simulation` owns the physics world | M0-4 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
+| `SimSnapshot` holds only id and transform per entity | — | M2: `Vehicle` overrides `snapshot()` to add health, heat, reload state so M1-7-style determinism checks cover them | M1-5 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -27,7 +27,8 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 |---|---|
 | In the Claude Code sandbox, npm fails with "cache contains root-owned files" (EPERM). The message is misleading: the sandbox blocks `~/.npm`; no files are root-owned | Run npm with `npm_config_cache="$TMPDIR/npm-cache"`. Do not `sudo chown` |
 | Dev server in the sandbox fails with `listen EPERM` | Fixed: `sandbox.network.allowLocalBinding: true` in `.claude/settings.local.json` (gitignored) |
-| Headless Chrome (used for screenshot/console checks) can't start in the sandbox | Run just that command outside the sandbox; stop the dev server by its PID |
+| Headless Chrome (used for screenshot/console checks) can't start in the sandbox | Run just that command outside the sandbox. Use `--use-angle=swiftshader --enable-unsafe-swiftshader` (software WebGL); `--disable-gpu` makes Babylon fail with "WebGL not supported" |
+| A dev/preview server started in the background can't be stopped from inside the sandbox (`kill`: operation not permitted) | Stop it by PID outside the sandbox. `$TMPDIR` differs inside and outside the sandbox, so don't rely on a PID file across the two |
 | `gh` can't read the macOS keychain from the sandbox | Run `gh` commands outside the sandbox. `gh auth status` works in a normal terminal |
 | Git commands that write `.git/config` (`push -u`, `branch -D`) warn "could not lock config file" in the sandbox | The main action still succeeds. Run `git branch --set-upstream-to=origin/<branch>` in a normal terminal if tracking is needed |
 | npm 11 skips `fsevents`'s install script (asks for approval) | Harmless: the prebuilt binary works. Optional: `npm install-scripts approve fsevents`. Review any newly flagged package before approving |
@@ -36,6 +37,22 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M1-5 · `Entity`, `World`, `Simulation`
+**Built:**
+- `core/Transform.ts` (immutable position + heading) and `core/Entity.ts`: abstract base with an id assigned by `World.add`, `transform` / `previousTransform` (`saveTransform()` copies one to the other at the start of each tick), `snapshot()`.
+- `core/World.ts`: ids from 1, never reused; `add` (queues `EntitySpawned`), `get`, `all`, `ofType(Class)` in insertion order (subclasses included); `remove` deferred to `applyRemovals()` (queues `EntityDestroyed` in removal order).
+- `core/Simulation.ts`: `constructor({ seed, physics, populate })` owns the `Rng`, `EventBus`, `World` and physics world. `tick(commands)` saves transforms → steps `DebugMover`s → `physics.step(1/60)` → applies removals → counts the tick. `snapshot()` (plain numbers, JSON-safe) and `dispose()`.
+- `vehicles/VehicleCommand.ts` (`throttle`, `turn`, `aimPoint`, `firePrimary`, `fireSecondary`; `PlayerId`). Commands are accepted but unused until M2.
+- `debug/DebugMover.ts`: constant speed and turn rate.
+- `main.ts` hands the Rapier world to a `Simulation` and runs one tick as a smoke check; the loop arrives in M1-6.
+- 25 tests: `World`, `Entity`, `Simulation` (fake `PhysicsWorld` in `tests/sim/physics/FakePhysicsWorld.ts`, plus one run with real Rapier), `DebugMover`. Deleted the `src/sim/vehicles/index.ts` placeholder (T-12).
+**Resolved:** T-26 follow-up (`Simulation` owns physics).
+**Trade-offs:** T-40, T-41, T-42, T-43, T-44; T-26 reversed.
+**Acceptance:** built game in headless Chrome logs `Simulation ready: tick 1, Rapier 2D physics` and `Babylon.js v9.34.0 - WebGL2`, no errors.
+**Issues:**
+- Headless Chrome with `--disable-gpu` reported "WebGL not supported"; software WebGL (`--use-angle=swiftshader`) works. Background preview server could only be stopped outside the sandbox. Both added to environment issues.
+- New follow-up: snapshots cover only id and transform.
 
 ## 2026-11-19 · M1-4 · `EventBus` and `SimEvents`
 **Built:** `src/sim/core/EventBus.ts`: generic `EventBus<Events>` with `emit` (queues), `on` (returns an unsubscribe function) and `flush` (delivers in emission order, then empties). `src/sim/core/SimEvents.ts`: the name → payload map, starting with `EntitySpawned` and `EntityDestroyed` (`{ id }`). `architecture.md` §5 now describes buffering. 11 tests, including `@ts-expect-error` checks that wrong names and payloads fail typecheck.

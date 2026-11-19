@@ -23,8 +23,9 @@ flowchart TB
 ```
 src/
   sim/
-    core/        Simulation, World, Entity, EventBus, Rng, FixedClock, math
-    vehicles/    Vehicle, Turret, WeaponMount, VehicleFactory
+    core/        Simulation, World, Entity, Transform, EventBus, SimEvents, Rng, FixedClock, math (Vec2, angles, time)
+    debug/       DebugMover (temporary M1 test entity, deleted in M2)
+    vehicles/    Vehicle, VehicleCommand, Turret, WeaponMount, VehicleFactory
       locomotion/   Locomotion (interface), TrackedLocomotion
       controllers/  Controller (interface), PlayerController, AiController
     combat/      Weapon, Projectile, ArmorProfile, Health, DamageResolver
