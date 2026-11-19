@@ -1,6 +1,6 @@
 # M1 Plan — Simulation core
 
-_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **all tasks built**; done-when "renders smoothly at any frame rate" awaits Brendan's visual check (headless Chrome can't show smoothness) (update the task table as work lands)._
+_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M1. Status: **done** 2026-11-19 (all tasks merged; smoothness confirmed by Brendan in `npm run dev`)._
 
 **Goal:** the fixed-step engine room, fully tested, with a debug view.
 **Done when:** a test entity moves at a fixed speed and renders smoothly at any frame rate; all core classes have tests.

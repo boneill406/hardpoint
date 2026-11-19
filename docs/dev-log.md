@@ -19,7 +19,6 @@ Debt taken on deliberately, each with the condition that clears it.
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `SimSnapshot` holds only id and transform per entity | — | M2: `Vehicle` overrides `snapshot()` to add health, heat, reload state so M1-7-style determinism checks cover them | M1-5 |
 | Determinism test's scripted command stream has no effect yet (M1 entities ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
-| Visual check: movers render smoothly at any frame rate (M1 done-when) | T-47 | Brendan runs `npm run dev`, with and without `?fps=20` and `?interp=off` | M1-6 |
 | Debug scene constants in `main.ts`; `DebugMover` / `DebugMoverView` | T-41, T-49 | M2: player tank replaces them; delete both | M1-6 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
@@ -40,6 +39,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M1 · Milestone complete
+**Resolved:** visual-check follow-up from M1-6: Brendan confirmed the movers look smooth in `npm run dev`.
+**M1 done-when:** a test entity moves at a fixed speed (`Simulation` test: speed × 1 s in 60 ticks) and renders smoothly at any frame rate (Brendan's check, plus `?fps` / `?interp=off` comparison) ✅ · all core classes have tests (`Vec2`, angles, `Rng`, `FixedClock`, `EventBus`, `Entity`, `World`, `Simulation`, `DebugMover`, determinism; 116 tests) ✅ · CI green ✅.
+**Carried into M2:** delete `DebugMover`, `DebugMoverView` and the `main.ts` debug scene (T-41, T-49); `Vehicle` extends `snapshot()`; the determinism test's command stream starts to matter (M2-2); camera tuning (T-19) and arena from `ArenaDef` (T-20).
 
 ## 2026-11-19 · M1-6 · `RenderBridge`, coordinate conversion, fixed-step loop
 **Built:**

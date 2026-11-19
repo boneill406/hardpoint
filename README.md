@@ -4,7 +4,7 @@
 
 A browser-based 3D arcade tank combat game where **where you stand matters as much as what you shoot**. Inspired by Wii Play Tanks, Robokill and Halo's Mantis. _Hardpoint_ is a working title.
 
-**Status:** building the vertical slice: one tracked tank, a cannon and a machine gun, five waves of enemy tanks in a single arena. The project scaffold (milestone M0) is complete; nothing is playable yet. See [milestones](docs/milestones.md).
+**Status:** building the vertical slice: one tracked tank, a cannon and a machine gun, five waves of enemy tanks in a single arena. The project scaffold (M0) and simulation core (M1) are complete: `npm run dev` shows debug boxes circling on a fixed 60 Hz simulation with interpolated rendering. Nothing is playable yet; driving arrives in M2. See [milestones](docs/milestones.md).
 
 ## Quick start
 
