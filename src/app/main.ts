@@ -1,6 +1,8 @@
+import { Renderer } from '../render/Renderer';
+
 /**
  * Application entry point. Wires input, simulation and rendering together and
- * owns the main loop. For now it only locates the canvas; Babylon arrives in M0-3.
+ * owns the frame loop. M0: rendering only; the fixed-step simulation joins in M1.
  */
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
@@ -10,5 +12,15 @@ function getCanvas(): HTMLCanvasElement {
   return canvas;
 }
 
-const canvas = getCanvas();
-console.info(`Hardpoint booted: canvas ${canvas.clientWidth}x${canvas.clientHeight}`);
+function start(): void {
+  const renderer = new Renderer(getCanvas());
+  window.addEventListener('resize', () => renderer.resize());
+
+  const frame = (): void => {
+    renderer.render();
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+}
+
+start();
