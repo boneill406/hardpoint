@@ -37,6 +37,12 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M0-8 · README — M0 complete
+**Built:** `README.md`: one-liner and status, quick start, scripts table, a one-minute architecture summary (sim/render split and why), folder layout, tech stack, a docs index with what each doc is for, and the workflow. CI badge. CLAUDE.md commands list gains `preview`.
+**Trade-offs:** none new.
+**Issues:** no license file exists yet, so the code is "all rights reserved" by default. Brendan's decision; flagged, not added.
+**M0 done-when:** `npm run dev` shows the blank scene (headless Chrome, M0-3/M0-4) ✅ · CI green ✅ · deliberate boundary violation fails lint locally and in CI (M0-5, M0-7) ✅.
+
 ## 2026-11-19 · M0-7 · GitHub Actions CI
 **Built:** `.github/workflows/ci.yml`: on every push and PR, `npm ci` → lint → format check → typecheck → test → build, on Node from `.nvmrc` with npm cache. Read-only token, superseded runs cancelled, 15-minute timeout.
 **Trade-offs:** T-29, T-30, T-31; T-27 updated (CI now runs before merge).

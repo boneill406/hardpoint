@@ -22,8 +22,8 @@ Read `gdd.md` and the relevant milestone before starting a task. When a decision
 TypeScript (strict) · Vite · Babylon.js (rendering, VFX, audio) · Rapier 2D (physics, simulation only; ADR-0005) · Vitest · ESLint + Prettier · npm · GitHub Actions.
 
 ## Commands
-_(Created in milestone M0. Update this list if they change.)_
-- `npm run dev`: dev server
+_(Update this list if they change; README.md has the same table.)_
+- `npm run dev`: dev server; `npm run preview`: serve the production build
 - `npm run build`: production build
 - `npm test`: Vitest (single run); `npm run test:watch` re-runs on save
 - `npm run lint` / `npm run typecheck` / `npm run format` (`format:check` in CI; Prettier skips `*.md`)
