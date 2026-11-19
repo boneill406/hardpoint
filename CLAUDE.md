@@ -11,7 +11,8 @@ Solo hobby project by Brendan (software engineer). He wants Claude to do most of
 - `docs/milestones.md`: milestones and task IDs
 - `docs/adr/`: architecture decisions (ADR-0001 to 0005)
 - `docs/lessons-learned.md`: why the prototype failed (don't repeat it)
-- `docs/dev-log.md`: per-task trade-offs, issues and resolutions; open follow-ups; known environment issues
+- `docs/dev-log.md`: per-task log of what was built, issues and resolutions; open follow-ups; known environment issues
+- `docs/tradeoffs.md`: register of every deliberate trade-off (`T-nn`), with what was given up and when to revisit
 
 @docs/architecture.md
 
@@ -57,5 +58,5 @@ _(Created in milestone M0. Update this list if they change.)_
 2. **Ask before:** adding a dependency, changing an interface listed above, or deviating from the GDD/architecture.
 3. **Flag scope creep.** If something isn't in the current milestone or the GDD, say so and propose adding it to the post-slice backlog instead.
 4. Work on a branch per task (`m2-3-collision`). Small commits; messages start with the task ID (`M2-3: oriented hull collision`).
-5. **Definition of done:** lint, typecheck, tests and build pass; docs updated if behavior or decisions changed; acceptance items for the task demonstrated; `docs/dev-log.md` entry added (and its follow-up / environment lists updated).
+5. **Definition of done:** lint, typecheck, tests and build pass; docs updated if behavior or decisions changed; acceptance items for the task demonstrated; `docs/dev-log.md` entry added (and its follow-up / environment lists updated); new trade-offs recorded in `docs/tradeoffs.md` and cited by ID in the entry.
 6. **Finish with an explanation:** what was built, how it fits the architecture, any trade-offs, and anything Brendan should try in the game. Be concise; no filler or praise.
