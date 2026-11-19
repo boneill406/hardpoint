@@ -1,3 +1,5 @@
+import type { EntityId } from './Entity';
+
 /**
  * Every event the simulation emits, keyed by name, with its payload type.
  * `EventBus<SimEvents>` uses this map so `emit` and `on` are checked at compile
@@ -8,7 +10,7 @@
  */
 export interface SimEvents {
   /** An entity was added to the world this tick. */
-  EntitySpawned: { readonly id: number };
+  EntitySpawned: { readonly id: EntityId };
   /** An entity was removed from the world at the end of this tick. */
-  EntityDestroyed: { readonly id: number };
+  EntityDestroyed: { readonly id: EntityId };
 }
