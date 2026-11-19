@@ -140,9 +140,9 @@ classDiagram
    4. Projectiles advance (swept/ray tests, no tunneling); hits go to `DamageResolver`.
    5. `DamageResolver` applies `ArmorProfile.multiplier(hitAngle)` → `Health`.
    6. `GameMode.update` spawns enemies and checks win/lose.
-   7. Events are emitted: `ShotFired`, `Hit`, `EntityDestroyed`, `WeaponStateChanged`, `WaveStarted`, `RunEnded`.
+   7. Events are emitted: `ShotFired`, `Hit`, `EntityDestroyed`, `WeaponStateChanged`, `WaveStarted`, `RunEnded`. `EventBus.emit` only queues them (typed by the `SimEvents` name → payload map).
 3. **Render:** `RenderBridge` keeps one view per entity id, interpolates between the last two ticks, and applies state to Babylon nodes.
-4. **React to events:** VFX, camera shake, hit-stop, audio and HUD subscribe to simulation events. The simulation never calls "play explosion."
+4. **React to events:** after the frame's ticks, `events.flush()` delivers the queue in emission order (M1 plan, D2), so subscribers never run mid-tick. VFX, camera shake, hit-stop, audio and HUD subscribe to simulation events. The simulation never calls "play explosion."
 
 ## 6. Render layer
 

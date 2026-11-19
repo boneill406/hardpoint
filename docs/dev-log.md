@@ -37,6 +37,12 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M1-4 · `EventBus` and `SimEvents`
+**Built:** `src/sim/core/EventBus.ts`: generic `EventBus<Events>` with `emit` (queues), `on` (returns an unsubscribe function) and `flush` (delivers in emission order, then empties). `src/sim/core/SimEvents.ts`: the name → payload map, starting with `EntitySpawned` and `EntityDestroyed` (`{ id }`). `architecture.md` §5 now describes buffering. 11 tests, including `@ts-expect-error` checks that wrong names and payloads fail typecheck.
+**Semantics chosen:** events emitted by a handler during `flush` wait for the next flush (no infinite loops); a handler unsubscribed mid-flush gets nothing further; subscribing the same function twice delivers once.
+**Trade-offs:** T-38, T-39.
+**Issues:** lint (`no-unnecessary-type-assertion`) caught a cast in `emit` that TypeScript turned out not to need; removed. One cast remains in delivery, where TypeScript can't relate a stored handler to its event name; commented.
+
 ## 2026-11-19 · M1-2 · `FixedClock`
 **Built:** `src/sim/core/FixedClock.ts`: the fixed-timestep accumulator. `advance(elapsedSeconds)` returns how many 60 Hz steps to run (0..5); `alpha` is the leftover fraction of a step for render interpolation. It never reads a clock; the caller passes elapsed time. Zero, negative or NaN elapsed time is ignored. Options for step length and cap (validated, like T-35). `src/sim/core/time.ts` holds `TICK_RATE` / `TICK_SECONDS` for `Simulation` (M1-5) to share. 12 tests.
 **Trade-offs:** T-36, T-37.
