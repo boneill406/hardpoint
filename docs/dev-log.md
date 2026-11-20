@@ -49,7 +49,7 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 - `sim/vehicles/controllers/PlayerController` (its player's command, or idle).
 - `main.ts`: player tank with `PlayerController`; per frame `input.read` → `intentToCommand` → one commands map for all of that frame's ticks. Insurgent still circles.
 - Deleted the `src/input/index.ts` placeholder (T-12). Architecture §2/§7 and README updated.
-- 32 new tests (177 total): keyboard (6), gamepad (11), `intentToCommand` (9), `InputManager` (3), `PlayerController` (2); determinism now includes a player tank, plus "different command stream → different game" and "player drives by the stream".
+- 32 new tests (177 total): keyboard (6), gamepad (10), `intentToCommand` (9), `InputManager` (3), `PlayerController` (2), determinism (2). Determinism now includes a player tank, plus "different command stream → different game" and "player drives by the stream".
 **Resolved:** M1-7 follow-up (the determinism test's command stream now drives a player tank).
 **Trade-offs:** T-55 to T-59; T-49 updated.
 **Acceptance:** built game loads cleanly in headless Chrome with no `?pad`, `direct`, `triggers` and an invalid value (falls back to `tank`). Keyboard and Xbox driving can't be exercised headless → playtest follow-up for Brendan.
