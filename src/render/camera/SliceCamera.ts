@@ -31,32 +31,42 @@ export type CameraPresetName = keyof typeof CAMERA_PRESETS;
  */
 const FOLLOW_RATE = 3.2;
 
-/** The part of the ground plane the camera may show (the arena plus its walls). */
+/** The arena the camera frames: its outer wall edges and how tall the walls are. */
 export interface GroundBounds {
   readonly minX: number;
   readonly maxX: number;
   readonly minZ: number;
   readonly maxZ: number;
+  /** Wall height (u): the walls' top edges must fit on screen too, not just their bases. */
+  readonly edgeHeight: number;
 }
 
-/** How far the visible ground extends from the focus point, in each direction (u, all ≥ 0). */
+/** Maps a canvas pixel to the point it shows on the horizontal plane at `height`. */
+export type ScreenToPlane = (x: number, y: number, height: number) => Vec2 | undefined;
+
+/** How far the view reaches from the focus point (u, all ≥ 0), as used for clamping. */
 interface ViewExtents {
-  readonly left: number;
-  readonly right: number;
+  /** Half-width of the bottom (near, narrow) edge of the view, on the ground. */
+  readonly halfWidth: number;
+  /** Behind the focus to the bottom edge, at wall-top height. */
   readonly near: number;
+  /** Ahead of the focus to the top edge, at wall-top height. */
   readonly far: number;
 }
 
 /**
  * The slice's high-angle camera (GDD §7). It looks "north" (+z) from behind and
  * above its focus, so the player's start at the bottom of the arena faces
- * up-screen. The focus eases after the player (M2-5) and is clamped so the
- * view never shows the void beyond the arena walls.
+ * up-screen. The focus eases after the player (M2-5) and is clamped to frame
+ * the arena: the camera can travel until a wall's top edge reaches the screen
+ * edge, so every wall and corner can come into view. A tilted camera sees a
+ * trapezoid, wider at the top, so near the side walls the top corners show
+ * ground beyond the arena (ArenaView draws terrain there, never void).
  */
 export class SliceCamera {
   readonly camera: TargetCamera;
   private focus: Vec2 | undefined;
-  private extents: ViewExtents = { left: 0, right: 0, near: 0, far: 0 };
+  private extents: ViewExtents = { halfWidth: 0, near: 0, far: 0 };
 
   constructor(
     scene: Scene,
@@ -70,30 +80,25 @@ export class SliceCamera {
   }
 
   /**
-   * Measures which patch of ground the screen shows around the focus. Must be
-   * called once the canvas has its size, and again after every resize (the
-   * aspect ratio changes the width). `groundAt` maps a canvas pixel to the ground.
+   * Measures how far the view reaches around the focus. Call once the canvas
+   * has its size and again after every resize (the aspect ratio changes the
+   * width). Sideways reach uses the narrow bottom edge, so the bottom corners
+   * can be reached; up and down use wall-top height, so whole walls fit.
    */
-  measureView(
-    width: number,
-    height: number,
-    groundAt: (x: number, y: number) => Vec2 | undefined,
-  ): void {
+  measureView(width: number, height: number, pointAt: ScreenToPlane): void {
     this.place(Vec2.ZERO);
     // Picking uses cached matrices; force them up to date for the new position and aspect.
     this.camera.getViewMatrix(true);
     this.camera.getProjectionMatrix(true);
-    const corners = [
-      groundAt(0, 0),
-      groundAt(width, 0),
-      groundAt(0, height),
-      groundAt(width, height),
-    ].filter((point): point is Vec2 => point !== undefined);
+    const wallTop = this.bounds.edgeHeight;
+    const bottomLeft = pointAt(0, height, 0);
+    const bottomRight = pointAt(width, height, 0);
+    const bottomAtWallTop = pointAt(width / 2, height, wallTop);
+    const topAtWallTop = pointAt(width / 2, 0, wallTop);
     this.extents = {
-      left: Math.max(0, ...corners.map((p) => -p.x)),
-      right: Math.max(0, ...corners.map((p) => p.x)),
-      near: Math.max(0, ...corners.map((p) => -p.z)),
-      far: Math.max(0, ...corners.map((p) => p.z)),
+      halfWidth: Math.min(-(bottomLeft?.x ?? 0), bottomRight?.x ?? 0),
+      near: Math.max(0, -(bottomAtWallTop?.z ?? 0)),
+      far: Math.max(0, topAtWallTop?.z ?? 0),
     };
     if (this.focus !== undefined) {
       this.place(this.focus);
@@ -116,14 +121,14 @@ export class SliceCamera {
   }
 
   /**
-   * Moves a focus point so the visible ground stays inside the bounds. If the
-   * view is wider (or deeper) than the bounds, centres it on that axis instead.
+   * Keeps the focus where the screen edges stop at the arena edges. If the view
+   * is larger than the arena on an axis, centres it on that axis instead.
    */
   private clampToBounds(point: Vec2): Vec2 {
-    const { left, right, near, far } = this.extents;
+    const { halfWidth, near, far } = this.extents;
     const { minX, maxX, minZ, maxZ } = this.bounds;
     return new Vec2(
-      clampAxis(point.x, minX + left, maxX - right),
+      clampAxis(point.x, minX + halfWidth, maxX - halfWidth),
       clampAxis(point.z, minZ + near, maxZ - far),
     );
   }

@@ -53,6 +53,7 @@ export class Renderer {
       maxX: edgeX,
       minZ: -edgeZ,
       maxZ: edgeZ,
+      edgeHeight: arena.def.wall.height,
     });
     this.measureCameraView();
 
@@ -86,11 +87,16 @@ export class Renderer {
    * which meshes happen to be under the cursor.
    */
   screenToGround(x: number, y: number): Vec2 | undefined {
+    return this.screenToPlane(x, y, 0);
+  }
+
+  /** Like `screenToGround`, but onto the horizontal plane `height` u above the floor. */
+  private screenToPlane(x: number, y: number, height: number): Vec2 | undefined {
     const ray = this.scene.createPickingRay(x, y, null, this.sliceCamera.camera);
     if (ray.direction.y >= 0) {
       return undefined;
     }
-    const distance = -ray.origin.y / ray.direction.y;
+    const distance = (height - ray.origin.y) / ray.direction.y;
     return fromBabylonPosition(ray.origin.add(ray.direction.scale(distance)));
   }
 
@@ -113,8 +119,8 @@ export class Renderer {
     if (canvas === null) {
       return;
     }
-    this.sliceCamera.measureView(canvas.clientWidth, canvas.clientHeight, (x, y) =>
-      this.screenToGround(x, y),
+    this.sliceCamera.measureView(canvas.clientWidth, canvas.clientHeight, (x, y, height) =>
+      this.screenToPlane(x, y, height),
     );
   }
 

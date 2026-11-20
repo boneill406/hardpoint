@@ -6,18 +6,22 @@ import { toBabylonPosition, toBabylonRotationY } from '../coords';
 
 /** Spacing of the debug grid lines (`?grid=on`), in units. Helps judge scale and speed. */
 const GRID_STEP = 2;
+/** Ground beyond the walls (u per side): far larger than any view, so the camera never shows void. */
+const TERRAIN_SIZE = 300;
+
 /** Gate marker size (u): a coloured panel on the wall's inner face. Glow and spawn warnings come in M5. */
 const GATE = { width: 4, height: 1.6, depth: 0.1 };
 
 /**
  * The arena's static geometry, built once from the sim's `Arena`: floor,
- * walls and gate markers (M2-4; clears T-20). Pillars and crates are entities
+ * walls, gate markers (M2-4; clears T-20) and the terrain beyond the walls (M2-5). Pillars and crates are entities
  * and get their own `PropView`s through `RenderBridge`.
  */
 export class ArenaView {
   private readonly meshes: Mesh[] = [];
 
   constructor(scene: Scene, arena: Arena, showGrid: boolean) {
+    this.createTerrain(scene);
     this.createFloor(scene, arena);
     this.createWalls(scene, arena);
     this.createGates(scene, arena);
@@ -30,6 +34,19 @@ export class ArenaView {
     for (const mesh of this.meshes) {
       mesh.dispose(false, true);
     }
+  }
+
+  /** Darker, flat ground outside the arena: what you see past the walls near the side edges. */
+  private createTerrain(scene: Scene): void {
+    const terrain = MeshBuilder.CreateGround(
+      'terrain',
+      { width: TERRAIN_SIZE, height: TERRAIN_SIZE },
+      scene,
+    );
+    terrain.position.y = -0.02; // just below the arena floor, so the floor always wins
+    terrain.material = flatMaterial(scene, 'terrain-mat', new Color3(0.2, 0.2, 0.18));
+    terrain.isPickable = false;
+    this.meshes.push(terrain);
   }
 
   private createFloor(scene: Scene, arena: Arena): void {
