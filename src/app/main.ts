@@ -154,7 +154,7 @@ async function start(): Promise<void> {
       simulation.tick(commands);
     }
     simulation.events.flush();
-    renderer.render(simulation.world.all(), clock.alpha, playerTank.id);
+    renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
   };
   requestAnimationFrame(frame);
 }

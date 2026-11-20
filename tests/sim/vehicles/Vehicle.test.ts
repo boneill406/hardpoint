@@ -101,3 +101,15 @@ describe('createVehicle', () => {
     expect(tank.linearVelocity.length()).toBeCloseTo(TEST_TANK.locomotion.topSpeed, 9);
   });
 });
+
+describe('Vehicle previous velocity', () => {
+  it('keeps the velocity from the end of the previous tick, for acceleration', () => {
+    const tank = scriptedTank(drive(1));
+    tank.applyCommand(drive(1));
+    tickVehicle(tank, 5);
+    const afterFive = tank.linearVelocity;
+    tickVehicle(tank, 1);
+    expect(tank.previousLinearVelocity).toBe(afterFive);
+    expect(tank.linearVelocity.length()).toBeGreaterThan(afterFive.length());
+  });
+});

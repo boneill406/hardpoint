@@ -52,10 +52,16 @@ export class Renderer {
   /**
    * Draws one frame: `alpha` (0..1) is how far real time is into the next tick
    * (`FixedClock`). The camera centres on `followId`'s drawn position. Hard
-   * follow for now; M2-5 adds smoothing.
+   * follow for now; M2-5 adds smoothing. `frameSeconds` is real time since the
+   * last frame, for view-only animation.
    */
-  render(entities: readonly Entity[], alpha: number, followId: EntityId): void {
-    this.bridge.sync(entities, alpha);
+  render(
+    entities: readonly Entity[],
+    alpha: number,
+    followId: EntityId,
+    frameSeconds: number,
+  ): void {
+    this.bridge.sync(entities, alpha, frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.lookAt(toBabylonPosition(followed.position));

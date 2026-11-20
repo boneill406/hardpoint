@@ -6,8 +6,12 @@ import type { Transform } from '../../sim/core/Transform';
  * and disposes it when the entity leaves the world.
  */
 export interface EntityView {
-  /** Places the view at an (already interpolated) transform for this frame. */
-  update(transform: Transform): void;
+  /**
+   * Places the view at an (already interpolated) transform for this frame.
+   * `frameSeconds` is real time since the last frame, for view-only animation
+   * (tread scroll, suspension) that must run at the same speed at any frame rate.
+   */
+  update(transform: Transform, frameSeconds: number): void;
   /** Frees the view's meshes and materials. */
   dispose(): void;
 }

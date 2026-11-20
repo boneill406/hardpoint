@@ -27,6 +27,7 @@ export interface VehicleSnapshot extends EntitySnapshot {
  */
 export class Vehicle extends Entity {
   private linear = Vec2.ZERO;
+  private previousLinear = Vec2.ZERO;
   private angular = 0;
   private activeCommand: VehicleCommand = IDLE_COMMAND;
 
@@ -45,6 +46,14 @@ export class Vehicle extends Entity {
     return this.linear;
   }
 
+  /**
+   * Velocity at the end of the previous tick. With `linearVelocity` it gives
+   * this tick's acceleration, which the render layer uses for hull pitch.
+   */
+  get previousLinearVelocity(): Vec2 {
+    return this.previousLinear;
+  }
+
   /** rad/s; positive turns clockwise seen from above. */
   get angularVelocity(): number {
     return this.angular;
@@ -53,6 +62,12 @@ export class Vehicle extends Entity {
   /** The command this tick's movement and firing follow. */
   get command(): VehicleCommand {
     return this.activeCommand;
+  }
+
+  /** Tick phase 1: keeps last tick's velocity alongside last tick's transform. */
+  override saveTransform(): void {
+    super.saveTransform();
+    this.previousLinear = this.linear;
   }
 
   /** Tick phase 2: store what the controller decided. */

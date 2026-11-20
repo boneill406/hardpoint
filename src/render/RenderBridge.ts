@@ -6,7 +6,7 @@ import type { Transform } from '../sim/core/Transform';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { EntityView } from './views/EntityView';
 import { PropView } from './views/PropView';
-import { VehicleView } from './views/VehicleView';
+import { TankView } from './views/TankView';
 
 export interface RenderBridgeOptions {
   /** false draws the latest tick as is (debug `?interp=off`), to show the stutter interpolation hides. */
@@ -34,13 +34,13 @@ export class RenderBridge {
   ) {}
 
   /** Creates views for new entities, disposes views of removed ones, and places the rest. */
-  sync(entities: readonly Entity[], alpha: number): void {
+  sync(entities: readonly Entity[], alpha: number, frameSeconds: number): void {
     const live = new Set<EntityId>();
     for (const entity of entities) {
       live.add(entity.id);
       const transform = this.transformToDraw(entity, alpha);
       this.drawn.set(entity.id, transform);
-      this.viewFor(entity).update(transform);
+      this.viewFor(entity).update(transform, frameSeconds);
     }
     for (const [id, view] of this.views) {
       if (!live.has(id)) {
@@ -79,7 +79,7 @@ export class RenderBridge {
       return new PropView(this.scene, `${entity.kind}-${entity.id}`, entity);
     }
     if (entity instanceof Vehicle) {
-      return new VehicleView(this.scene, `vehicle-${entity.id}`, entity.def.hull, entity.faction);
+      return new TankView(this.scene, `tank-${entity.id}`, entity);
     }
     throw new Error(`No view for entity ${entity.id} (${entity.constructor.name})`);
   }
