@@ -14,7 +14,7 @@ export const PLAYER_TANK: VehicleDef = {
     accelTime: 0.4,
     stopTime: 0.25,
     shiftTime: 0.15,
-    turnRate: 2.0,
+    turnRate: 2.3,
     turnAccelTime: 0.1,
     grip: 40,
   },

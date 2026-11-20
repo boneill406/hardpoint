@@ -47,9 +47,9 @@ Escalation is **count only**. All enemies use the same definition.
 | Reverse speed | 60% of drive speed (4.2 u/s) | Prototype reversed at full speed |
 | Acceleration | 0.4 s to top speed; 0.25 s to stop | Inertia; the prototype reached speed instantly. Tuned by Brendan in play (2026-11-19) |
 | Gear change | 0.15 s stopped when switching between forward and reverse | Makes direction changes feel mechanical (brake, pause, pull) rather than one smooth swoop. Tuned in play |
-| Hull turn rate | 2.0 rad/s, 0.1 s ramp; can pivot in place | Prototype 2.2; tuned in play |
+| Hull turn rate | 2.3 rad/s, 0.1 s ramp; can pivot in place | Prototype 2.2; tuned in play (2.0, then 2.3) |
 | Mass | 30 | Relative units. Engine force = mass × speed / accel time, so heavier or quicker tanks shove harder |
-| Track grip | 40 u/s² sideways | Must exceed speed × turn rate (14) to hold a full-speed turn |
+| Track grip | 40 u/s² sideways | Must exceed speed × turn rate (16.1) to hold a full-speed turn |
 | Hull footprint | 2.4 × 1.6 u (length × width) | Approximate prototype size; adjust as needed |
 | Turret traverse | 4.1 rad/s, 0.07 s spin-up delay | From prototype |
 | Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping. Any vehicle's top speed is capped at 12 u/s (`MAX_VEHICLE_SPEED`), which collision is sized for |
