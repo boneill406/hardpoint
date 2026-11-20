@@ -14,7 +14,7 @@ Requires **Node.js 22.12 or later** (CI uses the version in [`.nvmrc`](.nvmrc), 
 npm ci          # install the exact versions in package-lock.json
 npm run dev     # start the dev server, then open the printed URL
 # drive: WASD or arrows, aim with the mouse; or an Xbox pad (press a button first)
-# debug: append ?fps=20 (cap frame rate), ?interp=off (no interpolation), ?pad=direct|triggers (pad scheme), ?grid=on (floor grid)
+# debug: append ?fps=20 (cap frame rate), ?interp=off (no interpolation), ?pad=direct|triggers (pad scheme), ?grid=on (floor grid), ?cam=proto (prototype camera)
 ```
 
 You should see the arena floor from the game's high-angle camera. The browser console logs `Physics ready: Rapier 2D`.
