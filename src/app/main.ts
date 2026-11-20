@@ -1,10 +1,13 @@
 import { Renderer } from '../render/Renderer';
 import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
+import { TICK_RATE } from '../sim/core/time';
 import { Vec2 } from '../sim/core/Vec2';
-import { DebugMover, type DebugMoverOptions } from '../sim/debug/DebugMover';
+import { ScriptedController } from '../sim/debug/ScriptedController';
+import { INSURGENT_TANK, PLAYER_TANK } from '../sim/defs/vehicles';
 import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
-import type { PlayerId, VehicleCommand } from '../sim/vehicles/VehicleCommand';
+import { createVehicle } from '../sim/vehicles/VehicleFactory';
+import { IDLE_COMMAND, type PlayerId, type VehicleCommand } from '../sim/vehicles/VehicleCommand';
 import { readDebugParams } from './debugParams';
 
 /**
@@ -14,17 +17,39 @@ import { readDebugParams } from './debugParams';
  */
 
 const SEED = 1;
-/** No input devices until M2-1. */
+/** No input devices until M2-2. */
 const NO_COMMANDS: ReadonlyMap<PlayerId, VehicleCommand> = new Map();
 
 /**
- * Temporary M1 scene: two movers circling in opposite directions (radius =
- * speed / turnRate ≈ 6.7 u and 10 u), so position and heading both interpolate.
+ * Temporary debug scene until player input (M2-2): the player tank repeats a
+ * 5 s routine that shows acceleration, braking and slower reverse; an insurgent
+ * tank circles at full throttle.
  */
-const DEBUG_MOVERS: readonly (DebugMoverOptions & { readonly start: Vec2 })[] = [
-  { start: new Vec2(-6.7, 0), speed: 6, turnRate: 0.9 },
-  { start: new Vec2(10, 0), speed: 10, turnRate: -1 },
+const ROUTINE: readonly {
+  readonly seconds: number;
+  readonly throttle: number;
+  readonly turn: number;
+}[] = [
+  { seconds: 2, throttle: 1, turn: 0.25 },
+  { seconds: 1, throttle: 0, turn: 0 },
+  { seconds: 1.5, throttle: -1, turn: 0 },
+  { seconds: 0.5, throttle: 0, turn: 0 },
 ];
+const ROUTINE_TICKS = ROUTINE.reduce((sum, step) => sum + step.seconds * TICK_RATE, 0);
+
+function routineCommand(tick: number): VehicleCommand {
+  let remaining = tick % ROUTINE_TICKS;
+  for (const step of ROUTINE) {
+    const ticks = step.seconds * TICK_RATE;
+    if (remaining < ticks) {
+      return { ...IDLE_COMMAND, throttle: step.throttle, turn: step.turn };
+    }
+    remaining -= ticks;
+  }
+  return IDLE_COMMAND;
+}
+
+const CIRCLE_COMMAND: VehicleCommand = { ...IDLE_COMMAND, throttle: 1, turn: -0.6 };
 
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
@@ -35,9 +60,20 @@ function getCanvas(): HTMLCanvasElement {
 }
 
 function populateDebugScene(simulation: Simulation): void {
-  for (const { start, speed, turnRate } of DEBUG_MOVERS) {
-    simulation.world.add(new DebugMover({ position: start, heading: 0 }, { speed, turnRate }));
-  }
+  simulation.world.add(
+    createVehicle(PLAYER_TANK, {
+      transform: { position: new Vec2(-4, -6), heading: 0 },
+      faction: 'player',
+      controller: new ScriptedController(routineCommand),
+    }),
+  );
+  simulation.world.add(
+    createVehicle(INSURGENT_TANK, {
+      transform: { position: new Vec2(8, 0), heading: 0 },
+      faction: 'insurgent',
+      controller: new ScriptedController(() => CIRCLE_COMMAND),
+    }),
+  );
 }
 
 /**

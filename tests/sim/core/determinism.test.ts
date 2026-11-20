@@ -2,9 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { Simulation, type SimSnapshot } from '../../../src/sim/core/Simulation';
 import { Rng } from '../../../src/sim/core/Rng';
 import { Vec2 } from '../../../src/sim/core/Vec2';
-import { DebugMover } from '../../../src/sim/debug/DebugMover';
+import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
+import { INSURGENT_TANK, PLAYER_TANK } from '../../../src/sim/defs/vehicles';
+import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import { RapierPhysicsWorld } from '../../../src/sim/physics/RapierPhysicsWorld';
-import type { PlayerId, VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
+import {
+  IDLE_COMMAND,
+  type PlayerId,
+  type VehicleCommand,
+} from '../../../src/sim/vehicles/VehicleCommand';
 
 const TICKS = 600;
 const SNAPSHOT_EVERY = 60;
@@ -12,23 +18,36 @@ const MOVERS = 12;
 const PLAYER: PlayerId = 1;
 
 /**
- * Builds a world entirely from the simulation's own `Rng`, so the seed decides
- * every starting position, heading, speed and turn rate.
+ * Builds a world entirely from the simulation's own `Rng`: the seed decides every
+ * tank's def, start, and scripted driving (throttle, turn, and how often it
+ * flips between forward and reverse, which exercises acceleration and braking).
  */
 function populateRandomMovers(simulation: Simulation): void {
   const { rng, world } = simulation;
   for (let i = 0; i < MOVERS; i++) {
     const position = new Vec2(rng.range(-20, 20), rng.range(-20, 20));
     const heading = rng.range(-Math.PI, Math.PI);
-    const speed = rng.range(0.5, 6);
-    const turnRate = rng.range(-2, 2);
-    world.add(new DebugMover({ position, heading }, { speed, turnRate }));
+    const throttle = rng.range(0.3, 1);
+    const turn = rng.range(-1, 1);
+    const flipEvery = rng.int(30, 120);
+    const controller = new ScriptedController((tick) => ({
+      ...IDLE_COMMAND,
+      throttle: Math.floor(tick / flipEvery) % 2 === 0 ? throttle : -throttle,
+      turn,
+    }));
+    world.add(
+      createVehicle(rng.chance(0.5) ? PLAYER_TANK : INSURGENT_TANK, {
+        transform: { position, heading },
+        faction: 'player',
+        controller,
+      }),
+    );
   }
 }
 
 /**
  * A scripted player input stream, generated from its own seed so it is the same
- * for every run. M1 entities ignore commands; from M2-2 a player vehicle reads
+ * for every run. Scripted tanks ignore commands; from M2-2 a player vehicle reads
  * them and this test covers "same seed + same commands → same game".
  */
 function scriptedCommands(): (tick: number) => ReadonlyMap<PlayerId, VehicleCommand> {

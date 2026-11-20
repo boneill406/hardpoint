@@ -1,0 +1,30 @@
+import type { Vec2 } from '../../core/Vec2';
+import type { VehicleCommand } from '../VehicleCommand';
+
+/** A vehicle's current motion, as locomotion needs to see it. */
+export interface MotionState {
+  readonly heading: number;
+  /** World-space velocity, u/s. */
+  readonly linearVelocity: Vec2;
+  /** rad/s; positive turns clockwise seen from above. */
+  readonly angularVelocity: number;
+}
+
+/** The velocities a vehicle should have after this tick's drive forces. */
+export interface Velocities {
+  readonly linear: Vec2;
+  readonly angular: number;
+}
+
+/**
+ * How a vehicle turns a command into motion (architecture.md §4). Tracks,
+ * legs or hover differ only here; `Vehicle`, controllers and collision don't
+ * change.
+ *
+ * Returns velocities rather than moving the vehicle: until M2-3 `Vehicle`
+ * integrates them itself, after that Rapier does, and contacts (walls, other
+ * tanks) can change them before the next tick.
+ */
+export interface Locomotion {
+  step(command: VehicleCommand, motion: MotionState, dt: number): Velocities;
+}

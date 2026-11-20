@@ -1,4 +1,4 @@
-import type { Vec2 } from '../core/Vec2';
+import { Vec2 } from '../core/Vec2';
 
 /** Identifies a human player (1 in the slice; more with co-op). */
 export type PlayerId = number;
@@ -18,3 +18,12 @@ export interface VehicleCommand {
   readonly firePrimary: boolean;
   readonly fireSecondary: boolean;
 }
+
+/** No input: stand still, hold fire. A vehicle starts with this, and a player with no input gets it. */
+export const IDLE_COMMAND: VehicleCommand = {
+  throttle: 0,
+  turn: 0,
+  aimPoint: Vec2.ZERO,
+  firePrimary: false,
+  fireSecondary: false,
+};

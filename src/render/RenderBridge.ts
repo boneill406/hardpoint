@@ -2,9 +2,9 @@ import type { Scene } from '@babylonjs/core';
 import { lerpAngle } from '../sim/core/angles';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Transform } from '../sim/core/Transform';
-import { DebugMover } from '../sim/debug/DebugMover';
-import { DebugMoverView } from './views/DebugMoverView';
+import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { EntityView } from './views/EntityView';
+import { VehicleView } from './views/VehicleView';
 
 export interface RenderBridgeOptions {
   /** false draws the latest tick as is (debug `?interp=off`), to show the stutter interpolation hides. */
@@ -62,8 +62,8 @@ export class RenderBridge {
 
   /** Throws for an entity type with no view: every entity must be visible, so this is a bug. */
   private createView(entity: Entity): EntityView {
-    if (entity instanceof DebugMover) {
-      return new DebugMoverView(this.scene, `debug-mover-${entity.id}`);
+    if (entity instanceof Vehicle) {
+      return new VehicleView(this.scene, `vehicle-${entity.id}`, entity.def.hull, entity.faction);
     }
     throw new Error(`No view for entity ${entity.id} (${entity.constructor.name})`);
   }

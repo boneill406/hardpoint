@@ -1,5 +1,5 @@
-import { DebugMover } from '../debug/DebugMover';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
+import { Vehicle } from '../vehicles/Vehicle';
 import type { PlayerId, VehicleCommand } from '../vehicles/VehicleCommand';
 import type { EntitySnapshot } from './Entity';
 import { EventBus } from './EventBus';
@@ -50,15 +50,22 @@ export class Simulation {
 
   /**
    * Advances the game by one fixed step. `commands` holds each human player's
-   * input for this tick; M2 routes them to `PlayerController`s (M1 entities ignore them).
+   * input for this tick; controllers pick out their own (`PlayerController`, M2-2).
+   * The phase order is the tick order in architecture.md §5.
    */
   tick(commands: ReadonlyMap<PlayerId, VehicleCommand>): void {
-    void commands; // Unused until M2; kept so the signature is final now.
     for (const entity of this.world.all()) {
       entity.saveTransform();
     }
-    for (const mover of this.world.ofType(DebugMover)) {
-      mover.step(TICK_SECONDS);
+    const vehicles = this.world.ofType(Vehicle);
+    for (const vehicle of vehicles) {
+      vehicle.applyCommand(vehicle.controller.decide({ tick: this.ticks, commands, vehicle }));
+    }
+    for (const vehicle of vehicles) {
+      vehicle.drive(TICK_SECONDS);
+    }
+    for (const vehicle of vehicles) {
+      vehicle.integrate(TICK_SECONDS);
     }
     this.physics.step(TICK_SECONDS);
     this.world.applyRemovals();

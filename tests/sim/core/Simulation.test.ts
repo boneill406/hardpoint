@@ -2,19 +2,24 @@ import { describe, expect, it } from 'vitest';
 import { Simulation, type SimulationOptions } from '../../../src/sim/core/Simulation';
 import { TICK_SECONDS } from '../../../src/sim/core/time';
 import { Vec2 } from '../../../src/sim/core/Vec2';
-import { DebugMover } from '../../../src/sim/debug/DebugMover';
 import { RapierPhysicsWorld } from '../../../src/sim/physics/RapierPhysicsWorld';
+import type { ControllerContext } from '../../../src/sim/vehicles/controllers/Controller';
+import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
+import {
+  IDLE_COMMAND,
+  type PlayerId,
+  type VehicleCommand,
+} from '../../../src/sim/vehicles/VehicleCommand';
+import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import { FakePhysicsWorld } from '../physics/FakePhysicsWorld';
+import { drive, scriptedTank, TEST_TANK } from '../vehicles/testVehicles';
 
 const SEED = 42;
-const NO_COMMANDS = new Map();
-const SPEED = 3;
+const NO_COMMANDS: ReadonlyMap<PlayerId, VehicleCommand> = new Map();
 
-/** One mover at the origin heading +z, at `SPEED` u/s, not turning. */
+/** One test tank at the origin heading +z, always at full throttle. */
 function addMover(simulation: Simulation): void {
-  simulation.world.add(
-    new DebugMover({ position: Vec2.ZERO, heading: 0 }, { speed: SPEED, turnRate: 0 }),
-  );
+  simulation.world.add(scriptedTank(drive(1)));
 }
 
 function createSimulation(options: Partial<SimulationOptions> = {}): {
@@ -32,10 +37,10 @@ function runTicks(simulation: Simulation, ticks: number): void {
   }
 }
 
-function moverOf(simulation: Simulation): DebugMover {
-  const [mover] = simulation.world.ofType(DebugMover);
+function moverOf(simulation: Simulation): Vehicle {
+  const [mover] = simulation.world.ofType(Vehicle);
   if (mover === undefined) {
-    throw new Error('test setup: no DebugMover in the world');
+    throw new Error('test setup: no Vehicle in the world');
   }
   return mover;
 }
@@ -66,12 +71,42 @@ describe('Simulation', () => {
     expect(mover.transform.position.z).toBeGreaterThan(afterTen.position.z);
   });
 
-  it('a mover covers speed × 1 s in 60 ticks', () => {
+  it("asks each vehicle's controller once per tick, with the tick number and that tick's commands", () => {
+    const calls: ControllerContext[] = [];
+    const commands: ReadonlyMap<PlayerId, VehicleCommand> = new Map([[1, drive(1)]]);
+    const { simulation } = createSimulation({
+      populate: (sim) => {
+        sim.world.add(
+          createVehicle(TEST_TANK, {
+            transform: { position: Vec2.ZERO, heading: 0 },
+            faction: 'player',
+            controller: {
+              decide: (context) => {
+                calls.push(context);
+                return IDLE_COMMAND;
+              },
+            },
+          }),
+        );
+      },
+    });
+
+    simulation.tick(commands);
+    simulation.tick(commands);
+
+    expect(calls.map((call) => call.tick)).toEqual([0, 1]);
+    expect(calls[0]?.commands).toBe(commands);
+    expect(calls[0]?.vehicle).toBe(moverOf(simulation));
+  });
+
+  it("a vehicle follows its controller's command through the tick phases", () => {
     const { simulation } = createSimulation();
     runTicks(simulation, 60);
-    const { position } = moverOf(simulation).transform;
-    expect(position.z).toBeCloseTo(SPEED, 9);
-    expect(position.x).toBeCloseTo(0, 9);
+    const tank = moverOf(simulation);
+    expect(tank.command).toEqual(drive(1));
+    expect(tank.linearVelocity.z).toBeCloseTo(TEST_TANK.locomotion.topSpeed, 9);
+    expect(tank.transform.position.z).toBeCloseTo(7.5, 0);
+    expect(tank.transform.position.x).toBeCloseTo(0, 9);
   });
 
   it('applies removals at the end of the tick and queues EntityDestroyed', () => {
@@ -104,7 +139,7 @@ describe('Simulation', () => {
     expect(snapshot.tick).toBe(60);
     expect(snapshot.rngState).toBe(simulation.rng.getState());
     expect(snapshot.entities).toHaveLength(1);
-    expect(snapshot.entities[0]?.z).toBeCloseTo(SPEED, 9);
+    expect(snapshot.entities[0]?.z).toBeCloseTo(7.5, 0);
     expect(JSON.parse(JSON.stringify(snapshot))).toEqual(snapshot);
   });
 
@@ -121,7 +156,7 @@ describe('Simulation', () => {
       populate: addMover,
     });
     runTicks(simulation, 60);
-    expect(moverOf(simulation).transform.position.z).toBeCloseTo(SPEED, 9);
+    expect(moverOf(simulation).transform.position.z).toBeCloseTo(7.5, 0);
     simulation.dispose();
   });
 });
