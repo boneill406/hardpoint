@@ -39,6 +39,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-1 · Turret
+**Built:** `TurretDef` (traverse rate, spin-up, snap angle, minimum aim distance) in `VehicleDef`; player 4.0 rad/s, 0.05 s, 1°, 1.2 u; insurgent 1.8 rad/s. `Turret` (sim): stabilised world heading, previous heading for interpolation, spin-up then constant-rate traverse the short way round, snap within the snap angle, aim points closer than the minimum ignored; snapshot. `Vehicle.turret`, `aimTurret` as tick phase 5 (after physics). `VehicleCommand.aimPoint` optional (T-80): `intentToCommand` no longer remembers a last aim point. `TankView` turns the model's turret by the interpolated world heading minus the drawn hull heading; views now get `FrameTiming { seconds, alpha }` (alpha 1 with `?interp=off`).
+**Tests:** 12 new (258 total): `Turret` (8: hold, spin-up of exactly 3 ticks, traverse time, snap, short way round, minimum distance, re-spin-up per new aim, previous heading), turret on a vehicle (stabilised while the hull pivots; turns to the command's aim), def guard that every timing is a whole number of 60 Hz ticks (2, plan D13). `intentToCommand`: no aim → no aim point.
+**Trade-offs:** T-80.
+**Acceptance:** throwaway builds with a parked insurgent aiming at a fixed point (reverted): hull north aiming east shows the barrel pointing right; hull east aiming north shows it pointing up-screen. Mouse and right-stick aiming need Brendan.
+**Issues:** headless Chrome under virtual time fires too few animation frames for the turret to finish traversing in a moving scene; static variants with the catch-up cap lifted gave a clean check instead.
+
 ## 2026-11-20 · M3 · Plan approved
 **Saved:** [`plans/m3-weapons.md`](plans/m3-weapons.md) (D1–D13). GDD §3–§5 updated to the plan's starting values: whole-tick, round numbers instead of the prototype's (MG 10 rounds/s, 30 rounds to overheat, 0.25/s idle cooling, re-arm 30%; cannon reload 1.5 s to try; turret 4.0 rad/s with 0.05 s spin-up; shells 70/100 u/s). Timings must be whole 60 Hz ticks (the prototype's 0.095 s MG interval would alternate 5- and 6-tick gaps). Both armor face rules will be built and compared in play. Backlog: realistic armor (angle of impact, ricochets).
 

@@ -140,7 +140,7 @@ classDiagram
 2. **Fixed-step simulation (60 Hz),** run 0..n times per frame to catch up:
    1. Each `Controller` produces a `VehicleCommand`.
    2. `Locomotion.step` turns each command into new velocities, traction-limited (engine, brakes, track grip; M2 plan D1); `PhysicsWorld` integrates them and resolves collisions `PhysicsBridge` keeps one body per vehicle and prop (diffing ids each tick, like `RenderBridge`), pushes velocities, Rapier steps, and each vehicle takes its resolved transform back (`syncFromPhysics`). Walls are static boxes added once.
-   3. Turrets traverse toward aim; weapons update limiters and fire.
+   3. Turrets traverse toward aim (after physics, from where the tank ended up; stabilised, so hull turning doesn't swing them; no aim point = hold heading); weapons update limiters and fire.
    4. Projectiles advance (swept/ray tests, no tunneling); hits go to `DamageResolver`.
    5. `DamageResolver` applies `ArmorProfile.multiplier(hitAngle)` → `Health`.
    6. `GameMode.update` spawns enemies and checks win/lose.

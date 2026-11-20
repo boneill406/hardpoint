@@ -1,6 +1,6 @@
 # M3 Plan — Turret, weapons, damage
 
-_Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../milestones.md) § M3. Status: **not started** (update the task table as work lands)._
+_Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../milestones.md) § M3. Status: **in progress** (update the task table as work lands)._
 
 **Goal:** shoot things, and directional armor works.
 **Done when:** front hits on the dummy visibly deal less than rear hits; the machine gun overheats and re-arms; tests cover armor angles and multi-limiter weapons. Plus M3-7: the barrel never visibly enters obstacles.
@@ -41,7 +41,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 ## Tasks (build order)
 | Order | Task | Branch | Status |
 |---|---|---|---|
-| 1 | M3-1 `Turret`, `TurretDef`; aim from `VehicleCommand.aimPoint`; `TankView` rotates the turret | `m3-1-turret` | ⬜ |
+| 1 | M3-1 `Turret`, `TurretDef`; aim from `VehicleCommand.aimPoint`; `TankView` rotates the turret | `m3-1-turret` | ✅ |
 | 2 | M3-2 `Weapon`, `FireLimiter`, `ReloadLimiter`, `HeatLimiter`, `WeaponMount`, `defs/weapons.ts`; input tap latching | `m3-2-weapons` | ⬜ |
 | 3 | M3-3 `Projectile`, `PhysicsWorld.castCircle`, `ProjectileView` (shell, MG tracer), `ProjectileImpact` | `m3-3-projectiles` | ⬜ |
 | 4 | M3-7 Muzzle clearance and barrel retraction | `m3-7-muzzle` | ⬜ |
