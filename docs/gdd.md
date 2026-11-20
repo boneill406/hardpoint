@@ -43,10 +43,15 @@ Escalation is **count only**. All enemies use the same definition.
 |---|---|---|
 | Armor (health) | 100 | |
 | Directional armor | front ×0.65, side ×1.0, rear ×1.25 | Applies to damage the player receives |
-| Drive speed | 8.4 u/s | From prototype |
-| Hull turn rate | 2.2 rad/s | From prototype |
+| Drive speed | 7.0 u/s | Prototype's 8.4 felt too fast (M2 plan, D3) |
+| Reverse speed | 60% of drive speed (4.2 u/s) | Prototype reversed at full speed |
+| Acceleration | 0.4 s to top speed; 0.25 s to stop | Inertia; the prototype reached speed instantly |
+| Hull turn rate | 2.2 rad/s, 0.1 s ramp; can pivot in place | From prototype |
+| Mass | 30 | Relative units. Engine force = mass × speed / accel time, so heavier or quicker tanks shove harder |
+| Track grip | 40 u/s² sideways | Must exceed speed × turn rate (15.4) to hold a full-speed turn |
+| Hull footprint | 2.4 × 1.6 u (length × width) | Approximate prototype size; adjust as needed |
 | Turret traverse | 4.1 rad/s, 0.07 s spin-up delay | From prototype |
-| Collision | Oriented box matching the hull footprint | Fixes the prototype's tread clipping |
+| Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping |
 
 ### Controls
 
@@ -82,7 +87,8 @@ Weaker than the player by design, so numbers carry the threat.
 |---|---|
 | Armor (health) | 60 |
 | Directional armor | front ×0.65, side ×1.0, rear ×1.25 |
-| Drive speed / turn | 4.0 u/s / 1.4 rad/s |
+| Drive speed / turn | 4.0 u/s / 1.4 rad/s (same reverse, acceleration and footprint as the player) |
+| Mass / track grip | 20 / 30 u/s² (lighter than the player, so it can be shoved) |
 | Turret traverse | 1.8 rad/s |
 | Weapon | Cannon: 12 base damage, 2.4 s reload, slight aim spread |
 | Visual | Same primitive tank, insurgent colors, distinct silhouette detail |
@@ -121,6 +127,8 @@ Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 e
 - Muzzle-flash light, recoil kick on the cannon.
 - Explosion and smoke via Babylon particle presets; crate break-apart into a few chunks.
 - Tread marks and MG heat glow (from prototype).
+- Vehicle clash: sparks and a shake scaled by impact strength when vehicles collide (`VehiclesCollided` event, M2 plan D1).
+- Hull pitches back when accelerating and dips forward when braking (the look of inertia).
 - Placeholder sound effects: cannon, machine gun, impact, explosion, wave start/clear.
 
 ## 9. Run summary
