@@ -39,6 +39,9 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3 · Plan approved
+**Saved:** [`plans/m3-weapons.md`](plans/m3-weapons.md) (D1–D13). GDD §3–§5 updated to the plan's starting values: whole-tick, round numbers instead of the prototype's (MG 10 rounds/s, 30 rounds to overheat, 0.25/s idle cooling, re-arm 30%; cannon reload 1.5 s to try; turret 4.0 rad/s with 0.05 s spin-up; shells 70/100 u/s). Timings must be whole 60 Hz ticks (the prototype's 0.095 s MG interval would alternate 5- and 6-tick gaps). Both armor face rules will be built and compared in play. Backlog: realistic armor (angle of impact, ricochets).
+
 ## 2026-11-20 · M2 · Milestone complete
 **Changed:** default gamepad scheme `tank` → `triggers` (Brendan's pick: RT/LT drive, left stick X turns, RB/LB fire); GDD §3 controls and architecture §7 updated. README status.
 **M2 done-when:** drive with keyboard and Xbox controller ✅ (Brendan) · treads never visibly enter obstacles ✅ (tests: worst overlap ~0.005 u; Brendan: only the barrel clips, planned as M3-7) · locomotion unit-tested ✅ (`TrackedLocomotion`, gearbox, defs) · CI green ✅. 246 tests.

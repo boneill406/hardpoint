@@ -51,7 +51,7 @@ Escalation is **count only**. All enemies use the same definition.
 | Mass | 30 | Relative units. Engine force = mass × speed / accel time, so heavier or quicker tanks shove harder |
 | Track grip | 40 u/s² sideways | Must exceed speed × turn rate (16.1) to hold a full-speed turn |
 | Hull footprint | 2.4 × 1.6 u (length × width) | Approximate prototype size; adjust as needed |
-| Turret traverse | 4.1 rad/s, 0.07 s spin-up delay | From prototype |
+| Turret traverse | 4.0 rad/s, 0.05 s spin-up delay; snaps within 1°; stabilised (holds its heading while the hull turns) | Prototype 4.1 rad/s / 0.07 s, rounded to whole ticks (M3 plan D13) |
 | Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping. Any vehicle's top speed is capped at 12 u/s (`MAX_VEHICLE_SPEED`), which collision is sized for |
 
 ### Controls
@@ -73,13 +73,15 @@ _Xbox: the `triggers` scheme, chosen by Brendan in play over `tank` (left stick 
 |---|---|---|
 | Role | Heavy, deliberate, breaks cover | Fast, chip damage, finishing |
 | Base damage | 50 | 3 per round |
-| Limiter | `ReloadLimiter` — 1.35 s | `HeatLimiter` — ~33 rounds to overheat, re-arms at 32% heat |
-| Projectile speed | 68 u/s | 105 u/s |
+| Limiter | `ReloadLimiter`: 1.5 s (prototype 1.35; trying slower) | `ReloadLimiter` 10 rounds/s + `HeatLimiter`: 30 rounds to overheat (3 s of fire, no cooling while firing), cools 0.25/s when idle, re-arms at 30% heat |
+| Projectile speed | 70 u/s | 100 u/s |
+| Spread | none | 1° cone |
+| Firing | Hold to fire (fires whenever reloaded) | Hold to fire |
 | vs. crates | Destroys in 1 hit | No effect |
 | vs. pillars/walls | Impact only | Impact only |
 
 **Damage formula:** `damage = base × armorMultiplier(hit angle relative to target hull)`.
-Front = within ±45° of hull forward; rear = within ±45° of hull back; otherwise side.
+Front = within ±45° of hull forward; rear = within ±45° of hull back; otherwise side. The angle is where the shot came from relative to the hull (rule `direction`). A second rule, `struck` (the face the shell actually hit), is built for comparison in play (`?armor=struck`, M3 plan D5); the pick is recorded here.
 
 **Between-wave repair:** +20% of max armor (+20), capped at max.
 
@@ -93,10 +95,10 @@ Weaker than the player by design, so numbers carry the threat.
 | Drive speed / turn | 4.0 u/s / 1.4 rad/s; reverse 60%; 0.5 s to top speed, 0.15 s to stop, 0.2 s gear change; same footprint as the player |
 | Mass / track grip | 20 / 50 u/s² (lighter than the player, so it can be shoved; grip 50 means a full-speed ram knocks it ~1 u sideways rather than skating ~6 u) |
 | Turret traverse | 1.8 rad/s |
-| Weapon | Cannon: 12 base damage, 2.4 s reload, slight aim spread |
+| Weapon | Cannon: 12 base damage, 2.4 s reload, 3° aim spread |
 | Visual | Same primitive tank, insurgent colors, distinct silhouette detail |
 
-Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 each), **rear = 1 hit** (62.5). The one-shot rear kill is the deliberate payoff for flanking. Machine gun alone needs ~20 side hits, about 60% of a heat bar.
+Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 each), **rear = 1 hit** (62.5). The one-shot rear kill is the deliberate payoff for flanking. Machine gun alone needs ~20 side hits, about two-thirds of a heat bar.
 
 ### AI behavior
 

@@ -146,3 +146,4 @@ _Hardpoint (working title). Created 2026-11-18._
 - More enemy types (infantry, technicals), aliens faction
 - Settings, key rebinding, save data, music
 - Crate rebuild between waves (revisit after playtests)
+- Realistic armor: angle of impact, ricochets, armor thickness per face (builds on the `struck` face rule if it isn't the slice default)
