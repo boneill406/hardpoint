@@ -31,7 +31,7 @@ src/
     combat/      Weapon, Projectile, ArmorProfile, Health, DamageResolver
       limiters/     FireLimiter (interface), ReloadLimiter, HeatLimiter
     ai/          Pathfinder (grid A*), behavior states
-    physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005)
+    physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005), PhysicsBridge (entity ↔ body)
     arena/       Arena, ArenaDef, Prop (pillars, crates)
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
@@ -40,7 +40,8 @@ src/
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
-tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules)
+tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
+                 tests/input/ and tests/app/ cover pure mapping/parsing functions
 docs/            this folder
 ```
 
@@ -138,7 +139,7 @@ classDiagram
 1. **Input:** devices produce a `PlayerIntent` (throttle, turn, aim point, fire primary/secondary).
 2. **Fixed-step simulation (60 Hz),** run 0..n times per frame to catch up:
    1. Each `Controller` produces a `VehicleCommand`.
-   2. `Locomotion.step` turns each command into new velocities, traction-limited (engine, brakes, track grip; M2 plan D1); `PhysicsWorld` integrates them and resolves collisions (until M2-3, `Vehicle.integrate` moves vehicles directly).
+   2. `Locomotion.step` turns each command into new velocities, traction-limited (engine, brakes, track grip; M2 plan D1); `PhysicsWorld` integrates them and resolves collisions `PhysicsBridge` keeps one body per vehicle and prop (diffing ids each tick, like `RenderBridge`), pushes velocities, Rapier steps, and each vehicle takes its resolved transform back (`syncFromPhysics`). Walls are static boxes added once.
    3. Turrets traverse toward aim; weapons update limiters and fire.
    4. Projectiles advance (swept/ray tests, no tunneling); hits go to `DamageResolver`.
    5. `DamageResolver` applies `ArmorProfile.multiplier(hitAngle)` → `Health`.

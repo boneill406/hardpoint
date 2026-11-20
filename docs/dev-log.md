@@ -13,7 +13,6 @@ Debt taken on deliberately, each with the condition that clears it.
 |---|---|---|---|
 | TypeScript pinned to 6.0.x (7.x is out) | T-01 | typescript-eslint supports TS 7 | M0-1 |
 | `SliceCamera` angle/distance are first guesses | T-19 | M2-5: tune with a real tank on screen, then record values in the GDD | M0-3 |
-| `PhysicsWorld` only has `step` / `dispose`; physics behavior untested | T-24, T-16 | M2-3: add bodies, colliders, ray and shape casts, with tests | M0-4 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
@@ -39,6 +38,20 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-3a · Static collision
+**Built:**
+- `PhysicsWorld` extended (T-24): `addStaticBox`, `addVehicleBody` (hull box, mass), `setVelocity`, `readBody`, `removeBody`, all in sim coordinates. `RapierPhysicsWorld` implements it: fixed bodies for obstacles, dynamic bodies (no sleeping, zero friction with `Min` combine, no restitution) for vehicles; heading ↔ Rapier rotation is `r = −h` (and the same for angular velocity), in two functions.
+- `PhysicsBridge` (sim): one body per vehicle and prop, diffing ids each tick; pushes vehicle velocities, pulls resolved state. `Simulation` adds walls as static boxes once and runs sync → push → step → pull. `Vehicle.integrate` replaced by `syncFromPhysics` (T-51 reversed).
+- `debugParams` reports unknown names, invalid values, and `?` inside a value ("separate parameters with &, not ?"); `main.ts` logs them with `console.warn`.
+- Tests (218 total, +23): `collision.test.ts` with real Rapier measures, **every tick, how deep the oriented hull overlaps any wall or prop** (separating-axis test): straight into a wall stops at the face; at 45° the corner reaches the wall (no invisible bubble); angled approach slides; flush against a wall it can still pivot; can't pass through a crate or pillar; 20 s of wild driving in `SLICE_ARENA` never leaves it or enters anything. Rapier adapter conventions (position/heading round-trip, +z velocity, clockwise angular velocity, removal, stale handle throws), `PhysicsBridge` (with `FakePhysicsWorld`, now a no-collision integrator, T-69), `syncFromPhysics`, a def guard (top speed per tick < prediction distance), `debugParams` (`tests/app/`, T-70).
+**Resolved:** follow-up "`PhysicsWorld` only has step/dispose; physics behaviour untested" (T-16, T-24 reversed).
+**Trade-offs:** T-66, T-67, T-68, T-69, T-70; T-16, T-24, T-51 reversed.
+**Acceptance:** worst overlap across all scenarios 0.005 u (tolerance 0.02 u). Built game loads in headless Chrome; `?pad=triggers?grid=on` now logs the `&` hint. Driving into things needs Brendan's eyes.
+**Issues:**
+- First run: hitting a pillar at full speed overlapped 0.058 u. A per-tick trace showed a one-tick spike on impact (arriving at 7 u/s) that the solver pushed out over ~10 ticks. Cause: Rapier creates contacts only within its prediction distance (default 0.02 u), but a tank moves 0.12 u per tick. CCD made no difference; raising the prediction distance did (0.05 still failed; 0.15 and 0.3 passed). Set to 0.15 with a def test guarding top speed (T-66).
+- Both tanks are dynamic bodies now, so they already collide; M2-3b tunes and tests the shove and adds the event.
+- A `Write` was rejected because Prettier had reformatted the file since it was read, so tests ran against the old file; re-read and rewrote.
 
 ## 2026-11-19 · M2 · Plan update: M2-3 split, readability features
 **Changed:** M2-3 split into **M2-3a** static collision and **M2-3b** tank vs. tank (plan, milestones.md), so the riskiest task lands in two reviewable, playable steps. A `debugParams` warning for unrecognised values joins M2-3a (Brendan typed `?pad=triggers?grid=on`, which silently fell back to `tank` and never set `grid`; the second parameter needs `&`).
