@@ -116,7 +116,7 @@ Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 e
 - Layout is defined in `defs/arenas.ts` (typed data). Blender-authored arenas come later.
 
 ## 7. Camera, HUD and readability
-- **Camera:** high angle between top-down and isometric, smoothed follow (from prototype): the focus eases after the player at the prototype's rate (`1 − e^(−3.2·dt)` per frame) and stops at the arena's edges so the view never shows the void beyond the walls. Angle, distance and field of view are being chosen in play between two presets (`?cam=slice`: 58°, 34 u, 43°, shows most of the arena; `?cam=proto`: the prototype's ≈82°, 23 u, 38°, tanks about twice the size); the pick is recorded here.
+- **Camera:** high angle between top-down and isometric: **58° elevation, 34 u from the focus, 43° vertical field of view** (chosen in play over the prototype's ≈82° / 23 u / 38°, which stays available as `?cam=proto`). Smoothed follow from the prototype: the focus eases after the player (`1 − e^(−3.2·dt)` per frame). Framing: the camera travels until a wall's top edge reaches the screen edge, so every wall and corner can come into view; past the side walls the view shows terrain, never void.
 - **HUD:** armor bar, cannon reload bar, MG heat bar, `WAVE n / 5`, enemies remaining, breather countdown.
 - **Off-screen indicators:** edge-of-screen arrows for enemies outside the view (the arena is larger than one screen).
 - **Spawn warnings:** gate glow plus an edge arrow if the gate is off-screen.

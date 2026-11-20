@@ -17,7 +17,6 @@ Debt taken on deliberately, each with the condition that clears it.
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
-| Pick the camera preset (`?cam=slice` vs `?cam=proto`, or values in between); record it in GDD §7 | T-19 | Brendan plays both | M2-5 |
 | Barrel pokes into walls and pillars (T-75) | T-75 | M3-7: muzzle ray (sim) sets shell spawn and barrel retraction (view) | M2-6 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
@@ -39,6 +38,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-20 · M2-5 follow-up · Camera framing fixed; slice camera chosen
+**Why:** Brendan picked `?cam=slice` (narrowly over `proto`) and noticed the bottom-left and bottom-right corners never came into view and the top wall sat slightly outside it.
+**Cause:** a tilted camera sees a trapezoid (at 16:10: ±17 u wide at the bottom edge, ±28 u at the top). The clamp used the widest part, which is wider than the arena (±24 u), so it centred the camera horizontally and it never moved sideways; and it clamped where the screen edge met the *floor*, while 2 u tall walls show their top edge further up the screen.
+**Changed:** `SliceCamera` clamps sideways by the bottom edge's half-width and up/down where the screen edges cross wall-top height (`Renderer.screenToPlane`); `ArenaView` adds a 300 u terrain plane beyond the walls so the wider top of the view shows ground, not void. GDD §7 records the slice values (T-19 reversed); T-78 revised.
+**Acceptance:** temporary builds starting the player at the bottom-right corner and at the top (reverted): the corner and the whole top wall, including its top edge and corners, are on screen; terrain shows past the right wall.
+**Resolved:** camera preset pick follow-up.
 
 ## 2026-11-20 · M2-5 · Camera follow and framing
 **Built:** `SliceCamera` rewritten: `CameraPreset` (elevation, distance, FOV) with two presets, `slice` (the M0-3 guess) and `proto` (the prototype's `game.js` camera: offset (0, 23, 3.2) → ≈82°, 23.2 u; 38° FOV), chosen with `?cam=`. The focus eases toward the followed tank's drawn position at the prototype's rate (`1 − e^(−3.2·dt)`, frame-rate independent; first frame snaps) and is clamped so the visible ground patch stays inside the arena and walls (measured by casting the four screen corners to the floor; re-measured on resize; centred if the view is larger than the arena on an axis). `Renderer` builds bounds from the `Arena`. `debugParams` gains `cam` (validated, tested).
