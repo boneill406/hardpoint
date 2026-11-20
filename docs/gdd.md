@@ -45,11 +45,11 @@ Escalation is **count only**. All enemies use the same definition.
 | Directional armor | front ×0.65, side ×1.0, rear ×1.25 | Applies to damage the player receives |
 | Drive speed | 7.0 u/s | Prototype's 8.4 felt too fast (M2 plan, D3) |
 | Reverse speed | 60% of drive speed (4.2 u/s) | Prototype reversed at full speed |
-| Acceleration | 0.5 s to top speed; 0.15 s to stop | Inertia; the prototype reached speed instantly. Slow pull-away, sharp track bite |
-| Gear change | 0.2 s stopped when switching between forward and reverse | Makes direction changes feel mechanical (brake, pause, pull) rather than one smooth swoop |
-| Hull turn rate | 2.2 rad/s, 0.1 s ramp; can pivot in place | From prototype |
+| Acceleration | 0.4 s to top speed; 0.25 s to stop | Inertia; the prototype reached speed instantly. Tuned by Brendan in play (2026-11-19) |
+| Gear change | 0.15 s stopped when switching between forward and reverse | Makes direction changes feel mechanical (brake, pause, pull) rather than one smooth swoop. Tuned in play |
+| Hull turn rate | 2.0 rad/s, 0.1 s ramp; can pivot in place | Prototype 2.2; tuned in play |
 | Mass | 30 | Relative units. Engine force = mass × speed / accel time, so heavier or quicker tanks shove harder |
-| Track grip | 40 u/s² sideways | Must exceed speed × turn rate (15.4) to hold a full-speed turn |
+| Track grip | 40 u/s² sideways | Must exceed speed × turn rate (14) to hold a full-speed turn |
 | Hull footprint | 2.4 × 1.6 u (length × width) | Approximate prototype size; adjust as needed |
 | Turret traverse | 4.1 rad/s, 0.07 s spin-up delay | From prototype |
 | Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping |
@@ -88,7 +88,7 @@ Weaker than the player by design, so numbers carry the threat.
 |---|---|
 | Armor (health) | 60 |
 | Directional armor | front ×0.65, side ×1.0, rear ×1.25 |
-| Drive speed / turn | 4.0 u/s / 1.4 rad/s (same reverse, acceleration and footprint as the player) |
+| Drive speed / turn | 4.0 u/s / 1.4 rad/s; reverse 60%; 0.5 s to top speed, 0.15 s to stop, 0.2 s gear change; same footprint as the player |
 | Mass / track grip | 20 / 30 u/s² (lighter than the player, so it can be shoved) |
 | Turret traverse | 1.8 rad/s |
 | Weapon | Cannon: 12 base damage, 2.4 s reload, slight aim spread |
