@@ -52,7 +52,7 @@ Escalation is **count only**. All enemies use the same definition.
 | Track grip | 40 u/s² sideways | Must exceed speed × turn rate (14) to hold a full-speed turn |
 | Hull footprint | 2.4 × 1.6 u (length × width) | Approximate prototype size; adjust as needed |
 | Turret traverse | 4.1 rad/s, 0.07 s spin-up delay | From prototype |
-| Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping |
+| Collision | Oriented box matching the hull footprint; tanks can shove each other | Fixes the prototype's tread clipping. Any vehicle's top speed is capped at 12 u/s (`MAX_VEHICLE_SPEED`), which collision is sized for |
 
 ### Controls
 
@@ -89,7 +89,7 @@ Weaker than the player by design, so numbers carry the threat.
 | Armor (health) | 60 |
 | Directional armor | front ×0.65, side ×1.0, rear ×1.25 |
 | Drive speed / turn | 4.0 u/s / 1.4 rad/s; reverse 60%; 0.5 s to top speed, 0.15 s to stop, 0.2 s gear change; same footprint as the player |
-| Mass / track grip | 20 / 30 u/s² (lighter than the player, so it can be shoved) |
+| Mass / track grip | 20 / 50 u/s² (lighter than the player, so it can be shoved; grip 50 means a full-speed ram knocks it ~1 u sideways rather than skating ~6 u) |
 | Turret traverse | 1.8 rad/s |
 | Weapon | Cannon: 12 base damage, 2.4 s reload, slight aim spread |
 | Visual | Same primitive tank, insurgent colors, distinct silhouette detail |

@@ -39,6 +39,20 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M2-3b · Tank vs. tank
+**Built:**
+- `MAX_VEHICLE_SPEED` (12 u/s) in `VehicleDef.ts`; `CONTACT_PREDICTION_DISTANCE` now derived from it for two capped tanks head-on (0.5 u). Def test: every top speed ≤ cap. Backlog note: `resolveBuild` must clamp.
+- `PhysicsWorld.contacts()`: this step's pushing contacts `{ bodyA, bodyB, impulse }`. Rapier: vehicle colliders report contact force events (threshold 0), drained after each step; impulse = force × dt.
+- `PhysicsBridge.newVehicleImpacts()`: maps bodies back to entities, keeps vehicle pairs only, and reports a pair only on the tick it starts touching (`a` < `b`). `Simulation` emits `VehiclesCollided { a, b, impulse }` (new in `SimEvents`).
+- Insurgent grip 30 → 50 (GDD §5).
+- Shared test helpers `tests/sim/physics/overlap.ts` (oriented-box overlap, tolerance, `seconds`).
+- 13 new tests (231 total): `tankContacts.test.ts` (head-on at 11 u/s closing never overlaps; stronger wins head-on; weaker barely moves a parked stronger tank; side ram knocks ~1 u then stops; leaning creep matches T-71's formula; `VehiclesCollided` once per impact, again after separating, bigger for harder hits, not for walls), `PhysicsBridge` impact unit tests (3), determinism with six tanks hitting walls, cover and each other in `SLICE_ARENA`.
+**Trade-offs:** T-71, T-72; T-66 updated.
+**Acceptance:** worst tank-vs-tank overlap ~0.001 u. Planted bug (impacts not deduplicated): 3 tests failed; restored. Built game loads clean. Shoving needs Brendan's eyes.
+**Issues:**
+- Measured before tuning. With grip 30 a full-speed T-bone made the insurgent skate ~6 u: grip force (20 × 30 = 600) barely exceeded the player's engine (525), so the knock decelerated very slowly. Grip 50 cuts the knock to ~1 u.
+- My estimate for grip 50 (0.9 u) first looked wrong (2.15 u after 4 s). A trace showed two effects: the knock (~0.9 u, as estimated) plus a steady 0.44 u/s creep while the player keeps pushing, identical at grip 50, 80 and 120. Cause: grip runs in locomotion between steps and can only zero sideways velocity; it can't resist inside the step like static friction, so the solver shares the pusher's engine impulse every tick. Kept (stronger tanks bulldozing weaker ones fits the design) and recorded as T-71; tests describe it instead of claiming the tracks hold.
+
 ## 2026-11-19 · M2-3a · Static collision
 **Built:**
 - `PhysicsWorld` extended (T-24): `addStaticBox`, `addVehicleBody` (hull box, mass), `setVelocity`, `readBody`, `removeBody`, all in sim coordinates. `RapierPhysicsWorld` implements it: fixed bodies for obstacles, dynamic bodies (no sleeping, zero friction with `Min` combine, no restitution) for vehicles; heading ↔ Rapier rotation is `r = −h` (and the same for angular velocity), in two functions.

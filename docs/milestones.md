@@ -136,7 +136,7 @@ _Hardpoint (working title). Created 2026-11-18._
 - ADR: asset pipeline (Blender → glTF) and Blender-authored arenas
 - Walker chassis: `LeggedLocomotion` + procedural `LegRig` (2-bone IK, foot planting)
 - Garage / meta loop, credits, upgrades, weapon tiers
-- Custom tank builds: split `VehicleDef` into part defs (chassis, engine, turret, weapons, armor); a pure `resolveBuild(build, parts) → VehicleDef` so `Vehicle` and the factory stay unchanged. Engines state power and acceleration is derived from power ÷ total mass (replaces `accelTime`), so heavier loadouts get slower (the parked mass/power budget idea). Builds are ids as JSON (save data, co-op sync)
+- Custom tank builds: split `VehicleDef` into part defs (chassis, engine, turret, weapons, armor); a pure `resolveBuild(build, parts) → VehicleDef` so `Vehicle` and the factory stay unchanged. Engines state power and acceleration is derived from power ÷ total mass (replaces `accelTime`), so heavier loadouts get slower (the parked mass/power budget idea). Builds are ids as JSON (save data, co-op sync). `resolveBuild` must clamp top speed to `MAX_VEHICLE_SPEED` (collision is sized for it, T-66)
 - Multiple player chassis and insurgent variants: more defs keyed by id (`VEHICLES`), referenced by waves and a chassis-select screen; new code only for new behaviour
 - `AmmoLimiter` and resupply
 - Machine gun pushes light crates (physics-driven cover)
