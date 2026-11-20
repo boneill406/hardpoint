@@ -23,9 +23,9 @@ flowchart TB
 ```
 src/
   sim/
-    core/        Simulation, World, Entity, Transform, EventBus, SimEvents, Rng, FixedClock, math (Vec2, angles, time)
-    debug/       DebugMover (temporary M1 test entity, deleted in M2)
-    vehicles/    Vehicle, VehicleCommand, Turret, WeaponMount, VehicleFactory
+    core/        Simulation, World, Entity, Transform, EventBus, SimEvents, Rng, FixedClock, math (Vec2, angles, scalar, time)
+    debug/       ScriptedController (fixed tick → command script, for tests and the debug scene)
+    vehicles/    Vehicle, VehicleDef, VehicleCommand, Faction, VehicleFactory (createVehicle), Turret, WeaponMount
       locomotion/   Locomotion (interface), TrackedLocomotion
       controllers/  Controller (interface), PlayerController, AiController
     combat/      Weapon, Projectile, ArmorProfile, Health, DamageResolver
@@ -35,7 +35,7 @@ src/
     arena/       Arena, ArenaDef
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
-  render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, DebugMoverView), vfx/, camera/, audio/
+  render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, VehicleView), vfx/, camera/, audio/
   input/         InputManager, KeyboardMouseDevice, GamepadDevice
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
@@ -75,7 +75,7 @@ classDiagram
   }
   class Locomotion {
     <<interface>>
-    +step(cmd, dt)
+    +step(cmd, motion, dt) Velocities
   }
   class Controller {
     <<interface>>
@@ -136,7 +136,7 @@ classDiagram
 1. **Input:** devices produce a `PlayerIntent` (throttle, turn, aim point, fire primary/secondary).
 2. **Fixed-step simulation (60 Hz),** run 0..n times per frame to catch up:
    1. Each `Controller` produces a `VehicleCommand`.
-   2. `Locomotion.step` moves vehicles; `PhysicsWorld` resolves collisions.
+   2. `Locomotion.step` turns each command into new velocities, traction-limited (engine, brakes, track grip; M2 plan D1); `PhysicsWorld` integrates them and resolves collisions (until M2-3, `Vehicle.integrate` moves vehicles directly).
    3. Turrets traverse toward aim; weapons update limiters and fire.
    4. Projectiles advance (swept/ray tests, no tunneling); hits go to `DamageResolver`.
    5. `DamageResolver` applies `ArmorProfile.multiplier(hitAngle)` → `Health`.

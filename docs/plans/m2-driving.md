@@ -32,7 +32,7 @@ Simulation.tick(commands)
 ## Tasks (build order)
 | Order | Task | Branch | Status |
 |---|---|---|---|
-| 1 | M2-1 `Vehicle`, `Locomotion` (interface), `TrackedLocomotion`, `Controller` (interface), `VehicleDef` + `defs/vehicles.ts` (player and insurgent), `VehicleFactory`, `ScriptedController` (debug). Deletes `DebugMover`; placeholder `VehicleView`. `Vehicle.snapshot()` adds velocities | `m2-1-vehicle` | ⬜ |
+| 1 | M2-1 `Vehicle`, `Locomotion` (interface), `TrackedLocomotion`, `Controller` (interface), `VehicleDef` + `defs/vehicles.ts` (player and insurgent), `VehicleFactory`, `ScriptedController` (debug). Deletes `DebugMover`; placeholder `VehicleView`. `Vehicle.snapshot()` adds velocities | `m2-1-vehicle` | ✅ |
 | 2 | M2-2 `PlayerIntent`, `bindings.ts`, `KeyboardMouseDevice`, `GamepadDevice` (schemes), `InputManager`, `PlayerController`. First drivable build; determinism test drives a player vehicle with its command stream | `m2-2-input` | ⬜ |
 | 3 | M2-4 `ArenaDef` in `defs/arenas.ts`: 46×46 walls, 7 pillars, 14 crates, 3 gates, player start; rendered from the def (clears T-20; grid behind `?grid=on`) | `m2-4-arena` | ⬜ |
 | 4 | M2-3 Collision via `PhysicsWorld` (D1, D2), `VehiclesCollided` event | `m2-3-collision` | ⬜ |

@@ -17,9 +17,9 @@ Debt taken on deliberately, each with the condition that clears it.
 | `PhysicsWorld` only has `step` / `dispose`; physics behavior untested | T-24, T-16 | M2-3: add bodies, colliders, ray and shape casts, with tests | M0-4 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
-| `SimSnapshot` holds only id and transform per entity | — | M2: `Vehicle` overrides `snapshot()` to add health, heat, reload state so M1-7-style determinism checks cover them | M1-5 |
-| Determinism test's scripted command stream has no effect yet (M1 entities ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
-| Debug scene constants in `main.ts`; `DebugMover` / `DebugMoverView` | T-41, T-49 | M2: player tank replaces them; delete both | M1-6 |
+| `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
+| Determinism test's scripted command stream has no effect yet (scripted tanks ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
+| Scripted debug scene in `main.ts` | T-49 | M2-2: player input replaces it | M1-6, M2-1 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -39,6 +39,20 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-1 · `Vehicle`, `TrackedLocomotion`, defs
+**Built:**
+- `vehicles/VehicleDef.ts` (`VehicleDef`, `HullDef`, `TrackedLocomotionDef` with a `kind` for future locomotion types) and `defs/vehicles.ts`: `PLAYER_TANK` (7 u/s, reverse ×0.6, 0.4 s to top speed, 0.25 s to stop, 2.2 rad/s with 0.1 s ramp, grip 40, mass 30, hull 2.4 × 1.6) and `INSURGENT_TANK` (GDD §5; mass 20, grip 30). GDD §3/§5 updated in the plan commit.
+- `locomotion/Locomotion.ts` (interface: `step(command, motion, dt)` → velocities) and `TrackedLocomotion` (traction-limited: engine rate when speeding up, brake rate when slowing or reversing, grip cancels sideways slide, turn ramp; inputs clamped).
+- `controllers/Controller.ts` (interface: `decide({ tick, commands, vehicle })`), `debug/ScriptedController`.
+- `Vehicle` (def, faction, controller, locomotion; velocities; `applyCommand` / `drive` / `integrate`; `snapshot()` adds velocities), `VehicleFactory.createVehicle`, `Faction`, `IDLE_COMMAND`, `core/scalar.ts` (`clamp`, `approach`).
+- `Simulation.tick` phases: save transforms → controllers decide → locomotion → integrate → physics → removals.
+- Render: placeholder `VehicleView` sized to the hull footprint, coloured by faction. `main.ts` debug scene: player tank on a 5 s routine (forward with a gentle turn, coast, reverse, stop), insurgent circling.
+- Deleted `DebugMover`, `DebugMoverView` and their test (T-41 reversed), plus three placeholders (`defs/`, `locomotion/`, `controllers/` `index.ts`, T-12).
+- 33 new tests (145 total): `TrackedLocomotion` (14), `Vehicle` + `createVehicle` (6), def invariants (8, incl. "grip holds a full-speed turn"), `scalar` (4), `Simulation` controller phase; `Simulation` and determinism tests ported to vehicles (determinism now flips tanks between forward and reverse).
+**Trade-offs:** T-50, T-51, T-52, T-53, T-54; T-41 reversed; T-49 updated.
+**Acceptance:** headless screenshot of the built game: green player tank turning gently right, orange insurgent circling left; console clean.
+**Issues:** `Vehicle`'s private `current` clashed with `Entity`'s private `current` (TypeScript private names share one namespace across a class hierarchy); renamed to `activeCommand`.
 
 ## 2026-11-19 · M1 · Milestone complete
 **Resolved:** visual-check follow-up from M1-6: Brendan confirmed the movers look smooth in `npm run dev`.
