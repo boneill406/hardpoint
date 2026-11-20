@@ -46,7 +46,7 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 - `PhysicsBridge.newVehicleImpacts()`: maps bodies back to entities, keeps vehicle pairs only, and reports a pair only on the tick it starts touching (`a` < `b`). `Simulation` emits `VehiclesCollided { a, b, impulse }` (new in `SimEvents`).
 - Insurgent grip 30 → 50 (GDD §5).
 - Shared test helpers `tests/sim/physics/overlap.ts` (oriented-box overlap, tolerance, `seconds`).
-- 13 new tests (231 total): `tankContacts.test.ts` (head-on at 11 u/s closing never overlaps; stronger wins head-on; weaker barely moves a parked stronger tank; side ram knocks ~1 u then stops; leaning creep matches T-71's formula; `VehiclesCollided` once per impact, again after separating, bigger for harder hits, not for walls), `PhysicsBridge` impact unit tests (3), determinism with six tanks hitting walls, cover and each other in `SLICE_ARENA`.
+- 15 new tests (233 total): speed-cap def test (2), `tankContacts.test.ts` (head-on at 11 u/s closing never overlaps; stronger wins head-on; weaker barely moves a parked stronger tank; side ram knocks ~1 u then stops; leaning creep matches T-71's formula; `VehiclesCollided` once per impact, again after separating, bigger for harder hits, not for walls), `PhysicsBridge` impact unit tests (3), determinism with six tanks hitting walls, cover and each other in `SLICE_ARENA`.
 **Trade-offs:** T-71, T-72; T-66 updated.
 **Acceptance:** worst tank-vs-tank overlap ~0.001 u. Planted bug (impacts not deduplicated): 3 tests failed; restored. Built game loads clean. Shoving needs Brendan's eyes.
 **Issues:**
