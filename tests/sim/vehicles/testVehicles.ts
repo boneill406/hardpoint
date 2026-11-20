@@ -13,6 +13,7 @@ export const TEST_LOCOMOTION: TrackedLocomotionDef = {
   reverseFactor: 0.5,
   accelTime: 0.5,
   stopTime: 0.25,
+  shiftTime: 0.2,
   turnRate: 2,
   turnAccelTime: 0.1,
   grip: 40,

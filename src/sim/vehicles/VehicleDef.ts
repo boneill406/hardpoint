@@ -32,6 +32,8 @@ export interface TrackedLocomotionDef {
   readonly accelTime: number;
   /** Seconds from top speed to rest with no throttle. */
   readonly stopTime: number;
+  /** Seconds the tank sits stopped when changing between forward and reverse (gear change). 0 = none. */
+  readonly shiftTime: number;
   /** Hull turn rate at full turn input, rad/s. */
   readonly turnRate: number;
   /** Seconds from no turn to full turn rate. */

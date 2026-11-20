@@ -4,7 +4,7 @@ import type { Transform } from '../core/Transform';
 import { Vec2 } from '../core/Vec2';
 import type { Controller } from './controllers/Controller';
 import type { Faction } from './Faction';
-import type { Locomotion } from './locomotion/Locomotion';
+import type { Locomotion, LocomotionSnapshot } from './locomotion/Locomotion';
 import { IDLE_COMMAND, type VehicleCommand } from './VehicleCommand';
 import type { VehicleDef } from './VehicleDef';
 
@@ -13,6 +13,7 @@ export interface VehicleSnapshot extends EntitySnapshot {
   readonly vx: number;
   readonly vz: number;
   readonly angularVelocity: number;
+  readonly locomotion: LocomotionSnapshot;
 }
 
 /**
@@ -91,6 +92,7 @@ export class Vehicle extends Entity {
       vx: this.linear.x,
       vz: this.linear.z,
       angularVelocity: this.angular,
+      locomotion: this.locomotion.snapshot(),
     };
   }
 }

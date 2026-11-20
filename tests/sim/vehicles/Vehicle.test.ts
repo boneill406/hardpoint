@@ -54,6 +54,7 @@ describe('Vehicle', () => {
       vx: tank.linearVelocity.x,
       vz: tank.linearVelocity.z,
       angularVelocity: 0,
+      locomotion: { gear: 1, shiftElapsed: 0 },
     });
   });
 });

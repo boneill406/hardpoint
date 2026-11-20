@@ -10,6 +10,9 @@ export interface MotionState {
   readonly angularVelocity: number;
 }
 
+/** Locomotion's own state (e.g. the engaged gear) as plain numbers, for determinism checks. */
+export type LocomotionSnapshot = Readonly<Record<string, number>>;
+
 /** The velocities a vehicle should have after this tick's drive forces. */
 export interface Velocities {
   readonly linear: Vec2;
@@ -24,7 +27,11 @@ export interface Velocities {
  * Returns velocities rather than moving the vehicle: until M2-3 `Vehicle`
  * integrates them itself, after that Rapier does, and contacts (walls, other
  * tanks) can change them before the next tick.
+ *
+ * Implementations may keep state between ticks (a gearbox), so each vehicle
+ * gets its own instance; `snapshot()` exposes that state.
  */
 export interface Locomotion {
   step(command: VehicleCommand, motion: MotionState, dt: number): Velocities;
+  snapshot(): LocomotionSnapshot;
 }
