@@ -1,4 +1,5 @@
 import { PAD_SCHEMES, type PadSchemeName } from '../input/bindings';
+import { CAMERA_PRESETS, type CameraPresetName } from '../render/camera/SliceCamera';
 
 /** Debug switches read from the page URL, e.g. `http://localhost:5173/?fps=20&interp=off&pad=direct`. */
 export interface DebugParams {
@@ -10,11 +11,13 @@ export interface DebugParams {
   readonly pad: PadSchemeName;
   /** `?grid=on` draws a 2 u grid on the floor, to judge distances and speed. */
   readonly grid: boolean;
+  /** Camera preset (`?cam=slice|proto`), to compare framings in play. */
+  readonly cam: CameraPresetName;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
 
-const KNOWN = ['fps', 'interp', 'pad', 'grid'];
+const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam'];
 const ON_OFF = ['on', 'off'];
 
 /**
@@ -48,6 +51,12 @@ export function readDebugParams(search: string): DebugParams {
     warn('pad', pad, Object.keys(PAD_SCHEMES).join(' | '));
   }
 
+  const cam = params.get('cam');
+  const camValid = cam !== null && isCameraPresetName(cam);
+  if (cam !== null && !camValid) {
+    warn('cam', cam, Object.keys(CAMERA_PRESETS).join(' | '));
+  }
+
   for (const name of ['interp', 'grid']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
@@ -60,6 +69,7 @@ export function readDebugParams(search: string): DebugParams {
     interpolate: params.get('interp') !== 'off',
     pad: padValid ? pad : 'tank',
     grid: params.get('grid') === 'on',
+    cam: camValid ? cam : 'slice',
     warnings,
   };
 }
@@ -67,4 +77,8 @@ export function readDebugParams(search: string): DebugParams {
 /** Own keys only: `in` would also accept inherited names like `toString`. */
 function isPadSchemeName(value: string): value is PadSchemeName {
   return Object.hasOwn(PAD_SCHEMES, value);
+}
+
+function isCameraPresetName(value: string): value is CameraPresetName {
+  return Object.hasOwn(CAMERA_PRESETS, value);
 }

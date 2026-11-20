@@ -3,6 +3,7 @@ import { PAD_SCHEMES } from '../input/bindings';
 import { InputManager } from '../input/InputManager';
 import { intentToCommand } from '../input/intentToCommand';
 import { KeyboardMouseDevice } from '../input/KeyboardMouseDevice';
+import { CAMERA_PRESETS } from '../render/camera/SliceCamera';
 import { Renderer } from '../render/Renderer';
 import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
@@ -100,7 +101,7 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}`,
   );
 
   for (const warning of debug.warnings) {
@@ -122,6 +123,7 @@ async function start(): Promise<void> {
     interpolate: debug.interpolate,
     arena: simulation.arena,
     grid: debug.grid,
+    camera: CAMERA_PRESETS[debug.cam],
   });
   window.addEventListener('resize', () => renderer.resize());
 

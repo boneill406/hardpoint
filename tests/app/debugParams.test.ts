@@ -3,12 +3,13 @@ import { readDebugParams } from '../../src/app/debugParams';
 
 describe('readDebugParams', () => {
   it('reads valid parameters with no warnings', () => {
-    const params = readDebugParams('?fps=20&interp=off&pad=direct&grid=on');
+    const params = readDebugParams('?fps=20&interp=off&pad=direct&grid=on&cam=proto');
     expect(params).toEqual({
       fps: 20,
       interpolate: false,
       pad: 'direct',
       grid: true,
+      cam: 'proto',
       warnings: [],
     });
   });
@@ -19,6 +20,7 @@ describe('readDebugParams', () => {
       interpolate: true,
       pad: 'tank',
       grid: false,
+      cam: 'slice',
       warnings: [],
     });
   });
@@ -35,7 +37,7 @@ describe('readDebugParams', () => {
   it('warns about unknown names and invalid values', () => {
     const { warnings } = readDebugParams('?fsp=20&fps=-3&grid=yes&pad=toString');
     expect(warnings).toEqual([
-      'Unknown debug parameter "fsp" (known: fps, interp, pad, grid)',
+      'Unknown debug parameter "fsp" (known: fps, interp, pad, grid, cam)',
       'Ignoring ?fps=-3: expected a positive number',
       'Ignoring ?pad=toString: expected tank | direct | triggers',
       'Ignoring ?grid=yes: expected on | off',

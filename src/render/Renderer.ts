@@ -10,8 +10,8 @@ import {
 import type { Arena } from '../sim/arena/Arena';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Vec2 } from '../sim/core/Vec2';
-import { SliceCamera } from './camera/SliceCamera';
-import { fromBabylonPosition, toBabylonPosition } from './coords';
+import { SliceCamera, type CameraPreset } from './camera/SliceCamera';
+import { fromBabylonPosition } from './coords';
 import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { ArenaView } from './views/ArenaView';
 
@@ -20,6 +20,8 @@ export interface RendererOptions extends RenderBridgeOptions {
   readonly arena: Arena;
   /** Draw the 2 u debug grid on the floor (`?grid=on`). */
   readonly grid: boolean;
+  /** Camera angle, distance and field of view (`?cam=`). */
+  readonly camera: CameraPreset;
 }
 
 /**
@@ -43,17 +45,25 @@ export class Renderer {
     this.createLights();
     this.arenaView = new ArenaView(this.scene, options.arena, options.grid);
 
-    this.sliceCamera = new SliceCamera(this.scene);
-    this.sliceCamera.lookAt(Vector3.Zero());
+    const { arena } = options;
+    const edgeX = arena.halfWidth + arena.def.wall.thickness;
+    const edgeZ = arena.halfDepth + arena.def.wall.thickness;
+    this.sliceCamera = new SliceCamera(this.scene, options.camera, {
+      minX: -edgeX,
+      maxX: edgeX,
+      minZ: -edgeZ,
+      maxZ: edgeZ,
+    });
+    this.measureCameraView();
 
     this.bridge = new RenderBridge(this.scene, options);
   }
 
   /**
    * Draws one frame: `alpha` (0..1) is how far real time is into the next tick
-   * (`FixedClock`). The camera centres on `followId`'s drawn position. Hard
-   * follow for now; M2-5 adds smoothing. `frameSeconds` is real time since the
-   * last frame, for view-only animation.
+   * (`FixedClock`). The camera eases after `followId`'s drawn position.
+   * `frameSeconds` is real time since the last frame, for view-only animation
+   * and the camera ease.
    */
   render(
     entities: readonly Entity[],
@@ -64,7 +74,7 @@ export class Renderer {
     this.bridge.sync(entities, alpha, frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
-      this.sliceCamera.lookAt(toBabylonPosition(followed.position));
+      this.sliceCamera.follow(followed.position, frameSeconds);
     }
     this.scene.render();
   }
@@ -87,6 +97,7 @@ export class Renderer {
   /** Matches the drawing buffer to the canvas after the window changes size. */
   resize(): void {
     this.engine.resize();
+    this.measureCameraView();
   }
 
   dispose(): void {
@@ -94,6 +105,17 @@ export class Renderer {
     this.arenaView.dispose();
     this.scene.dispose();
     this.engine.dispose();
+  }
+
+  /** The camera's visible ground patch depends on the canvas aspect ratio; re-measure on resize. */
+  private measureCameraView(): void {
+    const canvas = this.engine.getRenderingCanvas();
+    if (canvas === null) {
+      return;
+    }
+    this.sliceCamera.measureView(canvas.clientWidth, canvas.clientHeight, (x, y) =>
+      this.screenToGround(x, y),
+    );
   }
 
   private createLights(): void {
