@@ -121,6 +121,8 @@ Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 e
 - **Off-screen indicators:** edge-of-screen arrows for enemies outside the view (the arena is larger than one screen).
 - **Spawn warnings:** gate glow plus an edge arrow if the gate is off-screen.
 - **Damage feedback:** hit flash on any damaged vehicle; the player's armor bar pulses when critical (≤30%).
+- **Occlusion silhouettes:** when a pillar, crate or wall hides a tank from the camera, its silhouette (flat colour or outline) shows through. The **player's tank always**; **enemy tanks only while the player's tank has line of sight to them**, so cover still hides enemies from the player (no wallhack) and flanking keeps its value. Line of sight comes from the sim (the M3/M4 ray casts); the render layer only reads it.
+- **Shadows:** one directional light (the sun); tanks and props cast, the floor receives. Grounds objects and makes heights readable (crate vs. pillar). Behind `?shadows=off` for the M7-3 performance check.
 
 ## 8. Feel ("juice") in scope
 - Screen shake: cannon fire (small), player hit (medium), nearby kill (medium).

@@ -40,6 +40,10 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M2 · Plan update: M2-3 split, readability features
+**Changed:** M2-3 split into **M2-3a** static collision and **M2-3b** tank vs. tank (plan, milestones.md), so the riskiest task lands in two reviewable, playable steps. A `debugParams` warning for unrecognised values joins M2-3a (Brendan typed `?pad=triggers?grid=on`, which silently fell back to `tank` and never set `grid`; the second parameter needs `&`).
+**Added to GDD §7 and M6 (new M6-7):** occlusion silhouettes, the player's tank always and enemies only while the player has line of sight (cover still hides enemies, so flanking keeps its value); shadows from the sun light behind `?shadows=off`. Deliberately later than M2-6.
+
 ## 2026-11-19 · M2-4 · Arena definition
 **Built:**
 - `arena/ArenaDef.ts` (`ArenaDef`, `BoxDef`, `GateDef`) and `defs/arenas.ts`: `SLICE_ARENA`, 46 × 46, 1 u walls, player start (0, −19) facing up-screen, gates left/right/top, 7 pillars (centre 3 × 3, two 2 × 2, two long side and two long top segments), 14 crates (1.5 u), mirror-symmetric.

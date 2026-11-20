@@ -36,9 +36,12 @@ Simulation.tick(commands)
 | 1b | M2-1 follow-up: gear-change pause, sharper braking, slower pull-away (after Brendan's first drive) | `m2-1-gear-shift` | ✅ |
 | 2 | M2-2 `PlayerIntent`, `bindings.ts`, `KeyboardMouseDevice`, `GamepadDevice` (schemes), `InputManager`, `PlayerController`. First drivable build; determinism test drives a player vehicle with its command stream | `m2-2-input` | ✅ |
 | 3 | M2-4 `ArenaDef` in `defs/arenas.ts`: 46×46 walls, 7 pillars, 14 crates, 3 gates, player start; rendered from the def (clears T-20; grid behind `?grid=on`) | `m2-4-arena` | ✅ |
-| 4 | M2-3 Collision via `PhysicsWorld` (D1, D2), `VehiclesCollided` event | `m2-3-collision` | ⬜ |
+| 4 | M2-3a Static collision: `PhysicsWorld` API (static boxes, vehicle bodies, set velocity, read transform), walls and props as colliders, Rapier integrates vehicles (replaces `Vehicle.integrate`), heading ↔ Rapier conversion. Also: `debugParams` warns on unrecognised values | `m2-3a-static-collision` | ⬜ |
+| 4b | M2-3b Tank vs. tank: shoving by mass and traction, contact events → `VehiclesCollided { a, b, impulse }`, determinism with contacts | `m2-3b-tank-contacts` | ⬜ |
 | 5 | M2-6 Primitive tank view: hull, two tracks, turret and barrel (turret fixed forward until M3), sized to the footprint. **Plus hull pitch** (back on accelerate, forward on brake, rock on gear change), computed in the render layer from the sim's velocity change (pulled forward from M6) | `m2-6-tank-view` | ⬜ |
 | 6 | M2-5 Camera: smoothed, frame-rate-independent follow of the interpolated player; tune and record T-19 values in the GDD | `m2-5-camera` | ⬜ |
+
+_M2-3 was split in two (Brendan, 2026-11-19): collision is the riskiest task in M2, and a smaller change is easier to tune and review, with a playable checkpoint (no driving through obstacles) in between._
 
 ## Tests
 | Area | Behaviors |
@@ -46,7 +49,8 @@ Simulation.tick(commands)
 | `TrackedLocomotion` | Reaches top speed in the accel time, never above it; analog throttle gives proportional speed; reverse capped at 60%; stops within the stop time; turn ramps to 2.2 rad/s, positive = clockwise; pivots in place; sideways sliding decays at the grip limit |
 | `Vehicle` / `VehicleFactory` / defs | Built from a def with its numbers; moves along its heading; `snapshot()` includes velocities; player def grip can hold a full-speed turn |
 | `Controller` | Simulation asks each vehicle's controller once per tick; `PlayerController` uses its player's command, a missing command means idle |
-| Collision (real Rapier) | Stops at a wall face within skin tolerance; at 45° the **corner** touches the wall; angled approach slides; a tank flush against a wall can pivot away; can't pass through a crate or pillar; two tanks don't overlap; the stronger tank wins a head-on shove; collisions emit `VehiclesCollided` |
+| Static collision, M2-3a (real Rapier) | Stops at a wall face within skin tolerance; at 45° the **corner** touches the wall; angled approach slides; a tank flush against a wall can pivot away; can't pass through a crate or pillar |
+| Tank contacts, M2-3b (real Rapier) | Two tanks don't overlap; the stronger tank wins a head-on shove; collisions emit `VehiclesCollided` with an impulse |
 | Arena def | Obstacles inside the walls; gates on walls; player start clear; no overlaps |
 | Determinism | Same seed + scripted commands, including wall and tank contacts, give identical snapshots |
 | Input (`tests/input/`) | W and D give throttle 1, turn +1; opposite keys cancel; stick deadzone; stick Y inverted; each `?pad=` scheme maps as specified |

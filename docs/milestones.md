@@ -52,7 +52,8 @@ _Hardpoint (working title). Created 2026-11-18._
 |---|---|
 | M2-1 | `Vehicle`, `Locomotion` interface, `TrackedLocomotion` (GDD §3 values) |
 | M2-2 | `PlayerIntent`, `KeyboardMouseDevice`, `GamepadDevice` (Xbox, tank-style), `PlayerController` |
-| M2-3 | Collision: oriented box hull vs. walls/pillars/crates via `PhysicsWorld` |
+| M2-3a | Static collision: oriented box hull vs. walls/pillars/crates via `PhysicsWorld` |
+| M2-3b | Tank vs. tank: shoving by mass and traction, `VehiclesCollided` event |
 | M2-4 | Arena definition (`defs/arenas.ts`): 46×46 walls, pillars, crates, 3 gates, player start |
 | M2-5 | Camera: high angle, smoothed follow |
 | M2-6 | Primitive tank view (hull, tracks, turret) |
@@ -112,8 +113,9 @@ _Hardpoint (working title). Created 2026-11-18._
 | M6-4 | Crate break-apart chunks; tread marks; MG heat glow |
 | M6-5 | Bloom and basic post-processing |
 | M6-6 | Placeholder sound effects (cannon, MG, impact, explosion, wave start/clear) |
+| M6-7 | Readability: occlusion silhouettes (player always; enemies while in the player's line of sight) and shadows (GDD §7) |
 
-**Done when:** every GDD §8 item is in; effects never hide projectiles or enemies.
+**Done when:** every GDD §8 item and the §7 silhouettes and shadows are in; effects never hide projectiles or enemies.
 
 ## M7 — Tuning and slice sign-off
 **Goal:** the slice meets every GDD acceptance criterion.
