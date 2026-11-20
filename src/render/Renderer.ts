@@ -10,7 +10,9 @@ import {
   Vector3,
 } from '@babylonjs/core';
 import type { Entity } from '../sim/core/Entity';
+import type { Vec2 } from '../sim/core/Vec2';
 import { SliceCamera } from './camera/SliceCamera';
+import { fromBabylonPosition } from './coords';
 import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 
 /**
@@ -51,6 +53,21 @@ export class Renderer {
   render(entities: readonly Entity[], alpha: number): void {
     this.bridge.sync(entities, alpha);
     this.scene.render();
+  }
+
+  /**
+   * The ground-plane point under canvas pixel (x, y), in CSS pixels as given by
+   * pointer events; undefined if that pixel shows sky. Casts a ray from the camera
+   * and intersects it with the floor (y = 0) directly, so it never depends on
+   * which meshes happen to be under the cursor.
+   */
+  screenToGround(x: number, y: number): Vec2 | undefined {
+    const ray = this.scene.createPickingRay(x, y, null, this.sliceCamera.camera);
+    if (ray.direction.y >= 0) {
+      return undefined;
+    }
+    const distance = -ray.origin.y / ray.direction.y;
+    return fromBabylonPosition(ray.origin.add(ray.direction.scale(distance)));
   }
 
   /** Matches the drawing buffer to the canvas after the window changes size. */

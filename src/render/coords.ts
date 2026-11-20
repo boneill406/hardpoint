@@ -1,5 +1,5 @@
 import { Vector3 } from '@babylonjs/core';
-import type { Vec2 } from '../sim/core/Vec2';
+import { Vec2 } from '../sim/core/Vec2';
 
 // The only place simulation coordinates become Babylon coordinates (CLAUDE.md
 // conventions, architecture.md §9). The sim's ground plane (x, z) is Babylon's
@@ -17,4 +17,9 @@ export function toBabylonPosition(position: Vec2, height = 0): Vector3 {
  */
 export function toBabylonRotationY(heading: number): number {
   return heading;
+}
+
+/** Babylon world position → ground-plane point (height dropped). Used for mouse aim. */
+export function fromBabylonPosition(position: Vector3): Vec2 {
+  return new Vec2(position.x, position.z);
 }
