@@ -49,7 +49,7 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 - `Simulation.tick` phases: save transforms → controllers decide → locomotion → integrate → physics → removals.
 - Render: placeholder `VehicleView` sized to the hull footprint, coloured by faction. `main.ts` debug scene: player tank on a 5 s routine (forward with a gentle turn, coast, reverse, stop), insurgent circling.
 - Deleted `DebugMover`, `DebugMoverView` and their test (T-41 reversed), plus three placeholders (`defs/`, `locomotion/`, `controllers/` `index.ts`, T-12).
-- 33 new tests (145 total): `TrackedLocomotion` (14), `Vehicle` + `createVehicle` (6), def invariants (8, incl. "grip holds a full-speed turn"), `scalar` (4), `Simulation` controller phase; `Simulation` and determinism tests ported to vehicles (determinism now flips tanks between forward and reverse).
+- 31 new tests, 2 `DebugMover` tests removed (145 total): `TrackedLocomotion` (12), `Vehicle` + `createVehicle` (6), def invariants (8, incl. "grip holds a full-speed turn"), `scalar` (4), `Simulation` controller phase; `Simulation` and determinism tests ported to vehicles (determinism now flips tanks between forward and reverse).
 **Trade-offs:** T-50, T-51, T-52, T-53, T-54; T-41 reversed; T-49 updated.
 **Acceptance:** headless screenshot of the built game: green player tank turning gently right, orange insurgent circling left; console clean.
 **Issues:** `Vehicle`'s private `current` clashed with `Entity`'s private `current` (TypeScript private names share one namespace across a class hierarchy); renamed to `activeCommand`.
