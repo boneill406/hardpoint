@@ -10,22 +10,58 @@ export interface DebugParams {
   readonly pad: PadSchemeName;
   /** `?grid=on` draws a 2 u grid on the floor, to judge distances and speed. */
   readonly grid: boolean;
+  /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
+  readonly warnings: readonly string[];
 }
 
-/** Parses the query string; invalid values are ignored rather than breaking startup. */
+const KNOWN = ['fps', 'interp', 'pad', 'grid'];
+const ON_OFF = ['on', 'off'];
+
+/**
+ * Parses the query string. Invalid values fall back to defaults rather than
+ * breaking startup, but are reported in `warnings` so a typo isn't silent.
+ */
 export function readDebugParams(search: string): DebugParams {
   const params = new URLSearchParams(search);
-  const fps = Number(params.get('fps'));
-  return {
-    fps: Number.isFinite(fps) && fps > 0 ? fps : undefined,
-    interpolate: params.get('interp') !== 'off',
-    pad: readPadScheme(params.get('pad')),
-    grid: params.get('grid') === 'on',
+  const warnings: string[] = [];
+  const warn = (name: string, value: string, expected: string): void => {
+    const hint = value.includes('?') ? ' (separate parameters with &, not ?)' : '';
+    warnings.push(`Ignoring ?${name}=${value}: expected ${expected}${hint}`);
   };
-}
 
-function readPadScheme(value: string | null): PadSchemeName {
-  return value !== null && isPadSchemeName(value) ? value : 'tank';
+  for (const name of params.keys()) {
+    if (!KNOWN.includes(name)) {
+      warnings.push(`Unknown debug parameter "${name}" (known: ${KNOWN.join(', ')})`);
+    }
+  }
+
+  const fpsText = params.get('fps');
+  const fps = Number(fpsText);
+  const fpsValid = fpsText !== null && Number.isFinite(fps) && fps > 0;
+  if (fpsText !== null && !fpsValid) {
+    warn('fps', fpsText, 'a positive number');
+  }
+
+  const pad = params.get('pad');
+  const padValid = pad !== null && isPadSchemeName(pad);
+  if (pad !== null && !padValid) {
+    warn('pad', pad, Object.keys(PAD_SCHEMES).join(' | '));
+  }
+
+  for (const name of ['interp', 'grid']) {
+    const value = params.get(name);
+    if (value !== null && !ON_OFF.includes(value)) {
+      warn(name, value, 'on | off');
+    }
+  }
+
+  return {
+    fps: fpsValid ? fps : undefined,
+    interpolate: params.get('interp') !== 'off',
+    pad: padValid ? pad : 'tank',
+    grid: params.get('grid') === 'on',
+    warnings,
+  };
 }
 
 /** Own keys only: `in` would also accept inherited names like `toString`. */

@@ -1,5 +1,6 @@
 import { Arena } from '../arena/Arena';
 import type { ArenaDef } from '../arena/ArenaDef';
+import { PhysicsBridge } from '../physics/PhysicsBridge';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
 import type { PlayerId, VehicleCommand } from '../vehicles/VehicleCommand';
@@ -39,14 +40,19 @@ export class Simulation {
   readonly rng: Rng;
   readonly arena: Arena | undefined;
   private readonly physics: PhysicsWorld;
+  private readonly bodies: PhysicsBridge;
   private ticks = 0;
 
   constructor(options: SimulationOptions) {
     this.rng = new Rng(options.seed);
     this.physics = options.physics;
     this.world = new World(this.events);
+    this.bodies = new PhysicsBridge(this.physics);
     this.arena = options.arena === undefined ? undefined : new Arena(options.arena);
-    this.arena?.spawnProps(this.world);
+    if (this.arena !== undefined) {
+      this.addWalls(this.arena);
+      this.arena.spawnProps(this.world);
+    }
     options.populate?.(this);
   }
 
@@ -71,10 +77,10 @@ export class Simulation {
     for (const vehicle of vehicles) {
       vehicle.drive(TICK_SECONDS);
     }
-    for (const vehicle of vehicles) {
-      vehicle.integrate(TICK_SECONDS);
-    }
+    this.bodies.sync(this.world);
+    this.bodies.pushVelocities(vehicles);
     this.physics.step(TICK_SECONDS);
+    this.bodies.pullState(vehicles);
     this.world.applyRemovals();
     this.ticks++;
   }
@@ -90,5 +96,12 @@ export class Simulation {
   /** Frees the physics world (Rapier memory lives outside the JS garbage collector). */
   dispose(): void {
     this.physics.dispose();
+  }
+
+  /** Walls never change, so they are added once, as plain static boxes rather than entities. */
+  private addWalls(arena: Arena): void {
+    for (const wall of arena.walls) {
+      this.physics.addStaticBox({ ...wall, heading: 0 });
+    }
   }
 }

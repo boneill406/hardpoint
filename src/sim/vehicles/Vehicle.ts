@@ -2,6 +2,7 @@ import { wrapAngle } from '../core/angles';
 import { Entity, type EntitySnapshot } from '../core/Entity';
 import type { Transform } from '../core/Transform';
 import { Vec2 } from '../core/Vec2';
+import type { BodyState } from '../physics/PhysicsWorld';
 import type { Controller } from './controllers/Controller';
 import type { Faction } from './Faction';
 import type { Locomotion, LocomotionSnapshot } from './locomotion/Locomotion';
@@ -75,15 +76,17 @@ export class Vehicle extends Entity {
   }
 
   /**
-   * Tick phase 4: move by the current velocities. Temporary: from M2-3 Rapier
-   * integrates instead, so contacts can stop and push vehicles.
+   * Tick phase 4, after the physics step: take the transform and velocities
+   * physics produced. Contacts may have stopped, slid or pushed the vehicle, and
+   * locomotion starts the next tick from what really happened.
    */
-  integrate(dt: number): void {
-    const { position, heading } = this.transform;
+  syncFromPhysics(state: BodyState): void {
     this.setTransform({
-      position: position.add(this.linear.scale(dt)),
-      heading: wrapAngle(heading + this.angular * dt),
+      position: state.transform.position,
+      heading: wrapAngle(state.transform.heading),
     });
+    this.linear = state.linearVelocity;
+    this.angular = state.angularVelocity;
   }
 
   override snapshot(): VehicleSnapshot {

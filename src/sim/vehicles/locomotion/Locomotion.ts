@@ -24,9 +24,9 @@ export interface Velocities {
  * legs or hover differ only here; `Vehicle`, controllers and collision don't
  * change.
  *
- * Returns velocities rather than moving the vehicle: until M2-3 `Vehicle`
- * integrates them itself, after that Rapier does, and contacts (walls, other
- * tanks) can change them before the next tick.
+ * Returns velocities rather than moving the vehicle: physics (Rapier) moves it,
+ * and contacts (walls, other tanks) can change those velocities before the
+ * next tick.
  *
  * Implementations may keep state between ticks (a gearbox), so each vehicle
  * gets its own instance; `snapshot()` exposes that state.

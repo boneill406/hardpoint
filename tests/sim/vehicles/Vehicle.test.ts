@@ -5,14 +5,24 @@ import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
 import { IDLE_COMMAND } from '../../../src/sim/vehicles/VehicleCommand';
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import type { Vehicle } from '../../../src/sim/vehicles/Vehicle';
+import { FakePhysicsWorld } from '../physics/FakePhysicsWorld';
 import { drive, scriptedTank, TEST_TANK } from './testVehicles';
 
-/** Runs the vehicle's own tick phases (no Simulation) with a fixed command. */
+/** Runs the vehicle's tick phases with a no-collision physics world (no Simulation). */
 function tickVehicle(vehicle: Vehicle, ticks: number): void {
+  const physics = new FakePhysicsWorld();
+  const body = physics.addVehicleBody({
+    transform: vehicle.transform,
+    length: vehicle.def.hull.length,
+    width: vehicle.def.hull.width,
+    mass: vehicle.def.mass,
+  });
   for (let i = 0; i < ticks; i++) {
     vehicle.saveTransform();
     vehicle.drive(TICK_SECONDS);
-    vehicle.integrate(TICK_SECONDS);
+    physics.setVelocity(body, vehicle.linearVelocity, vehicle.angularVelocity);
+    physics.step(TICK_SECONDS);
+    vehicle.syncFromPhysics(physics.readBody(body));
   }
 }
 
@@ -39,6 +49,19 @@ describe('Vehicle', () => {
     tickVehicle(tank, 30);
     expect(tank.transform.heading).toBeGreaterThanOrEqual(-Math.PI);
     expect(tank.transform.heading).toBeLessThan(0);
+  });
+
+  it('takes position, heading and velocities from physics after a step', () => {
+    const tank = scriptedTank(drive(0));
+    tank.syncFromPhysics({
+      transform: { position: new Vec2(1, 2), heading: 4 },
+      linearVelocity: new Vec2(0.5, -1),
+      angularVelocity: 0.3,
+    });
+    expect(tank.transform.position).toEqual(new Vec2(1, 2));
+    expect(tank.transform.heading).toBeCloseTo(4 - 2 * Math.PI, 12);
+    expect(tank.linearVelocity).toEqual(new Vec2(0.5, -1));
+    expect(tank.angularVelocity).toBe(0.3);
   });
 
   it('snapshot adds velocities to the transform', () => {

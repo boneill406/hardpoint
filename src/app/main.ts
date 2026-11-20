@@ -103,6 +103,10 @@ async function start(): Promise<void> {
     `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}`,
   );
 
+  for (const warning of debug.warnings) {
+    console.warn(warning);
+  }
+
   // The simulation can't run without physics, so load Rapier's WASM before anything else.
   const simulation = new Simulation({
     seed: SEED,
