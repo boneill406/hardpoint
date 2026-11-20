@@ -1,3 +1,5 @@
+import { Arena } from '../arena/Arena';
+import type { ArenaDef } from '../arena/ArenaDef';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
 import { Vehicle } from '../vehicles/Vehicle';
 import type { PlayerId, VehicleCommand } from '../vehicles/VehicleCommand';
@@ -13,6 +15,8 @@ export interface SimulationOptions {
   readonly seed: number;
   /** Owned by the simulation from now on: stepped every tick, freed by `dispose()`. */
   readonly physics: PhysicsWorld;
+  /** The arena to play in. Its props are spawned first, before `populate`. Optional so unit tests can use an empty world. */
+  readonly arena?: ArenaDef;
   /** Adds the starting entities. Runs inside the constructor, so their spawn events are queued. */
   readonly populate?: (simulation: Simulation) => void;
 }
@@ -33,6 +37,7 @@ export class Simulation {
   readonly world: World;
   readonly events = new EventBus<SimEvents>();
   readonly rng: Rng;
+  readonly arena: Arena | undefined;
   private readonly physics: PhysicsWorld;
   private ticks = 0;
 
@@ -40,6 +45,8 @@ export class Simulation {
     this.rng = new Rng(options.seed);
     this.physics = options.physics;
     this.world = new World(this.events);
+    this.arena = options.arena === undefined ? undefined : new Arena(options.arena);
+    this.arena?.spawnProps(this.world);
     options.populate?.(this);
   }
 

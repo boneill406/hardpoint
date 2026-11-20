@@ -8,6 +8,7 @@ import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
 import { Vec2 } from '../sim/core/Vec2';
 import { ScriptedController } from '../sim/debug/ScriptedController';
+import { SLICE_ARENA } from '../sim/defs/arenas';
 import { INSURGENT_TANK, PLAYER_TANK } from '../sim/defs/vehicles';
 import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
 import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
@@ -27,13 +28,12 @@ const SEED = 1;
 const PLAYER_ID: PlayerId = 1;
 
 /**
- * Temporary debug scene (T-49): the player's tank, plus an insurgent tank that
- * circles at full throttle as something to drive around (and, from M2-3, to
- * shove). Replaced by the arena's player start (M2-4) and real enemies (M4).
+ * Temporary debug scene (T-49): an insurgent tank circling (radius ≈ 2.9 u) in
+ * open ground right of centre, as something to drive around and, from M2-3,
+ * shove. Real enemies replace it in M4.
  */
-const PLAYER_START = { position: new Vec2(0, -8), heading: 0 };
-const CIRCLER_START = { position: new Vec2(8, 0), heading: 0 };
-const CIRCLE_COMMAND: VehicleCommand = { ...IDLE_COMMAND, throttle: 1, turn: -0.6 };
+const CIRCLER_START = { position: new Vec2(17.9, -3), heading: 0 };
+const CIRCLE_COMMAND: VehicleCommand = { ...IDLE_COMMAND, throttle: 1, turn: -1 };
 
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
@@ -46,7 +46,7 @@ function getCanvas(): HTMLCanvasElement {
 function populateDebugScene(simulation: Simulation): void {
   simulation.world.add(
     createVehicle(PLAYER_TANK, {
-      transform: PLAYER_START,
+      transform: SLICE_ARENA.playerStart,
       faction: 'player',
       controller: new PlayerController(PLAYER_ID),
     }),
@@ -100,17 +100,25 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}`,
   );
 
   // The simulation can't run without physics, so load Rapier's WASM before anything else.
   const simulation = new Simulation({
     seed: SEED,
     physics: await RapierPhysicsWorld.create(),
+    arena: SLICE_ARENA,
     populate: populateDebugScene,
   });
   const canvas = getCanvas();
-  const renderer = new Renderer(canvas, { interpolate: debug.interpolate });
+  if (simulation.arena === undefined) {
+    throw new Error('Simulation was created without an arena');
+  }
+  const renderer = new Renderer(canvas, {
+    interpolate: debug.interpolate,
+    arena: simulation.arena,
+    grid: debug.grid,
+  });
   window.addEventListener('resize', () => renderer.resize());
 
   const input = new InputManager([
@@ -142,7 +150,7 @@ async function start(): Promise<void> {
       simulation.tick(commands);
     }
     simulation.events.flush();
-    renderer.render(simulation.world.all(), clock.alpha);
+    renderer.render(simulation.world.all(), clock.alpha, playerTank.id);
   };
   requestAnimationFrame(frame);
 }

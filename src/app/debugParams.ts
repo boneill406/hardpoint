@@ -8,6 +8,8 @@ export interface DebugParams {
   readonly interpolate: boolean;
   /** Gamepad control scheme (`?pad=tank|direct|triggers`), to compare schemes in play. */
   readonly pad: PadSchemeName;
+  /** `?grid=on` draws a 2 u grid on the floor, to judge distances and speed. */
+  readonly grid: boolean;
 }
 
 /** Parses the query string; invalid values are ignored rather than breaking startup. */
@@ -18,6 +20,7 @@ export function readDebugParams(search: string): DebugParams {
     fps: Number.isFinite(fps) && fps > 0 ? fps : undefined,
     interpolate: params.get('interp') !== 'off',
     pad: readPadScheme(params.get('pad')),
+    grid: params.get('grid') === 'on',
   };
 }
 

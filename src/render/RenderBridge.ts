@@ -1,9 +1,11 @@
 import type { Scene } from '@babylonjs/core';
+import { Prop } from '../sim/arena/Prop';
 import { lerpAngle } from '../sim/core/angles';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Transform } from '../sim/core/Transform';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { EntityView } from './views/EntityView';
+import { PropView } from './views/PropView';
 import { VehicleView } from './views/VehicleView';
 
 export interface RenderBridgeOptions {
@@ -23,6 +25,8 @@ export interface RenderBridgeOptions {
  */
 export class RenderBridge {
   private readonly views = new Map<EntityId, EntityView>();
+  /** Where each entity was drawn this frame, so the camera can follow exactly what's on screen. */
+  private readonly drawn = new Map<EntityId, Transform>();
 
   constructor(
     private readonly scene: Scene,
@@ -34,14 +38,22 @@ export class RenderBridge {
     const live = new Set<EntityId>();
     for (const entity of entities) {
       live.add(entity.id);
-      this.viewFor(entity).update(this.transformToDraw(entity, alpha));
+      const transform = this.transformToDraw(entity, alpha);
+      this.drawn.set(entity.id, transform);
+      this.viewFor(entity).update(transform);
     }
     for (const [id, view] of this.views) {
       if (!live.has(id)) {
         view.dispose();
         this.views.delete(id);
+        this.drawn.delete(id);
       }
     }
+  }
+
+  /** The (interpolated) transform an entity was drawn at in the last `sync`, if it exists. */
+  drawnTransform(id: EntityId): Transform | undefined {
+    return this.drawn.get(id);
   }
 
   dispose(): void {
@@ -49,6 +61,7 @@ export class RenderBridge {
       view.dispose();
     }
     this.views.clear();
+    this.drawn.clear();
   }
 
   private viewFor(entity: Entity): EntityView {
@@ -62,6 +75,9 @@ export class RenderBridge {
 
   /** Throws for an entity type with no view: every entity must be visible, so this is a bug. */
   private createView(entity: Entity): EntityView {
+    if (entity instanceof Prop) {
+      return new PropView(this.scene, `${entity.kind}-${entity.id}`, entity);
+    }
     if (entity instanceof Vehicle) {
       return new VehicleView(this.scene, `vehicle-${entity.id}`, entity.def.hull, entity.faction);
     }
