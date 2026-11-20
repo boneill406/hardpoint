@@ -35,7 +35,7 @@ Simulation.tick(commands)
 | 1 | M2-1 `Vehicle`, `Locomotion` (interface), `TrackedLocomotion`, `Controller` (interface), `VehicleDef` + `defs/vehicles.ts` (player and insurgent), `VehicleFactory`, `ScriptedController` (debug). Deletes `DebugMover`; placeholder `VehicleView`. `Vehicle.snapshot()` adds velocities | `m2-1-vehicle` | ✅ |
 | 1b | M2-1 follow-up: gear-change pause, sharper braking, slower pull-away (after Brendan's first drive) | `m2-1-gear-shift` | ✅ |
 | 2 | M2-2 `PlayerIntent`, `bindings.ts`, `KeyboardMouseDevice`, `GamepadDevice` (schemes), `InputManager`, `PlayerController`. First drivable build; determinism test drives a player vehicle with its command stream | `m2-2-input` | ✅ |
-| 3 | M2-4 `ArenaDef` in `defs/arenas.ts`: 46×46 walls, 7 pillars, 14 crates, 3 gates, player start; rendered from the def (clears T-20; grid behind `?grid=on`) | `m2-4-arena` | ⬜ |
+| 3 | M2-4 `ArenaDef` in `defs/arenas.ts`: 46×46 walls, 7 pillars, 14 crates, 3 gates, player start; rendered from the def (clears T-20; grid behind `?grid=on`) | `m2-4-arena` | ✅ |
 | 4 | M2-3 Collision via `PhysicsWorld` (D1, D2), `VehiclesCollided` event | `m2-3-collision` | ⬜ |
 | 5 | M2-6 Primitive tank view: hull, two tracks, turret and barrel (turret fixed forward until M3), sized to the footprint. **Plus hull pitch** (back on accelerate, forward on brake, rock on gear change), computed in the render layer from the sim's velocity change (pulled forward from M6) | `m2-6-tank-view` | ⬜ |
 | 6 | M2-5 Camera: smoothed, frame-rate-independent follow of the interpolated player; tune and record T-19 values in the GDD | `m2-5-camera` | ⬜ |

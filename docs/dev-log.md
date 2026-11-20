@@ -12,13 +12,13 @@ Debt taken on deliberately, each with the condition that clears it.
 | Item | Trade-off | Clear when | From |
 |---|---|---|---|
 | TypeScript pinned to 6.0.x (7.x is out) | T-01 | typescript-eslint supports TS 7 | M0-1 |
-| `ARENA_SIZE` constant and debug grid in `Renderer` | T-20 | M2-4: build the floor from `ArenaDef`; keep the grid only behind a debug toggle | M0-3 |
 | `SliceCamera` angle/distance are first guesses | T-19 | M2-5: tune with a real tank on screen, then record values in the GDD | M0-3 |
 | `PhysicsWorld` only has `step` / `dispose`; physics behavior untested | T-24, T-16 | M2-3: add bodies, colliders, ray and shape casts, with tests | M0-4 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
-| Debug scene in `main.ts` (player start, circling insurgent) | T-49 | M2-4: arena player start; M4: real enemies | M1-6, M2-2 |
+| Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
+| Camera hard-follows the player | T-64 | M2-5: smoothed follow, framing | M2-4 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
@@ -39,6 +39,19 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-4 · Arena definition
+**Built:**
+- `arena/ArenaDef.ts` (`ArenaDef`, `BoxDef`, `GateDef`) and `defs/arenas.ts`: `SLICE_ARENA`, 46 × 46, 1 u walls, player start (0, −19) facing up-screen, gates left/right/top, 7 pillars (centre 3 × 3, two 2 × 2, two long side and two long top segments), 14 crates (1.5 u), mirror-symmetric.
+- `arena/Arena.ts` (four wall boxes from the size, corners overlapped; `contains`; `spawnProps` adds pillars then crates in def order) and `arena/Prop.ts` (entity: kind, size, destructible). `Simulation({ arena })` spawns props before `populate`.
+- Render: `ArenaView` (floor, walls, gate panels, grid behind `?grid=on`), `PropView` (box sized to the footprint; pillars 2.5 u tall, crates 1.1 u). `RenderBridge` records drawn transforms; `Renderer.render(entities, alpha, followId)` hard-follows the player. `ARENA_SIZE` and the old grid removed (T-20 reversed).
+- `main.ts`: player at `SLICE_ARENA.playerStart`; circling insurgent moved to open ground right of centre (radius ≈ 2.9 u). Deleted the `src/sim/arena/index.ts` placeholder (T-12).
+- Post-slice backlog (milestones.md): custom tank builds via part defs + `resolveBuild`, engine power instead of `accelTime`; multiple chassis and insurgent variants by id (from Brendan's question about scaling defs).
+- GDD §3/§5 and plan D3 updated with Brendan's tuned player handling (commit `e09165d`: 0.4 s accel, 0.25 s stop, 0.15 s shift, 2.0 rad/s).
+- 12 new tests (195 total): layout invariants for `SLICE_ARENA` (GDD counts, obstacles inside with a tank-width lane to the walls and between each other, gates on walls facing in with a clear apron, player start clear, left/right mirror symmetry), `Arena` walls/contains/spawning, `Simulation` with and without an arena.
+**Trade-offs:** T-62, T-63, T-64, T-65; T-20 reversed; T-49 updated.
+**Acceptance:** headless screenshots of the built game: the arena from the player's start with walls, grey pillars, brown crates and the circling insurgent, with and without `?grid=on`. Planted a crate on the player start: the clearance test failed; reverted.
+**Issues:** none.
 
 ## 2026-11-19 · M2-1 follow-up · Gear-change pause, heavier handling
 **Why:** Brendan's first drive: forward → reverse felt "too smooth for a hefty mechanical machine". Braking and the reverse ramp blended into one continuous V through zero.
