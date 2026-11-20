@@ -71,6 +71,7 @@ _Hardpoint (working title). Created 2026-11-18._
 | M3-4 | `ArmorProfile` (front/side/rear by hit angle), `Health`, `DamageResolver` |
 | M3-5 | Destructible crates (cannon only); static enemy-tank target dummy |
 | M3-6 | HUD: armor, reload, heat bars |
+| M3-7 | Muzzle clearance: each tick the sim casts a ray from the turret pivot to the muzzle; a blocked muzzle starts the shell at the obstacle (it hits immediately, never spawns inside or behind it), and `TankView` slides the barrel back to the clear distance so the visible tip matches (T-75) |
 
 **Done when:** front hits on the dummy visibly deal less than rear hits; the machine gun overheats and re-arms; tests cover armor angles and multi-limiter weapons.
 

@@ -18,7 +18,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | Camera hard-follows the player | T-64 | M2-5: smoothed follow, framing | M2-4 |
-| Barrel pokes into walls and pillars (T-75); Brendan would prefer it didn't | T-75 | Fix proposed: retract the barrel by the blocked distance, sharing M3's muzzle ray cast | M2-6 |
+| Barrel pokes into walls and pillars (T-75) | T-75 | M3-7: muzzle ray (sim) sets shell spawn and barrel retraction (view) | M2-6 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
