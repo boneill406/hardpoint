@@ -35,10 +35,10 @@ export function treadBlur(speed: number, frameSeconds: number, patternPeriod: nu
   return Math.min(1, Math.max(0, (periodsPerFrame - 0.25) / 0.2));
 }
 
-/** Hull pitch per unit of forward acceleration (rad per u/s²): full throttle ≈ 3°. */
-const PITCH_PER_ACCELERATION = 0.003;
-/** Never pitch more than this (rad, ≈ 5°): it's a heavy tank, not a car. */
-const MAX_PITCH = 0.09;
+/** Hull pitch per unit of forward acceleration (rad per u/s²): full throttle ≈ 2°. Tuned down in play. */
+const PITCH_PER_ACCELERATION = 0.002;
+/** Never pitch more than this (rad, ≈ 3.4°): it's a heavy tank, not a car. */
+const MAX_PITCH = 0.06;
 
 /**
  * Where the hull wants to pitch for a given forward acceleration, as Babylon
@@ -55,9 +55,12 @@ export interface SpringState {
   readonly velocity: number;
 }
 
-/** Suspension feel: ~3 Hz, under-damped so the hull rocks once on a gear change. */
+/**
+ * Suspension feel: ~3 Hz, slightly under-damped (≈10% overshoot) so a gear
+ * change gives a faint rock without bouncing. 0.35 felt too bouncy in play.
+ */
 const SPRING_FREQUENCY_HZ = 3;
-const DAMPING_RATIO = 0.35;
+const DAMPING_RATIO = 0.6;
 /** Integrate in steps no longer than this, so a slow frame can't make the spring explode. */
 const MAX_SPRING_STEP = 1 / 120;
 

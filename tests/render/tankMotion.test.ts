@@ -61,9 +61,9 @@ describe('hull pitch', () => {
     expect(pitchTarget(0)).toBe(-0);
   });
 
-  it('never pitches more than about 5°', () => {
-    expect(Math.abs(pitchTarget(1000))).toBeLessThanOrEqual(0.09);
-    expect(Math.abs(pitchTarget(-1000))).toBeLessThanOrEqual(0.09);
+  it('never pitches more than about 3.4°', () => {
+    expect(Math.abs(pitchTarget(1000))).toBeLessThanOrEqual(0.06);
+    expect(Math.abs(pitchTarget(-1000))).toBeLessThanOrEqual(0.06);
   });
 
   it('the spring settles on its target', () => {
@@ -74,7 +74,7 @@ describe('hull pitch', () => {
     expect(state.angle).toBeCloseTo(0.05, 4);
   });
 
-  it('the spring overshoots once, so a gear change rocks the hull', () => {
+  it('the spring overshoots slightly (a faint rock), but not a bounce', () => {
     let state: SpringState = { angle: 0, velocity: 0 };
     let peak = 0;
     for (let i = 0; i < 60; i++) {
@@ -82,7 +82,7 @@ describe('hull pitch', () => {
       peak = Math.max(peak, state.angle);
     }
     expect(peak).toBeGreaterThan(0.05);
-    expect(peak).toBeLessThan(0.05 * 1.5);
+    expect(peak).toBeLessThan(0.05 * 1.15);
   });
 
   it('a long frame (a stall) cannot make the spring blow up', () => {

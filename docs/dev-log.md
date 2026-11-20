@@ -18,7 +18,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | Camera hard-follows the player | T-64 | M2-5: smoothed follow, framing | M2-4 |
-| Playtest the tank view: tread direction (top run flows toward the nose when driving forward, as on a real tank), equal and opposite on pivots, hull pitch strength, barrel poking into walls (T-75) | T-73, T-75 | Brendan's feedback | M2-6 |
+| Barrel pokes into walls and pillars (T-75); Brendan would prefer it didn't | T-75 | Fix proposed: retract the barrel by the blocked distance, sharing M3's muzzle ray cast | M2-6 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
@@ -39,6 +39,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-6 follow-up · Hull pitch toned down
+**Why:** Brendan's playtest: tread direction and pivot treads correct; hull pitch "a bit bouncy, maybe slightly too much pitch".
+**Changed:** `tankMotion.ts`: pitch per acceleration 0.003 → 0.002 rad per u/s² (≈2° at full throttle), cap 0.09 → 0.06 rad (≈3.4°), damping ratio 0.35 → 0.6 (overshoot ≈31% → ≈10%). Tests updated (cap, overshoot under 15%).
+**Resolved:** tank-view playtest follow-up (tread direction, pivot). Barrel clipping (T-75) stays open with a proposed fix.
 
 ## 2026-11-19 · M2-6 · Primitive tank view
 **Built:**
