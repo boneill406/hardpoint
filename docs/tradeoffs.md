@@ -54,7 +54,7 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 | T-46 | `RenderBridge` diffs world ids against views every frame (M1-6) | Creating/disposing views from `EntitySpawned` / `EntityDestroyed` events | Can't desync: no missed, doubled or out-of-order event can leave a ghost or missing view | O(n) pass over all entities per frame | Profiling shows it (hundreds of entities) | Active |
 | T-47 | **Interpolate** between the last two ticks (M1-6, rule 6) | Drawing the latest tick, or extrapolating ahead | Smooth motion at any frame rate with no guessing | The screen shows the sim up to one tick (16.7 ms) late | Input latency feels bad in M2 (then consider extrapolating the player only) | Active |
 | T-48 | `RenderBridge.createView` throws for an entity type with no view (M1-6) | Skipping it silently | Fail fast (like T-35): an invisible entity is always a bug | One missing view stops the game | — | Active |
-| T-49 | Debug scene as constants in `main.ts` (M1-6; M2-1: a scripted drive routine for the player tank and a circling insurgent) | Defs in `src/sim/defs/` (rule 8) | Temporary scaffolding, not game content | A rule-8 exception in app code | M2-2: player input replaces the routine | Temporary |
+| T-49 | Debug scene as constants in `main.ts` (M1-6; M2-2: player start at (0, −8) and a circling insurgent to drive around and, from M2-3, shove) | Defs in `src/sim/defs/` (rule 8) | Temporary scaffolding, not game content | A rule-8 exception in app code | M2-4: player start from `ArenaDef`; M4: real enemies replace the circler | Temporary |
 
 ## Physics
 
@@ -89,6 +89,16 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 | T-52 | `Locomotion.step(command, motion, dt)` returns velocities (M2-1) | `step(cmd, dt)` mutating the vehicle (architecture §3 sketch) | Locomotion stays pure: no access to the vehicle or physics; easy to test and to swap | Two small types (`MotionState`, `Velocities`) | — | Active |
 | T-53 | Turning while reversing keeps the hull's turn direction (D in reverse still turns clockwise; the rear swings left) (M2-1) | Inverting turn in reverse, like a car | Matches real tracked vehicles and the prototype's hull-relative controls | Some players expect car-style reverse steering | M2-2 playtest: if reverse steering feels backwards | Active |
 | T-54 | `ScriptedController` lives in `src/sim/debug/` (M2-1) | A test-only helper | Shared by tests and the debug scene; useful later for AI-free scenarios | Debug code ships in the bundle (tiny) | — | Active |
+
+## Input
+
+| ID | Decision (task) | Instead of | Why | Cost / risk | Revisit when | Status |
+|---|---|---|---|---|---|---|
+| T-55 | **Last-active device wins** (M2-2, plan D6) | Summing or prioritising devices | No fighting between a resting stick and held keys; switching is instant | Bumping the mouse while using the pad hands control to the keyboard (until the stick moves again) | Players switch devices by accident | Active |
+| T-56 | Intent sampled **once per frame**; every tick in that frame gets the same command (M2-2) | Sampling per tick | Simple; the browser only delivers input between frames anyway | A press-and-release between two frames is missed; M3 single-shot fire may need latching ("pressed since last frame") | M3 fire buttons | Active |
+| T-57 | Stick aim and `direct` driving are resolved in the input layer (`intentToCommand`), reading the player tank's transform (M2-2) | Sending raw stick directions into the sim | `VehicleCommand` stays absolute (throttle, turn, world aim point), which replays and co-op need (ADR-0001); the sim never learns about schemes | Resolution uses the last tick's transform (up to one frame old) | `direct` steering feels laggy | Active |
+| T-58 | Input feel constants (stick aim distance 8 u, `direct` full-turn angle 30°, deadzone 0.15, trigger threshold 0.5) in `src/input/`, not `defs/` (M2-2) | `src/sim/defs/` (rule 8) | They tune how a device maps to a command, not game content; the sim must not import input | Tuning numbers in two places (defs for handling, input for device feel) | — | Active |
+| T-59 | Input mapping tests in `tests/input/` (M2-2, plan D7) | Only sim tests (CLAUDE.md testing rule) | Mapping bugs (inverted stick, wrong button) are easy to make and cheap to test as pure functions | One more test folder that doesn't mirror `src/sim/` (like T-14) | — | Active |
 
 ## Process and docs
 

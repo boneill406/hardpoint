@@ -36,7 +36,8 @@ src/
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
   render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, VehicleView), vfx/, camera/, audio/
-  input/         InputManager, KeyboardMouseDevice, GamepadDevice
+  input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
+                 keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules)
@@ -155,9 +156,16 @@ classDiagram
 
 ## 7. Input
 
-- `KeyboardMouseDevice`: WASD hull-relative driving, mouse aim (ray to ground plane), LMB/Space = primary, RMB/F = secondary.
-- `GamepadDevice` (Xbox, standard mapping): left stick tank-style (Y = throttle, X = turn), right stick aims, RT = primary, LT = secondary. Browsers expose a pad only after a button press.
-- Devices output the same `PlayerIntent`, so the simulation doesn't know which device is in use.
+```
+KeyboardMouseDevice ─┐                        ┌ intentToCommand(intent, player tank transform, last aim)
+GamepadDevice ───────┼ InputManager.read(now) ┤   resolves stick aim and `direct` driving
+  (?pad= scheme)     ┘  last-active wins      └▶ VehicleCommand ▶ tick(commands) ▶ PlayerController
+```
+- **Bindings are data** (`input/bindings.ts`): keys by `KeyboardEvent.code`, pad buttons and axes by standard-mapping index. Changing a binding is a one-line edit.
+- `KeyboardMouseDevice`: WASD/arrows hull-relative driving, mouse aim (`Renderer.screenToGround`: camera ray ∩ floor), LMB/Space = primary, RMB/F = secondary. Releases all keys on window blur.
+- `GamepadDevice` (Xbox, standard mapping), scheme chosen with `?pad=`: `tank` (default, GDD: left stick Y throttle, X turn), `direct` (left stick points where to go), `triggers` (RT/LT drive, fire on bumpers). Right stick aims. Radial deadzone 0.15. Browsers expose a pad only after a button press.
+- Devices output the same `PlayerIntent`; the pure mapping functions (`keyboardIntent`, `gamepadIntent`, `intentToCommand`) are unit-tested in `tests/input/`. The intent is sampled once per frame; every tick in that frame uses the same command.
+- `PlayerController` returns its player's command from `tick(commands)`, or idle if there is none, so local input, replays and (later) network input are indistinguishable to the sim.
 
 ## 8. Determinism and testing
 

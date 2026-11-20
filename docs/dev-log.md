@@ -18,8 +18,8 @@ Debt taken on deliberately, each with the condition that clears it.
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
-| Determinism test's scripted command stream has no effect yet (scripted tanks ignore commands) | — | M2-2: a player vehicle reads commands, so the same test covers "same seed + same commands → same game" | M1-7 |
-| Scripted debug scene in `main.ts` | T-49 | M2-2: player input replaces it | M1-6, M2-1 |
+| Debug scene in `main.ts` (player start, circling insurgent) | T-49 | M2-4: arena player start; M4: real enemies | M1-6, M2-2 |
+| Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -39,6 +39,21 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-2 · Input and `PlayerController` — first drivable build
+**Built:**
+- `input/PlayerIntent.ts` (`DriveIntent` tank | direct, `AimIntent` point | direction | none, `NO_INTENT`, `hasInput`), `input/bindings.ts` (keyboard codes, standard pad indices, `PAD_SCHEMES` tank / direct / triggers, deadzone, trigger threshold).
+- Pure mappings: `keyboardIntent`, `gamepadIntent` + `radialDeadzone`, `intentToCommand` (stick aim → point 8 u out; `direct` → turn proportional to heading error, full at 30°, throttle × cos(error), pivot when the target is behind).
+- Devices: `InputDevice` interface, `KeyboardMouseDevice` (DOM listeners via one `AbortController`; Space/arrows don't scroll; no context menu; releases keys on blur), `GamepadDevice` (polled), `InputManager` (last-active wins, logs device changes).
+- `Renderer.screenToGround` (camera ray ∩ y = 0) and `coords.fromBabylonPosition`. `?pad=` in `debugParams` (own-key check: `in` would accept `toString`).
+- `sim/vehicles/controllers/PlayerController` (its player's command, or idle).
+- `main.ts`: player tank with `PlayerController`; per frame `input.read` → `intentToCommand` → one commands map for all of that frame's ticks. Insurgent still circles.
+- Deleted the `src/input/index.ts` placeholder (T-12). Architecture §2/§7 and README updated.
+- 32 new tests (177 total): keyboard (6), gamepad (11), `intentToCommand` (9), `InputManager` (3), `PlayerController` (2); determinism now includes a player tank, plus "different command stream → different game" and "player drives by the stream".
+**Resolved:** M1-7 follow-up (the determinism test's command stream now drives a player tank).
+**Trade-offs:** T-55 to T-59; T-49 updated.
+**Acceptance:** built game loads cleanly in headless Chrome with no `?pad`, `direct`, `triggers` and an invalid value (falls back to `tank`). Keyboard and Xbox driving can't be exercised headless → playtest follow-up for Brendan.
+**Issues:** the first draft of the "player drives by the stream" test called the script generator, which would have advanced its RNG and compared a value with itself; rewritten to check the command isn't idle and the tank moved.
 
 ## 2026-11-19 · M2-1 · `Vehicle`, `TrackedLocomotion`, defs
 **Built:**
