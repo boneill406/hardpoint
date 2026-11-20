@@ -77,6 +77,7 @@ classDiagram
   class Locomotion {
     <<interface>>
     +step(cmd, motion, dt) Velocities
+    +snapshot()
   }
   class Controller {
     <<interface>>

@@ -89,6 +89,8 @@ _Hardpoint. Every deliberate trade-off: what was chosen, what was given up, and 
 | T-52 | `Locomotion.step(command, motion, dt)` returns velocities (M2-1) | `step(cmd, dt)` mutating the vehicle (architecture §3 sketch) | Locomotion stays pure: no access to the vehicle or physics; easy to test and to swap | Two small types (`MotionState`, `Velocities`) | — | Active |
 | T-53 | Turning while reversing keeps the hull's turn direction (D in reverse still turns clockwise; the rear swings left) (M2-1) | Inverting turn in reverse, like a car | Matches real tracked vehicles and the prototype's hull-relative controls | Some players expect car-style reverse steering | M2-2 playtest: if reverse steering feels backwards | Active |
 | T-54 | `ScriptedController` lives in `src/sim/debug/` (M2-1) | A test-only helper | Shared by tests and the debug scene; useful later for AI-free scenarios | Debug code ships in the bundle (tiny) | — | Active |
+| T-60 | **Gear-change pause**: switching forward ↔ reverse brakes to a stop, waits `shiftTime` (0.2 s), then engages (M2-1 follow-up) | Passing straight through zero speed | A heavy machine should feel mechanical; the old smooth V felt too fluid (Brendan's first drive) | A direction change takes ~0.65 s instead of ~0.5 s; slower to dodge | Dodging shells feels sluggish in M3/M4 (lower `shiftTime`; 0 disables it) | Active |
+| T-61 | `Locomotion` may keep state (the gearbox) and exposes it via `snapshot()`; one instance per vehicle (M2-1 follow-up) | Keeping all locomotion state in `MotionState` | Gear state is locomotion-specific; other locomotion types won't have it | Interface gains a method; sharing one instance between vehicles would now be a bug (the factory never does) | — | Active |
 
 ## Input
 

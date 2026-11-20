@@ -40,6 +40,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-19 · M2-1 follow-up · Gear-change pause, heavier handling
+**Why:** Brendan's first drive: forward → reverse felt "too smooth for a hefty mechanical machine". Braking and the reverse ramp blended into one continuous V through zero.
+**Built:** `TrackedLocomotion` gearbox: asking for the opposite direction brakes to a stop (below 0.05 u/s), sits still for `shiftTime`, then engages and pulls away the same tick. Releasing the throttle doesn't shift, so stopping and pulling away the same way is immediate; selecting reverse from a standstill after driving forward does shift. New def field `shiftTime`; both tanks now 0.5 s to top speed, 0.15 s to stop, 0.2 s shift (GDD §3). `Locomotion.snapshot()` added; `VehicleSnapshot` includes it, so determinism checks cover the gear. Plan D3 revised; hull pitch moved from M6 into M2-6 (plan, GDD §8).
+**Tests:** `TrackedLocomotion` tests rewritten around a stateful `Driver` helper (the old helper made a fresh instance per call, which would hide gear state); 6 new gearbox tests (forward→reverse pause length, reverse→forward, shift from standstill, no shift on release, no pause when easing off, `shiftTime` 0) and a snapshot test. 183 total.
+**Trade-offs:** T-60, T-61.
+**Issues:** `Math.sign` returns `number`, not the `1 | -1` gear type; made explicit.
+
 ## 2026-11-19 · M2-2 · Input and `PlayerController` — first drivable build
 **Built:**
 - `input/PlayerIntent.ts` (`DriveIntent` tank | direct, `AimIntent` point | direction | none, `NO_INTENT`, `hasInput`), `input/bindings.ts` (keyboard codes, standard pad indices, `PAD_SCHEMES` tank / direct / triggers, deadzone, trigger threshold).
