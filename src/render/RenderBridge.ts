@@ -35,12 +35,13 @@ export class RenderBridge {
 
   /** Creates views for new entities, disposes views of removed ones, and places the rest. */
   sync(entities: readonly Entity[], alpha: number, frameSeconds: number): void {
+    const frame = { seconds: frameSeconds, alpha: this.options.interpolate ? alpha : 1 };
     const live = new Set<EntityId>();
     for (const entity of entities) {
       live.add(entity.id);
       const transform = this.transformToDraw(entity, alpha);
       this.drawn.set(entity.id, transform);
-      this.viewFor(entity).update(transform, frameSeconds);
+      this.viewFor(entity).update(transform, frame);
     }
     for (const [id, view] of this.views) {
       if (!live.has(id)) {

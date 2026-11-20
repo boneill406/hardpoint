@@ -81,6 +81,9 @@ export class Simulation {
     this.bodies.pushVelocities(vehicles);
     this.physics.step(TICK_SECONDS);
     this.bodies.pullState(vehicles);
+    for (const vehicle of vehicles) {
+      vehicle.aimTurret(TICK_SECONDS);
+    }
     for (const impact of this.bodies.newVehicleImpacts()) {
       this.events.emit('VehiclesCollided', impact);
     }

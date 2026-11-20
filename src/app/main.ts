@@ -132,7 +132,6 @@ async function start(): Promise<void> {
     new GamepadDevice(PAD_SCHEMES[debug.pad]),
   ]);
   const playerTank = findPlayerTank(simulation, PLAYER_ID);
-  let aimPoint = playerTank.transform.position;
 
   const clock = new FixedClock();
   const frameGate = createFrameGate(debug.fps);
@@ -147,8 +146,7 @@ async function start(): Promise<void> {
     lastFrameMs = nowMs;
 
     // Input is sampled once per frame; every tick this frame runs on the same command (T-56).
-    const command = intentToCommand(input.read(nowMs), playerTank.transform, aimPoint);
-    aimPoint = command.aimPoint;
+    const command = intentToCommand(input.read(nowMs), playerTank.transform);
     const commands = new Map([[PLAYER_ID, command]]);
 
     const steps = clock.advance(elapsedSeconds);

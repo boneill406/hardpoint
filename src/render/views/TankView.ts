@@ -1,10 +1,11 @@
 import type { Scene } from '@babylonjs/core';
+import { lerpAngle, wrapAngle } from '../../sim/core/angles';
 import { TICK_SECONDS } from '../../sim/core/time';
 import type { Transform } from '../../sim/core/Transform';
 import { Vec2 } from '../../sim/core/Vec2';
 import type { Vehicle } from '../../sim/vehicles/Vehicle';
 import { toBabylonPosition, toBabylonRotationY } from '../coords';
-import type { EntityView } from './EntityView';
+import type { EntityView, FrameTiming } from './EntityView';
 import { PrimitiveTankModel } from './tank/PrimitiveTankModel';
 import type { TankModel } from './tank/TankModel';
 import {
@@ -36,15 +37,26 @@ export class TankView implements EntityView {
     this.model = new PrimitiveTankModel(scene, name, vehicle.def.hull, vehicle.faction);
   }
 
-  update(transform: Transform, frameSeconds: number): void {
+  update(transform: Transform, frame: FrameTiming): void {
     this.model.root.position = toBabylonPosition(transform.position);
     this.model.root.rotation.y = toBabylonRotationY(transform.heading);
-    this.animateTreads(frameSeconds);
-    this.animatePitch(frameSeconds);
+    this.aimTurret(transform.heading, frame.alpha);
+    this.animateTreads(frame.seconds);
+    this.animatePitch(frame.seconds);
   }
 
   dispose(): void {
     this.model.dispose();
+  }
+
+  /**
+   * The sim's turret heading is in world terms (stabilised); the model's turret
+   * sits on the hull, so it gets the difference from the drawn hull heading.
+   */
+  private aimTurret(hullHeading: number, alpha: number): void {
+    const { turret } = this.vehicle;
+    const world = lerpAngle(turret.previousHeading, turret.heading, alpha);
+    this.model.turret.rotation.y = toBabylonRotationY(wrapAngle(world - hullHeading));
   }
 
   /** Speeds come from the sim's motion after physics: a pinned or shoved tank's tracks don't turn. */

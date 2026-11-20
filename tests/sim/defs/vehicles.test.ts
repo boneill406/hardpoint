@@ -42,6 +42,20 @@ describe.each([PLAYER_TANK, INSURGENT_TANK])('$name def', (def) => {
     expect(locomotion.topSpeed * TICK_SECONDS).toBeLessThan(CONTACT_PREDICTION_DISTANCE);
   });
 
+  it('times everything in whole 60 Hz ticks (M3 plan D13)', () => {
+    const timings = {
+      accelTime: locomotion.accelTime,
+      stopTime: locomotion.stopTime,
+      shiftTime: locomotion.shiftTime,
+      turnAccelTime: locomotion.turnAccelTime,
+      turretSpinUp: def.turret.spinUpTime,
+    };
+    for (const [name, seconds] of Object.entries(timings)) {
+      const ticks = seconds / TICK_SECONDS;
+      expect(Math.abs(ticks - Math.round(ticks)), name).toBeLessThan(1e-9);
+    }
+  });
+
   it('is longer than it is wide, so the nose reads as the front', () => {
     expect(def.hull.length).toBeGreaterThan(def.hull.width);
   });

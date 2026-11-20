@@ -6,6 +6,7 @@ import type { BodyState } from '../physics/PhysicsWorld';
 import type { Controller } from './controllers/Controller';
 import type { Faction } from './Faction';
 import type { Locomotion, LocomotionSnapshot } from './locomotion/Locomotion';
+import { Turret, type TurretSnapshot } from './Turret';
 import { IDLE_COMMAND, type VehicleCommand } from './VehicleCommand';
 import type { VehicleDef } from './VehicleDef';
 
@@ -15,6 +16,7 @@ export interface VehicleSnapshot extends EntitySnapshot {
   readonly vz: number;
   readonly angularVelocity: number;
   readonly locomotion: LocomotionSnapshot;
+  readonly turret: TurretSnapshot;
 }
 
 /**
@@ -26,6 +28,8 @@ export interface VehicleSnapshot extends EntitySnapshot {
  * Build one with `createVehicle` (VehicleFactory.ts), not directly.
  */
 export class Vehicle extends Entity {
+  /** Aims independently of the hull (stabilised). */
+  readonly turret: Turret;
   private linear = Vec2.ZERO;
   private previousLinear = Vec2.ZERO;
   private angular = 0;
@@ -39,6 +43,7 @@ export class Vehicle extends Entity {
     private readonly locomotion: Locomotion,
   ) {
     super(transform);
+    this.turret = new Turret(def.turret, transform.heading);
   }
 
   /** World-space velocity, u/s. */
@@ -68,6 +73,7 @@ export class Vehicle extends Entity {
   override saveTransform(): void {
     super.saveTransform();
     this.previousLinear = this.linear;
+    this.turret.saveHeading();
   }
 
   /** Tick phase 2: store what the controller decided. */
@@ -104,6 +110,11 @@ export class Vehicle extends Entity {
     this.angular = state.angularVelocity;
   }
 
+  /** Tick phase 5, after physics: traverse the turret toward the command's aim, from where the tank now is. */
+  aimTurret(dt: number): void {
+    this.turret.step(this.activeCommand.aimPoint, this.transform.position, dt);
+  }
+
   override snapshot(): VehicleSnapshot {
     return {
       ...super.snapshot(),
@@ -111,6 +122,7 @@ export class Vehicle extends Entity {
       vz: this.linear.z,
       angularVelocity: this.angular,
       locomotion: this.locomotion.snapshot(),
+      turret: this.turret.snapshot(),
     };
   }
 }

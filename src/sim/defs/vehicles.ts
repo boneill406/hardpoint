@@ -1,3 +1,4 @@
+import { degToRad } from '../core/angles';
 import type { VehicleDef } from '../vehicles/VehicleDef';
 
 // Vehicle tuning (GDD §3, §5; M2 plan D3, D4). Starting values: edit and save,
@@ -18,6 +19,7 @@ export const PLAYER_TANK: VehicleDef = {
     turnAccelTime: 0.1,
     grip: 40,
   },
+  turret: { traverseRate: 4.0, spinUpTime: 0.05, snapAngle: degToRad(1), minAimDistance: 1.2 },
 };
 
 export const INSURGENT_TANK: VehicleDef = {
@@ -36,4 +38,5 @@ export const INSURGENT_TANK: VehicleDef = {
     // High enough that a full-speed ram shoves it ~1 u sideways, not ~6 u (M2-3b).
     grip: 50,
   },
+  turret: { traverseRate: 1.8, spinUpTime: 0.05, snapAngle: degToRad(1), minAimDistance: 1.2 },
 };

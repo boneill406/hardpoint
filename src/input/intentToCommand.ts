@@ -15,19 +15,15 @@ const DIRECT_FULL_TURN_ANGLE = degToRad(30);
  * layer, before the tick, reading (never writing) the player tank's transform:
  * stick aim and `direct` driving are relative to where the tank is and faces.
  *
- * `lastAimPoint` is kept when the intent has no aim (stick released, cursor
- * off the ground), so the turret doesn't snap back.
+ * With no aim (stick released, cursor off the ground) the command has no aim
+ * point, and the stabilised turret holds its heading.
  */
-export function intentToCommand(
-  intent: PlayerIntent,
-  tank: Transform,
-  lastAimPoint: Vec2,
-): VehicleCommand {
+export function intentToCommand(intent: PlayerIntent, tank: Transform): VehicleCommand {
   const { throttle, turn } = driveToThrottleTurn(intent.drive, tank.heading);
   return {
     throttle,
     turn,
-    aimPoint: aimToPoint(intent.aim, tank.position, lastAimPoint),
+    aimPoint: aimToPoint(intent.aim, tank.position),
     firePrimary: intent.firePrimary,
     fireSecondary: intent.fireSecondary,
   };
@@ -53,13 +49,13 @@ function driveToThrottleTurn(
   };
 }
 
-function aimToPoint(aim: AimIntent, tankPosition: Vec2, lastAimPoint: Vec2): Vec2 {
+function aimToPoint(aim: AimIntent, tankPosition: Vec2): Vec2 | undefined {
   switch (aim.kind) {
     case 'point':
       return aim.point;
     case 'direction':
       return tankPosition.add(aim.direction.normalize().scale(STICK_AIM_DISTANCE));
     case 'none':
-      return lastAimPoint;
+      return undefined;
   }
 }

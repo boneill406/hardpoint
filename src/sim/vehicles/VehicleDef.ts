@@ -17,6 +17,19 @@ export interface VehicleDef {
   readonly mass: number;
   readonly hull: HullDef;
   readonly locomotion: LocomotionDef;
+  readonly turret: TurretDef;
+}
+
+/** How the turret follows the aim point (GDD §3, M3 plan D1). */
+export interface TurretDef {
+  /** rad/s, in world terms: the turret is stabilised, so hull turning doesn't add to it. */
+  readonly traverseRate: number;
+  /** Seconds the turret waits before it starts to traverse toward a new aim (whole ticks). */
+  readonly spinUpTime: number;
+  /** Within this angle (rad) of the aim, the turret snaps onto it and stops. */
+  readonly snapAngle: number;
+  /** Aim points closer than this to the tank (u) are ignored, so it doesn't spin under the cursor. */
+  readonly minAimDistance: number;
 }
 
 /** The hull footprint, which is also its collision box (GDD §3). */

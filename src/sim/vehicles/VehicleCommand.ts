@@ -1,4 +1,4 @@
-import { Vec2 } from '../core/Vec2';
+import type { Vec2 } from '../core/Vec2';
 
 /** Identifies a human player (1 in the slice; more with co-op). */
 export type PlayerId = number;
@@ -13,8 +13,11 @@ export interface VehicleCommand {
   readonly throttle: number;
   /** -1 to 1; positive turns toward +x (clockwise seen from above), like heading. */
   readonly turn: number;
-  /** Ground-plane point the turret should face. */
-  readonly aimPoint: Vec2;
+  /**
+   * Ground-plane point the turret should face, or undefined to hold its current
+   * heading (no aim input: an idle player, a released stick, the cursor off the ground).
+   */
+  readonly aimPoint: Vec2 | undefined;
   readonly firePrimary: boolean;
   readonly fireSecondary: boolean;
 }
@@ -23,7 +26,7 @@ export interface VehicleCommand {
 export const IDLE_COMMAND: VehicleCommand = {
   throttle: 0,
   turn: 0,
-  aimPoint: Vec2.ZERO,
+  aimPoint: undefined,
   firePrimary: false,
   fireSecondary: false,
 };
