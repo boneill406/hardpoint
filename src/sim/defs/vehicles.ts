@@ -33,6 +33,7 @@ export const INSURGENT_TANK: VehicleDef = {
     shiftTime: 0.2,
     turnRate: 1.4,
     turnAccelTime: 0.1,
-    grip: 30,
+    // High enough that a full-speed ram shoves it ~1 u sideways, not ~6 u (M2-3b).
+    grip: 50,
   },
 };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Arena } from '../../../src/sim/arena/Arena';
-import type { ArenaDef, BoxDef } from '../../../src/sim/arena/ArenaDef';
+import type { ArenaDef } from '../../../src/sim/arena/ArenaDef';
 import { degToRad } from '../../../src/sim/core/angles';
 import { Simulation } from '../../../src/sim/core/Simulation';
 import type { Transform } from '../../../src/sim/core/Transform';
@@ -13,16 +13,12 @@ import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
 import type { VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import { drive } from '../vehicles/testVehicles';
+import { hullBox, obstacleBox, penetration, seconds, TOLERANCE } from './overlap';
 
 // M2-3a, against real Rapier. The key check runs every tick: how deep does the
 // tank's oriented hull overlap any obstacle? "Treads never visibly enter
 // obstacles" (M2 done-when) means that depth stays below a hair.
 
-/**
- * Overlap we accept from the contact solver (u), under 1% of the hull length and
- * invisible on screen. Measured worst case is ~0.005 (20 s of wild driving).
- */
-const TOLERANCE = 0.02;
 const { length: HULL_LENGTH, width: HULL_WIDTH } = PLAYER_TANK.hull;
 
 /** 20 × 20 room: inner wall faces at x = ±10 and z = ±10. */
@@ -36,50 +32,6 @@ const ROOM: ArenaDef = {
   pillars: [],
   crates: [],
 };
-
-interface Box {
-  readonly center: Vec2;
-  /** Half size along the box's own x (right) and z (forward). */
-  readonly halfX: number;
-  readonly halfZ: number;
-  readonly heading: number;
-}
-
-function hullBox(transform: Transform): Box {
-  return {
-    center: transform.position,
-    halfX: HULL_WIDTH / 2,
-    halfZ: HULL_LENGTH / 2,
-    heading: transform.heading,
-  };
-}
-
-function obstacleBox(box: BoxDef): Box {
-  return { center: box.center, halfX: box.width / 2, halfZ: box.depth / 2, heading: 0 };
-}
-
-/**
- * How far two oriented rectangles overlap: the smallest push that would separate
- * them (separating axis theorem), or 0 if they don't touch.
- */
-function penetration(a: Box, b: Box): number {
-  const axes = [a, b].flatMap((box) => [
-    Vec2.fromHeading(box.heading),
-    Vec2.fromHeading(box.heading + Math.PI / 2),
-  ]);
-  const radius = (box: Box, axis: Vec2): number =>
-    box.halfZ * Math.abs(Vec2.fromHeading(box.heading).dot(axis)) +
-    box.halfX * Math.abs(Vec2.fromHeading(box.heading + Math.PI / 2).dot(axis));
-  let depth = Number.POSITIVE_INFINITY;
-  for (const axis of axes) {
-    const overlap = radius(a, axis) + radius(b, axis) - Math.abs(b.center.sub(a.center).dot(axis));
-    if (overlap <= 0) {
-      return 0;
-    }
-    depth = Math.min(depth, overlap);
-  }
-  return depth;
-}
 
 /** Furthest the hull reaches along a world direction (e.g. +z for "how close to the top wall"). */
 function reach(transform: Transform, direction: Vec2): number {
@@ -133,14 +85,16 @@ async function driveTank(
     simulation.tick(new Map());
     path.push(tank.transform);
     for (const obstacle of obstacles) {
-      worstPenetration = Math.max(worstPenetration, penetration(hullBox(tank.transform), obstacle));
+      worstPenetration = Math.max(
+        worstPenetration,
+        penetration(hullBox(tank.transform, PLAYER_TANK.hull), obstacle),
+      );
     }
   }
   simulation.dispose();
   return { tank, worstPenetration, path };
 }
 
-const seconds = (s: number): number => Math.round(s * 60);
 const UP = new Vec2(0, 1);
 
 describe('static collision (real Rapier)', () => {

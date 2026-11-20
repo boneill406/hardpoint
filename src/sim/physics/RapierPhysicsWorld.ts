@@ -1,9 +1,12 @@
 import RAPIER from '@dimforge/rapier2d-compat';
 import { wrapAngle } from '../core/angles';
+import { TICK_SECONDS } from '../core/time';
 import { Vec2 } from '../core/Vec2';
+import { MAX_VEHICLE_SPEED } from '../vehicles/VehicleDef';
 import type {
   BodyHandle,
   BodyState,
+  ContactReport,
   PhysicsWorld,
   StaticBoxSpec,
   VehicleBodySpec,
@@ -14,12 +17,13 @@ let wasmReady: Promise<void> | undefined;
 
 /**
  * How close (u) two shapes must be before Rapier creates a contact for them.
- * Must exceed the furthest any body moves in one tick (top speed 7 u/s × 1/60 s
- * ≈ 0.12 u): otherwise a tank arriving at full speed has no contact yet on the
- * tick it hits and sinks into the obstacle (≈ 0.06 u measured with Rapier's
- * default 0.02) before being pushed out. Guarded by a test against the defs.
+ * Must exceed the furthest two bodies can close on each other in one tick:
+ * otherwise a tank arriving at speed has no contact yet on the tick it hits
+ * and sinks into the obstacle (≈ 0.06 u measured at 7 u/s with Rapier's
+ * default 0.02) before being pushed out. Sized for two vehicles at the speed
+ * cap meeting head-on, with 25% margin.
  */
-export const CONTACT_PREDICTION_DISTANCE = 0.15;
+export const CONTACT_PREDICTION_DISTANCE = 2 * MAX_VEHICLE_SPEED * TICK_SECONDS * 1.25;
 
 function loadRapier(): Promise<void> {
   wasmReady ??= RAPIER.init();
@@ -54,6 +58,9 @@ function fromRapierAngle(rotation: number): number {
  */
 export class RapierPhysicsWorld implements PhysicsWorld {
   private readonly world: RAPIER.World;
+  /** Rapier reports contact forces here during `step`; drained right after. */
+  private readonly events = new RAPIER.EventQueue(true);
+  private lastContacts: ContactReport[] = [];
 
   private constructor(world: RAPIER.World) {
     this.world = world;
@@ -71,7 +78,20 @@ export class RapierPhysicsWorld implements PhysicsWorld {
 
   step(dt: number): void {
     this.world.timestep = dt;
-    this.world.step();
+    this.world.step(this.events);
+    this.lastContacts = [];
+    this.events.drainContactForceEvents((event) => {
+      this.lastContacts.push({
+        bodyA: this.bodyOfCollider(event.collider1()),
+        bodyB: this.bodyOfCollider(event.collider2()),
+        // Rapier reports force (impulse / dt); the sim wants the impulse of this step.
+        impulse: event.totalForceMagnitude() * dt,
+      });
+    });
+  }
+
+  contacts(): readonly ContactReport[] {
+    return this.lastContacts;
   }
 
   addStaticBox(spec: StaticBoxSpec): BodyHandle {
@@ -98,7 +118,10 @@ export class RapierPhysicsWorld implements PhysicsWorld {
         .setMass(spec.mass)
         .setFriction(0)
         .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
-        .setRestitution(0),
+        .setRestitution(0)
+        // Report every pushing contact (threshold 0); PhysicsBridge decides what's an impact.
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(0),
       body,
     );
     return body.handle;
@@ -129,7 +152,16 @@ export class RapierPhysicsWorld implements PhysicsWorld {
   }
 
   dispose(): void {
+    this.events.free();
     this.world.free();
+  }
+
+  private bodyOfCollider(handle: number): BodyHandle {
+    const body = this.world.getCollider(handle).parent();
+    if (body === null) {
+      throw new Error(`Collider ${handle} has no body`);
+    }
+    return body.handle;
   }
 
   private body(handle: BodyHandle): RAPIER.RigidBody {

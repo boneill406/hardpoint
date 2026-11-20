@@ -13,8 +13,19 @@ import type { BodyHandle, PhysicsWorld } from './PhysicsWorld';
  * Collision shapes come from sim data (vehicle hull, prop size), never from
  * meshes (CLAUDE.md rule 5).
  */
+/** A new vehicle-vs-vehicle impact this tick (`a` < `b`, for a stable order). */
+export interface VehicleImpact {
+  readonly a: EntityId;
+  readonly b: EntityId;
+  readonly impulse: number;
+}
+
 export class PhysicsBridge {
   private readonly bodies = new Map<EntityId, BodyHandle>();
+  /** Reverse of `bodies`, for turning physics contacts back into entities. */
+  private readonly owners = new Map<BodyHandle, Entity>();
+  /** Vehicle pairs that were pushing on each other last tick, as "a:b" keys. */
+  private touching = new Set<string>();
 
   constructor(private readonly physics: PhysicsWorld) {}
 
@@ -28,6 +39,7 @@ export class PhysicsBridge {
           continue;
         }
         this.bodies.set(entity.id, handle);
+        this.owners.set(handle, entity);
       }
       live.add(entity.id);
     }
@@ -35,6 +47,7 @@ export class PhysicsBridge {
       if (!live.has(id)) {
         this.physics.removeBody(handle);
         this.bodies.delete(id);
+        this.owners.delete(handle);
       }
     }
   }
@@ -55,6 +68,31 @@ export class PhysicsBridge {
     for (const vehicle of vehicles) {
       vehicle.syncFromPhysics(this.physics.readBody(this.handleOf(vehicle)));
     }
+  }
+
+  /**
+   * After a step: vehicle pairs that started touching this step. A pair that
+   * keeps shoving isn't reported again until it separates and hits again, so
+   * one collision is one event (one clash effect in M6).
+   */
+  newVehicleImpacts(): VehicleImpact[] {
+    const impacts: VehicleImpact[] = [];
+    const nowTouching = new Set<string>();
+    for (const contact of this.physics.contacts()) {
+      const first = this.owners.get(contact.bodyA);
+      const second = this.owners.get(contact.bodyB);
+      if (!(first instanceof Vehicle) || !(second instanceof Vehicle)) {
+        continue;
+      }
+      const [a, b] = first.id < second.id ? [first.id, second.id] : [second.id, first.id];
+      const key = `${a}:${b}`;
+      if (!this.touching.has(key) && !nowTouching.has(key)) {
+        impacts.push({ a, b, impulse: contact.impulse });
+      }
+      nowTouching.add(key);
+    }
+    this.touching = nowTouching;
+    return impacts;
   }
 
   /** Number of bodies currently tracked (for tests and debugging). */

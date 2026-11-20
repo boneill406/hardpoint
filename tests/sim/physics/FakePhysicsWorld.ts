@@ -3,6 +3,7 @@ import { Vec2 } from '../../../src/sim/core/Vec2';
 import type {
   BodyHandle,
   BodyState,
+  ContactReport,
   PhysicsWorld,
   StaticBoxSpec,
   VehicleBodySpec,
@@ -18,11 +19,16 @@ export class FakePhysicsWorld implements PhysicsWorld {
   readonly staticBoxes: StaticBoxSpec[] = [];
   readonly removed: BodyHandle[] = [];
   disposed = false;
+  /** What `contacts()` reports after the next step; tests set it to simulate collisions. */
+  nextContacts: ContactReport[] = [];
+  private lastContacts: ContactReport[] = [];
   private readonly vehicles = new Map<BodyHandle, BodyState>();
   private nextHandle: BodyHandle = 1;
 
   step(dt: number): void {
     this.steps.push(dt);
+    this.lastContacts = this.nextContacts;
+    this.nextContacts = [];
     for (const [handle, state] of this.vehicles) {
       const { position, heading } = state.transform;
       this.vehicles.set(handle, {
@@ -64,6 +70,10 @@ export class FakePhysicsWorld implements PhysicsWorld {
       throw new Error(`No fake vehicle body ${handle}`);
     }
     return state;
+  }
+
+  contacts(): readonly ContactReport[] {
+    return this.lastContacts;
   }
 
   removeBody(handle: BodyHandle): void {

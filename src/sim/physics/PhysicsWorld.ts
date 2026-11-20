@@ -32,6 +32,14 @@ export interface BodyState {
   readonly angularVelocity: number;
 }
 
+/** Two bodies that pushed on each other during the last step. */
+export interface ContactReport {
+  readonly bodyA: BodyHandle;
+  readonly bodyB: BodyHandle;
+  /** Total contact impulse this step (mass × u/s): how hard they hit or pushed. */
+  readonly impulse: number;
+}
+
 /**
  * The simulation's view of the physics engine. Game rules depend on this
  * interface, never on Rapier directly, so the engine can be swapped or faked in
@@ -57,6 +65,12 @@ export interface PhysicsWorld {
 
   /** Reads a body's transform and velocities, after contacts have been resolved. */
   readBody(handle: BodyHandle): BodyState;
+
+  /**
+   * Contacts involving a vehicle body that pushed during the last `step`
+   * (vehicle against vehicle, wall or prop), in a deterministic order.
+   */
+  contacts(): readonly ContactReport[];
 
   /** Removes a body and its collider (a destroyed crate or tank). */
   removeBody(handle: BodyHandle): void;

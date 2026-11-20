@@ -1,4 +1,12 @@
 /**
+ * Design cap on any vehicle's top speed (u/s), including future chassis and
+ * upgrades (`resolveBuild` must clamp to it). Physics sizes its contact
+ * prediction from it, so nothing can move fast enough to sink into an
+ * obstacle or another tank between ticks (T-66). Raise it deliberately.
+ */
+export const MAX_VEHICLE_SPEED = 12;
+
+/**
  * A vehicle variant as plain data (CLAUDE.md rule 8). The player tank and the
  * insurgent tank are two of these, not two classes; `createVehicle` turns one
  * into a `Vehicle`. Values live in `src/sim/defs/vehicles.ts`.

@@ -3,6 +3,7 @@ import { Simulation, type SimSnapshot } from '../../../src/sim/core/Simulation';
 import { Rng } from '../../../src/sim/core/Rng';
 import { Vec2 } from '../../../src/sim/core/Vec2';
 import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
+import { SLICE_ARENA } from '../../../src/sim/defs/arenas';
 import { INSURGENT_TANK, PLAYER_TANK } from '../../../src/sim/defs/vehicles';
 import { PlayerController } from '../../../src/sim/vehicles/controllers/PlayerController';
 import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
@@ -186,5 +187,51 @@ describe('determinism', () => {
     expect(player?.command).not.toBe(IDLE_COMMAND);
     expect(player?.transform.position.length()).toBeGreaterThan(0);
     run.simulation.dispose();
+  });
+
+  it('the same seed and commands give identical games with wall, prop and tank contacts', async () => {
+    // Six tanks in the slice arena, driven wildly so they hit walls, cover and each other.
+    const crowd = (simulation: Simulation): void => {
+      const starts = [-15, -9, -3, 3, 9, 15].map((x) => new Vec2(x, -19));
+      starts.forEach((position, i) => {
+        simulation.world.add(
+          createVehicle(i % 2 === 0 ? PLAYER_TANK : INSURGENT_TANK, {
+            transform: { position, heading: 0 },
+            faction: 'player',
+            controller: new ScriptedController((tick) => ({
+              ...IDLE_COMMAND,
+              throttle: tick % 300 < 250 ? 1 : -1,
+              turn: Math.sin((tick + i * 40) / 30),
+            })),
+          }),
+        );
+      });
+    };
+    const play = async (): Promise<{ trace: SimSnapshot[]; collisions: number }> => {
+      const simulation = new Simulation({
+        seed: 3,
+        physics: await RapierPhysicsWorld.create(),
+        arena: SLICE_ARENA,
+        populate: crowd,
+      });
+      let collisions = 0;
+      simulation.events.on('VehiclesCollided', () => collisions++);
+      const trace: SimSnapshot[] = [];
+      for (let tick = 1; tick <= TICKS; tick++) {
+        simulation.tick(new Map());
+        simulation.events.flush();
+        if (tick % SNAPSHOT_EVERY === 0) {
+          trace.push(simulation.snapshot());
+        }
+      }
+      simulation.dispose();
+      return { trace, collisions };
+    };
+
+    const first = await play();
+    const second = await play();
+    expect(first.collisions).toBeGreaterThan(0);
+    expect(second.trace).toEqual(first.trace);
+    expect(second.collisions).toBe(first.collisions);
   });
 });

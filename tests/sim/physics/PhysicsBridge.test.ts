@@ -73,4 +73,52 @@ describe('PhysicsBridge', () => {
     const tank = world.add(scriptedTank(drive(1)));
     expect(() => bridge.pushVelocities([tank])).toThrow('call sync first');
   });
+
+  describe('newVehicleImpacts', () => {
+    function twoTanksAndACrate(): {
+      world: World;
+      physics: FakePhysicsWorld;
+      bridge: PhysicsBridge;
+      handles: { tankA: number; tankB: number; crate: number };
+    } {
+      const { world, physics, bridge } = setup();
+      world.add(scriptedTank(drive(0)));
+      world.add(scriptedTank(drive(0), { position: new Vec2(5, 0), heading: 0 }));
+      world.add(crate());
+      bridge.sync(world);
+      // FakePhysicsWorld hands out handles 1, 2, 3 in creation order.
+      return { world, physics, bridge, handles: { tankA: 1, tankB: 2, crate: 3 } };
+    }
+
+    function stepWith(physics: FakePhysicsWorld, contacts: FakePhysicsWorld['nextContacts']): void {
+      physics.nextContacts = contacts;
+      physics.step(1 / 60);
+    }
+
+    it('reports a new tank-vs-tank contact once, with the lower id first', () => {
+      const { physics, bridge, handles } = twoTanksAndACrate();
+      stepWith(physics, [{ bodyA: handles.tankB, bodyB: handles.tankA, impulse: 12 }]);
+      expect(bridge.newVehicleImpacts()).toEqual([{ a: 1, b: 2, impulse: 12 }]);
+
+      stepWith(physics, [{ bodyA: handles.tankA, bodyB: handles.tankB, impulse: 3 }]);
+      expect(bridge.newVehicleImpacts()).toEqual([]);
+    });
+
+    it('reports again after the tanks separate', () => {
+      const { physics, bridge, handles } = twoTanksAndACrate();
+      const hit = { bodyA: handles.tankA, bodyB: handles.tankB, impulse: 5 };
+      stepWith(physics, [hit]);
+      bridge.newVehicleImpacts();
+      stepWith(physics, []);
+      bridge.newVehicleImpacts();
+      stepWith(physics, [hit]);
+      expect(bridge.newVehicleImpacts()).toHaveLength(1);
+    });
+
+    it('ignores a tank touching a prop', () => {
+      const { physics, bridge, handles } = twoTanksAndACrate();
+      stepWith(physics, [{ bodyA: handles.tankA, bodyB: handles.crate, impulse: 9 }]);
+      expect(bridge.newVehicleImpacts()).toEqual([]);
+    });
+  });
 });

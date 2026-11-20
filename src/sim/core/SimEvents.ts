@@ -13,4 +13,10 @@ export interface SimEvents {
   EntitySpawned: { readonly id: EntityId };
   /** An entity was removed from the world at the end of this tick. */
   EntityDestroyed: { readonly id: EntityId };
+  /**
+   * Two vehicles started touching this tick (once per impact, not every tick
+   * they keep pushing). `impulse` (mass × u/s) is how hard; drives the clash
+   * juice in M6 (GDD §8).
+   */
+  VehiclesCollided: { readonly a: EntityId; readonly b: EntityId; readonly impulse: number };
 }
