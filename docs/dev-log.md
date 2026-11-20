@@ -18,6 +18,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | Camera hard-follows the player | T-64 | M2-5: smoothed follow, framing | M2-4 |
+| Playtest the tank view: tread direction (top run flows toward the nose when driving forward, as on a real tank), equal and opposite on pivots, hull pitch strength, barrel poking into walls (T-75) | T-73, T-75 | Brendan's feedback | M2-6 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
@@ -38,6 +39,18 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-19 · M2-6 · Primitive tank view
+**Built:**
+- `render/views/tank/TankModel.ts` (interface: root, hull pitch node, turret, barrel, two `TreadSurface`s) and `PrimitiveTankModel`: the prototype's design (`mantis_breach_v0_1_0/tank.js`, read-only reference) rebuilt in Babylon and slimmed so everything, tracks included, fits the 2.4 × 1.6 footprint (Brendan: keep a 1.5 length-to-width ratio). Tracks with rounded ends and a scrolling tread surface (0.4 u pads, `DynamicTexture`), hull with deck, sloped glacis, engine deck, vents and lamps, stretched hex turret with top plate, hatch and mantlet, barrel with muzzle brake and coaxial MG. Prototype palette for the player; sand and rust for insurgents.
+- `render/views/tank/tankMotion.ts` (pure): `treadSpeeds` (left = forward + ω·d, right = forward − ω·d), `treadBlur` (fade once the pattern moves over ¼ period per frame), `pitchTarget` (≈3° at full acceleration, capped ≈5°), `stepPitchSpring` (3 Hz, damping 0.35: rocks once; sub-stepped so stalls can't explode it).
+- `TankView` replaces `VehicleView`: places the model, accumulates per-track distance from the vehicle's post-physics velocities, pitches the hull from last tick's acceleration. `Vehicle.previousLinearVelocity` (saved with the transform). `EntityView.update` and `Renderer.render` now take the frame's seconds.
+- Player turn rate 2.0 → 2.3 rad/s (Brendan's request; GDD §3).
+- 13 new tests (246 total): `tankMotion` (12, `tests/render/`, T-77) and `previousLinearVelocity`.
+**Prototype findings:** its treads used 0.19 u pads, which at full speed move ~0.6 of a pad per frame, the wagon-wheel effect that looked "way too fast"; `TREAD_SPEED_SCALE = 0.05` hid it but disconnected the treads from the motion. Unequal pivot speeds came from mixing the turn *input* (−1..1) with speeds and from any leftover forward speed. Both handled (T-74; pivot test).
+**Trade-offs:** T-73, T-74, T-75, T-76, T-77.
+**Acceptance:** headless close-ups (a temporary camera-distance build, reverted) show the model and five tread pads per track; normal view shows both factions. Scroll direction, pivot treads and pitch need driving → playtest follow-up.
+**Issues:** first close-up showed one stretched band instead of repeating pads: `DynamicTexture` defaults to clamp addressing, so `vScale` stretched the edge; set wrap mode explicitly.
 
 ## 2026-11-19 · M2-3b · Tank vs. tank
 **Built:**

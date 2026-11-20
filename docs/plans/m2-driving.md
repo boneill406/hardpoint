@@ -38,7 +38,7 @@ Simulation.tick(commands)
 | 3 | M2-4 `ArenaDef` in `defs/arenas.ts`: 46×46 walls, 7 pillars, 14 crates, 3 gates, player start; rendered from the def (clears T-20; grid behind `?grid=on`) | `m2-4-arena` | ✅ |
 | 4 | M2-3a Static collision: `PhysicsWorld` API (static boxes, vehicle bodies, set velocity, read transform), walls and props as colliders, Rapier integrates vehicles (replaces `Vehicle.integrate`), heading ↔ Rapier conversion. Also: `debugParams` warns on unrecognised values | `m2-3a-static-collision` | ✅ |
 | 4b | M2-3b Tank vs. tank: shoving by mass and traction, contact events → `VehiclesCollided { a, b, impulse }`, determinism with contacts | `m2-3b-tank-contacts` | ✅ |
-| 5 | M2-6 Primitive tank view: hull, two tracks, turret and barrel (turret fixed forward until M3), sized to the footprint. **Plus hull pitch** (back on accelerate, forward on brake, rock on gear change), computed in the render layer from the sim's velocity change (pulled forward from M6) | `m2-6-tank-view` | ⬜ |
+| 5 | M2-6 Primitive tank view: hull, two tracks, turret and barrel (turret fixed forward until M3), sized to the footprint. **Plus hull pitch** (back on accelerate, forward on brake, rock on gear change), computed in the render layer from the sim's velocity change (pulled forward from M6) | `m2-6-tank-view` | ✅ |
 | 6 | M2-5 Camera: smoothed, frame-rate-independent follow of the interpolated player; tune and record T-19 values in the GDD | `m2-5-camera` | ⬜ |
 
 _M2-3 was split in two (Brendan, 2026-11-19): collision is the riskiest task in M2, and a smaller change is easier to tune and review, with a playable checkpoint (no driving through obstacles) in between._

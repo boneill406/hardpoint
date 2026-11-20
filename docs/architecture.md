@@ -35,13 +35,13 @@ src/
     arena/       Arena, ArenaDef, Prop (pillars, crates)
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
-  render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, VehicleView, PropView, ArenaView), vfx/, camera/, audio/
+  render/        Renderer, RenderBridge, coords.ts, views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
   ui/            Hud, menus
   app/           main.ts — wiring and the main loop
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
-                 tests/input/ and tests/app/ cover pure mapping/parsing functions
+                 tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
 docs/            this folder
 ```
 
@@ -153,7 +153,7 @@ classDiagram
 - **`RenderBridge`:** maps entity id → view. Each frame it diffs the world's ids against its views (creating and disposing views) rather than listening to spawn/destroy events, so it can't fall out of step; then places each view at `lerp(previousTransform, transform, alpha)` (heading via `lerpAngle`). An entity type with no view throws.
 - **`ArenaView`:** static floor, walls and gate markers, built once from the sim's `Arena` (walls aren't entities). Pillars and crates are `Prop` entities with `PropView`s.
 - **Debug URL params** (`src/app/debugParams.ts`): `?fps=N` caps the render rate to mimic a slow machine; `?interp=off` draws raw ticks to show what interpolation hides; `?pad=` picks the gamepad scheme; `?grid=on` draws a 2 u floor grid.
-- **Views** (`VehicleView`, `ProjectileView`, `PropView`): own Babylon meshes; read-only access to entity state. A future `WalkerView` owns a procedural `LegRig` (2-bone IK, foot planting). The legs are cosmetic, with no simulation impact.
+- **Views** (`TankView`, `ProjectileView`, `PropView`): own Babylon meshes; read-only access to entity state. `TankView` animates what the sim implies but doesn't model, from the vehicle's velocities after physics: treads scroll at their true surface speeds (left = forward + ω·d, right = forward − ω·d; equal and opposite when pivoting) and fade toward a plain track before the pattern could strobe; the hull pitches on a spring from the last tick's acceleration. It draws through the `TankModel` interface (root, hull, turret, barrel, treads), so a glTF model can later replace `PrimitiveTankModel` without changing the view. A future `WalkerView` owns a procedural `LegRig` (2-bone IK, foot planting). The legs are cosmetic, with no simulation impact.
 - **VFX:** Babylon particle systems (presets and Node Particle Editor assets) triggered by events, plus "juice": screen shake, hit-stop, muzzle-flash lights, bloom.
 - **Camera:** high angle between top-down and isometric, smoothed follow.
 
