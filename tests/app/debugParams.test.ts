@@ -14,11 +14,11 @@ describe('readDebugParams', () => {
     });
   });
 
-  it('defaults everything when there is no query string', () => {
+  it('defaults everything when there is no query string (pad: triggers, camera: slice)', () => {
     expect(readDebugParams('')).toEqual({
       fps: undefined,
       interpolate: true,
-      pad: 'tank',
+      pad: 'triggers',
       grid: false,
       cam: 'slice',
       warnings: [],
@@ -27,7 +27,7 @@ describe('readDebugParams', () => {
 
   it('warns about ? used instead of &, and falls back to the default', () => {
     const params = readDebugParams('?pad=triggers?grid=on');
-    expect(params.pad).toBe('tank');
+    expect(params.pad).toBe('triggers');
     expect(params.grid).toBe(false);
     expect(params.warnings).toEqual([
       'Ignoring ?pad=triggers?grid=on: expected tank | direct | triggers (separate parameters with &, not ?)',

@@ -7,7 +7,7 @@ export interface DebugParams {
   readonly fps: number | undefined;
   /** false (`?interp=off`) draws raw ticks, to compare against interpolated motion. */
   readonly interpolate: boolean;
-  /** Gamepad control scheme (`?pad=tank|direct|triggers`), to compare schemes in play. */
+  /** Gamepad control scheme (`?pad=tank|direct|triggers`); `triggers` unless overridden. */
   readonly pad: PadSchemeName;
   /** `?grid=on` draws a 2 u grid on the floor, to judge distances and speed. */
   readonly grid: boolean;
@@ -16,6 +16,9 @@ export interface DebugParams {
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
+
+/** Brendan's pick after trying all three in play (M2 close). */
+const DEFAULT_PAD_SCHEME: PadSchemeName = 'triggers';
 
 const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam'];
 const ON_OFF = ['on', 'off'];
@@ -67,7 +70,7 @@ export function readDebugParams(search: string): DebugParams {
   return {
     fps: fpsValid ? fps : undefined,
     interpolate: params.get('interp') !== 'off',
-    pad: padValid ? pad : 'tank',
+    pad: padValid ? pad : DEFAULT_PAD_SCHEME,
     grid: params.get('grid') === 'on',
     cam: camValid ? cam : 'slice',
     warnings,

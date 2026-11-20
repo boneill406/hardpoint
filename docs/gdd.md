@@ -58,12 +58,14 @@ Escalation is **count only**. All enemies use the same definition.
 
 | Action | Keyboard + mouse | Xbox controller |
 |---|---|---|
-| Throttle / reverse | W / S | Left stick Y |
+| Throttle / reverse | W / S | RT / LT (analog) |
 | Turn hull | A / D | Left stick X |
 | Aim turret | Mouse (ground point) | Right stick |
-| Fire cannon (primary) | LMB / Space | RT |
-| Fire machine gun (secondary) | RMB / F (hold) | LT (hold) |
+| Fire cannon (primary) | LMB / Space | RB |
+| Fire machine gun (secondary) | RMB / F (hold) | LB (hold) |
 | Pause | Esc | Start |
+
+_Xbox: the `triggers` scheme, chosen by Brendan in play over `tank` (left stick Y throttle, X turn; fire on the triggers) and `direct` (left stick points where to go). The others stay available as `?pad=tank` / `?pad=direct`._
 
 ## 4. Weapons and damage
 

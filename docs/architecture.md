@@ -166,7 +166,7 @@ GamepadDevice ───────┼ InputManager.read(now) ┤   resolves sti
 ```
 - **Bindings are data** (`input/bindings.ts`): keys by `KeyboardEvent.code`, pad buttons and axes by standard-mapping index. Changing a binding is a one-line edit.
 - `KeyboardMouseDevice`: WASD/arrows hull-relative driving, mouse aim (`Renderer.screenToGround`: camera ray ∩ floor), LMB/Space = primary, RMB/F = secondary. Releases all keys on window blur.
-- `GamepadDevice` (Xbox, standard mapping), scheme chosen with `?pad=`: `tank` (default, GDD: left stick Y throttle, X turn), `direct` (left stick points where to go), `triggers` (RT/LT drive, fire on bumpers). Right stick aims. Radial deadzone 0.15. Browsers expose a pad only after a button press.
+- `GamepadDevice` (Xbox, standard mapping), scheme chosen with `?pad=`: `triggers` (default, GDD §3: RT/LT drive, left stick X turns, fire on bumpers), `tank` (left stick Y throttle, X turn), `direct` (left stick points where to go). Right stick aims. Radial deadzone 0.15. Browsers expose a pad only after a button press.
 - Devices output the same `PlayerIntent`; the pure mapping functions (`keyboardIntent`, `gamepadIntent`, `intentToCommand`) are unit-tested in `tests/input/`. The intent is sampled once per frame; every tick in that frame uses the same command.
 - `PlayerController` returns its player's command from `tick(commands)`, or idle if there is none, so local input, replays and (later) network input are indistinguishable to the sim.
 

@@ -39,6 +39,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M2 · Milestone complete
+**Changed:** default gamepad scheme `tank` → `triggers` (Brendan's pick: RT/LT drive, left stick X turns, RB/LB fire); GDD §3 controls and architecture §7 updated. README status.
+**M2 done-when:** drive with keyboard and Xbox controller ✅ (Brendan) · treads never visibly enter obstacles ✅ (tests: worst overlap ~0.005 u; Brendan: only the barrel clips, planned as M3-7) · locomotion unit-tested ✅ (`TrackedLocomotion`, gearbox, defs) · CI green ✅. 246 tests.
+**Carried into M3:** M3-7 barrel retraction (T-75); `VehicleSnapshot` gains health, heat and reload state; input latching for fire buttons (T-56); `VehiclesCollided` consumed by M6 juice; circling insurgent replaced in M4 (T-49).
+
 ## 2026-11-20 · M2-5 follow-up · Camera framing fixed; slice camera chosen
 **Why:** Brendan picked `?cam=slice` (narrowly over `proto`) and noticed the bottom-left and bottom-right corners never came into view and the top wall sat slightly outside it.
 **Cause:** a tilted camera sees a trapezoid (at 16:10: ±17 u wide at the bottom edge, ±28 u at the top). The clamp used the widest part, which is wider than the arena (±24 u), so it centred the camera horizontally and it never moved sideways; and it clamped where the screen edge met the *floor*, while 2 u tall walls show their top edge further up the screen.

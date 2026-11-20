@@ -1,6 +1,6 @@
 # M2 Plan — Driving
 
-_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M2. Status: **in progress** (update the task table as work lands)._
+_Approved by Brendan 2026-11-19. Milestone definition: [`milestones.md`](../milestones.md) § M2. Status: **done** 2026-11-20 (all tasks merged; done-when confirmed by Brendan in play)._
 
 **Goal:** driving around the arena feels at least as good as the prototype.
 **Done when:** you can drive with keyboard and Xbox controller; treads never visibly enter obstacles; locomotion is unit-tested.
