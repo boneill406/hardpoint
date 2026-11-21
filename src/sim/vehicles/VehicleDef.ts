@@ -20,29 +20,38 @@ export interface VehicleDef {
   readonly hull: HullDef;
   readonly locomotion: LocomotionDef;
   readonly turret: TurretDef;
-  /** Guns on the turret, in the order they are updated and fire. */
-  readonly weapons: readonly WeaponMountDef[];
+  /** Where weapons can attach, in the order they are updated and fire (M3 plan D14). */
+  readonly hardpoints: readonly HardpointDef[];
+  /** Which weapon is fitted to which hardpoint (by id). Hardpoints may be left empty. */
+  readonly loadout: Readonly<Record<string, WeaponDef>>;
 }
 
 /** Which trigger fires a weapon: primary (cannon) or secondary (machine gun), GDD §3. */
 export type WeaponSlot = 'primary' | 'secondary';
 
-/** A weapon fitted to the turret, with its muzzle position relative to the turret pivot. */
-export interface WeaponMountDef {
-  readonly slot: WeaponSlot;
-  readonly weapon: WeaponDef;
-  readonly muzzle: {
-    /** Along the turret's facing (u). */
+/** Weapons only fit hardpoints of their size (validated when a vehicle is built). */
+export type HardpointSize = 'small' | 'large';
+
+/**
+ * A place on the chassis where a weapon can be fitted (D14). The weapon
+ * brings its own barrel; its muzzle is this position plus the barrel's
+ * length, so swapping weapons never means re-entering muzzle numbers.
+ */
+export interface HardpointDef {
+  readonly id: string;
+  /** Turret hardpoints turn with the aim; hull hardpoints face along the hull. */
+  readonly on: 'turret' | 'hull';
+  /** Where the barrel starts (u), relative to the turret pivot or the hull centre. */
+  readonly at: {
+    /** Along the turret's (or hull's) facing. */
     readonly forward: number;
-    /** To the turret's right (u); negative is left. */
+    /** To its right; negative is left. */
     readonly right: number;
   };
-  /**
-   * Half the barrel's visible width at the muzzle (u). The pivot→muzzle
-   * clearance check sweeps a circle this size, so the drawn barrel (brake
-   * included) stops at obstacles, not just the shell (M3-7).
-   */
-  readonly clearanceRadius: number;
+  readonly size: HardpointSize;
+  readonly trigger: WeaponSlot;
+  /** Barrel height above the frame's origin (turret pivot or hull centre), u. Cosmetic: the sim is planar. */
+  readonly height: number;
 }
 
 /** How the turret follows the aim point (GDD §3, M3 plan D1). */

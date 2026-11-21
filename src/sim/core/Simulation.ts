@@ -90,7 +90,8 @@ export class Simulation {
       for (const shot of vehicle.fireWeapons(TICK_SECONDS, this.rng)) {
         this.events.emit('ShotFired', {
           shooter: vehicle.id,
-          slot: shot.mount.def.slot,
+          slot: shot.mount.hardpoint.trigger,
+          hardpoint: shot.mount.hardpoint.id,
           weapon: shot.mount.weapon.def.name,
           origin: shot.origin,
           heading: shot.heading,
@@ -122,18 +123,17 @@ export class Simulation {
   }
 
   /**
-   * Tick phase 5b (M3-7): for each gun, sweep a barrel-wide circle from the
-   * turret pivot to the muzzle, ignoring the vehicle's own hull. Where it is
+   * Tick phase 5b (M3-7): for each gun, sweep a barrel-wide circle from its
+   * hardpoint frame's origin to the muzzle, ignoring the vehicle's own body. Where it is
    * blocked, shots start at the obstacle and the view retracts the barrel.
    */
   private checkMuzzleClearance(vehicle: Vehicle): void {
     const ignore = this.bodies.bodyOf(vehicle.id);
-    const pivot = vehicle.turretPivot();
     for (const mount of vehicle.mounts) {
       const hit = this.physics.castCircle(
-        pivot,
+        vehicle.mountOrigin(mount),
         vehicle.muzzlePosition(mount),
-        mount.def.clearanceRadius,
+        mount.weapon.def.barrel.radius,
         ignore,
       );
       mount.setClearance(hit?.fraction ?? 1);

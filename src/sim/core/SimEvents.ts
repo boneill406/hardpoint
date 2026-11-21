@@ -25,6 +25,7 @@ export interface SimEvents {
   ShotFired: {
     readonly shooter: EntityId;
     readonly slot: WeaponSlot;
+    readonly hardpoint: string;
     readonly weapon: string;
     readonly origin: Vec2;
     readonly heading: number;

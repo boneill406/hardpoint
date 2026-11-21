@@ -5,6 +5,14 @@
  */
 export interface WeaponDef {
   readonly name: string;
+  /** Fits only hardpoints of this size (M3 plan D14). */
+  readonly size: 'small' | 'large';
+  readonly barrel: BarrelDef;
+  /**
+   * Muzzle offsets across the barrel's end (u, to the right). One for a single
+   * barrel; a twin gun lists two and alternates between them shot by shot.
+   */
+  readonly muzzles: readonly { readonly right: number }[];
   /** Base damage per hit, before the target's armor multiplier. */
   readonly damage: number;
   readonly projectile: {
@@ -23,6 +31,18 @@ export interface WeaponDef {
   readonly breaksCover: boolean;
   /** Every limiter must allow a shot (architecture.md §4). At least one. */
   readonly limiters: readonly LimiterDef[];
+}
+
+/** The physical gun barrel: what collides (M3-8b) and what the view draws. */
+export interface BarrelDef {
+  /** From the hardpoint to the muzzle (u). */
+  readonly length: number;
+  /** Half the barrel's widest point, muzzle brake included (u): its collision and clearance radius. */
+  readonly radius: number;
+  /** How the render layer draws it. */
+  readonly look: 'tube-brake' | 'thin-tube';
+  /** Whether the barrel is solid against walls, cover and tanks (M3-8b). */
+  readonly collides: boolean;
 }
 
 export type LimiterDef = ReloadLimiterDef | HeatLimiterDef;

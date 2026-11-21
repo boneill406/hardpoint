@@ -50,7 +50,10 @@ export class Vehicle extends Entity {
   ) {
     super(transform);
     this.turret = new Turret(def.turret, transform.heading);
-    this.mounts = def.weapons.map((mount) => new WeaponMount(mount));
+    this.mounts = def.hardpoints.flatMap((hardpoint) => {
+      const weapon = def.loadout[hardpoint.id];
+      return weapon === undefined ? [] : [new WeaponMount(hardpoint, weapon)];
+    });
   }
 
   /** World-space velocity, u/s. */
@@ -138,13 +141,13 @@ export class Vehicle extends Entity {
    * Tick phase 6, after the turret has aimed: each weapon's limiters advance,
    * and every weapon whose trigger is held and whose limiters allow it fires.
    * Spread comes from the simulation's `Rng`, in a fixed order (vehicles in
-   * world order, mounts in def order), so it replays identically.
+   * world order, hardpoints in def order), so it replays identically.
    */
   fireWeapons(dt: number, rng: Rng): Shot[] {
     const shots: Shot[] = [];
     for (const mount of this.mounts) {
       const held =
-        mount.def.slot === 'primary'
+        mount.hardpoint.trigger === 'primary'
           ? this.activeCommand.firePrimary
           : this.activeCommand.fireSecondary;
       mount.weapon.update(dt, held);
@@ -154,37 +157,46 @@ export class Vehicle extends Entity {
           origin: this.clearMuzzlePosition(mount),
           heading: this.shotHeading(mount, rng),
         });
+        mount.advanceMuzzle();
       }
     }
     return shots;
   }
 
-  /** Where `mount`'s muzzle is now: turret pivot on the hull, then the muzzle offset along the turret. */
+  /** Where a hardpoint's frame starts: the turret pivot for turret hardpoints, the hull centre for hull ones. */
+  mountOrigin(mount: WeaponMount): Vec2 {
+    return mount.hardpoint.on === 'turret' ? this.turretPivot() : this.transform.position;
+  }
+
+  /** Which way a hardpoint faces: with the turret's aim, or straight along the hull. */
+  mountFacing(mount: WeaponMount): number {
+    return mount.hardpoint.on === 'turret' ? this.turret.heading : this.transform.heading;
+  }
+
+  /** Where `mount`'s (next) muzzle is now: its frame origin plus the muzzle offset along its facing. */
   muzzlePosition(mount: WeaponMount): Vec2 {
-    const pivot = this.turretPivot();
-    const facing = this.turret.heading;
-    const { forward, right } = mount.def.muzzle;
-    return pivot
+    const facing = this.mountFacing(mount);
+    const { forward, right } = mount.muzzleOffset;
+    return this.mountOrigin(mount)
       .add(Vec2.fromHeading(facing).scale(forward))
       .add(Vec2.fromHeading(facing + Math.PI / 2).scale(right));
   }
 
   /**
    * Where a shot from `mount` actually starts: the muzzle, or, if the barrel
-   * is pressed against something, the point where the pivot→muzzle line meets
-   * it, so the shot hits that obstacle at once instead of starting inside or
-   * behind it (M3-7).
+   * is pressed against something, the point where the origin→muzzle line
+   * meets it, so the shot hits that obstacle at once instead of starting
+   * inside or behind it (M3-7).
    */
   clearMuzzlePosition(mount: WeaponMount): Vec2 {
-    const pivot = this.turretPivot();
-    return pivot.lerp(this.muzzlePosition(mount), mount.clearance);
+    return this.mountOrigin(mount).lerp(this.muzzlePosition(mount), mount.clearance);
   }
 
   private shotHeading(mount: WeaponMount, rng: Rng): number {
     const { spread } = mount.weapon.def;
     // No draw for accurate weapons, so adding the cannon doesn't shift everyone else's spread.
     const offset = spread > 0 ? rng.range(-spread / 2, spread / 2) : 0;
-    return wrapAngle(this.turret.heading + offset);
+    return wrapAngle(this.mountFacing(mount) + offset);
   }
 
   override snapshot(): VehicleSnapshot {
@@ -195,10 +207,7 @@ export class Vehicle extends Entity {
       angularVelocity: this.angular,
       locomotion: this.locomotion.snapshot(),
       turret: this.turret.snapshot(),
-      weapons: this.mounts.map((mount) => [
-        ...mount.weapon.snapshot(),
-        { clearance: mount.clearance },
-      ]),
+      weapons: this.mounts.map((mount) => mount.snapshot()),
     };
   }
 }

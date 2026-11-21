@@ -1,5 +1,4 @@
 import type { TransformNode } from '@babylonjs/core';
-import type { WeaponSlot } from '../../../sim/vehicles/VehicleDef';
 
 /** The visible top run of one track: a repeating pattern that scrolls as the track turns. */
 export interface TreadSurface {
@@ -25,12 +24,12 @@ export interface TankModel {
   /** Rotates to aim (M3). */
   readonly turret: TransformNode;
   /**
-   * One node per gun, origin at its muzzle tip (+z forward along the turret);
+   * One node per fitted hardpoint (by id), origin at its muzzle tip (+z forward along the turret);
    * the barrel geometry extends backwards from it, so the drawn tip is the
    * sim's muzzle. Barrels are rigid (Brendan); sliding a node back is for
    * firing recoil (M6).
    */
-  readonly guns: Partial<Record<WeaponSlot, TransformNode>>;
+  readonly guns: Readonly<Record<string, TransformNode>>;
   readonly leftTread: TreadSurface;
   readonly rightTread: TreadSurface;
   /** Half the distance between the track centrelines (u), for tread speeds. */

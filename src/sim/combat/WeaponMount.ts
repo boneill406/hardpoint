@@ -1,6 +1,7 @@
 import type { Vec2 } from '../core/Vec2';
-import type { WeaponMountDef } from '../vehicles/VehicleDef';
+import type { HardpointDef } from '../vehicles/VehicleDef';
 import { Weapon } from './Weapon';
+import type { WeaponDef } from './WeaponDef';
 
 /** A shot a vehicle fired this tick: where it leaves the muzzle and which way it goes. */
 export interface Shot {
@@ -12,24 +13,44 @@ export interface Shot {
 }
 
 /**
- * A weapon fixed to a vehicle's turret (architecture.md §3): which trigger
- * fires it and where its muzzle sits relative to the turret pivot. The muzzle
- * offset is the single source of truth for where shells start (and, from
- * M3-7, for how long the barrel is drawn).
+ * A weapon fitted to a hardpoint (architecture.md §3, M3 plan D14). The
+ * hardpoint says where and which trigger; the weapon brings its barrel and
+ * muzzles. Together they give the muzzle position: the single source of truth
+ * for where shells start, what the barrel collides with, and how long it is
+ * drawn.
  */
 export class WeaponMount {
   readonly weapon: Weapon;
   private clear = 1;
   private previousClear = 1;
+  private muzzleIndex = 0;
 
-  constructor(readonly def: WeaponMountDef) {
-    this.weapon = new Weapon(def.weapon);
+  constructor(
+    readonly hardpoint: HardpointDef,
+    weaponDef: WeaponDef,
+  ) {
+    this.weapon = new Weapon(weaponDef);
   }
 
   /**
-   * 0..1: how much of the pivot→muzzle line is unobstructed this tick (1 =
-   * the barrel is clear). Shots start at the clear point, and the view slides
-   * the barrel back by the blocked share (M3-7).
+   * The muzzle the next shot leaves from, in the hardpoint's frame (forward
+   * along the turret or hull, right across it). Twin guns alternate muzzles.
+   */
+  get muzzleOffset(): { readonly forward: number; readonly right: number } {
+    const { at } = this.hardpoint;
+    const { barrel, muzzles } = this.weapon.def;
+    const muzzle = muzzles[this.muzzleIndex % muzzles.length];
+    return { forward: at.forward + barrel.length, right: at.right + (muzzle?.right ?? 0) };
+  }
+
+  /** After a shot: the next one leaves from the next muzzle (twin guns). */
+  advanceMuzzle(): void {
+    this.muzzleIndex = (this.muzzleIndex + 1) % this.weapon.def.muzzles.length;
+  }
+
+  /**
+   * 0..1: how much of the line from the frame's origin to the muzzle is
+   * unobstructed this tick (1 = clear). Shots start at the clear point (M3-7).
    */
   get clearance(): number {
     return this.clear;
@@ -47,5 +68,9 @@ export class WeaponMount {
   /** Called with the vehicle's `saveTransform` at the start of each tick. */
   saveClearance(): void {
     this.previousClear = this.clear;
+  }
+
+  snapshot(): Readonly<Record<string, number>>[] {
+    return [...this.weapon.snapshot(), { clearance: this.clear, muzzle: this.muzzleIndex }];
   }
 }

@@ -31,7 +31,8 @@ export const TEST_TANK: VehicleDef = {
     minAimDistance: 1,
     pivotForward: 0,
   },
-  weapons: [],
+  hardpoints: [],
+  loadout: {},
 };
 
 export const AT_ORIGIN: Transform = { position: Vec2.ZERO, heading: 0 };

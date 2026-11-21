@@ -8,6 +8,9 @@ import type { WeaponDef } from '../combat/WeaponDef';
 /** Heavy and deliberate: breaks cover; one shot per reload. */
 export const CANNON: WeaponDef = {
   name: 'Cannon',
+  size: 'large',
+  barrel: { length: 1.05, radius: 0.1, look: 'tube-brake', collides: true },
+  muzzles: [{ right: 0 }],
   damage: 50,
   // 90 u/s: faster than the prototype's 68 (Brendan: felt slow), still slower than the MG.
   projectile: { speed: 90, radius: 0.07, lifetime: 2, look: 'shell' },
@@ -19,6 +22,9 @@ export const CANNON: WeaponDef = {
 /** Fast chip damage: 12 rounds/s (raised from 10 in play), overheats after 30 (2.5 s), re-arms at 30% heat. */
 export const MACHINE_GUN: WeaponDef = {
   name: 'Machine gun',
+  size: 'small',
+  barrel: { length: 0.47, radius: 0.05, look: 'thin-tube', collides: true },
+  muzzles: [{ right: 0 }],
   damage: 3,
   projectile: { speed: 100, radius: 0.04, lifetime: 2, look: 'tracer' },
   spread: degToRad(1),
@@ -32,6 +38,9 @@ export const MACHINE_GUN: WeaponDef = {
 /** The insurgent tank's gun: weaker and less accurate than the player's (GDD §5). */
 export const INSURGENT_CANNON: WeaponDef = {
   name: 'Insurgent cannon',
+  size: 'large',
+  barrel: { length: 1.05, radius: 0.1, look: 'tube-brake', collides: true },
+  muzzles: [{ right: 0 }],
   damage: 12,
   projectile: { speed: 70, radius: 0.07, lifetime: 2, look: 'shell' },
   spread: degToRad(3),

@@ -81,7 +81,7 @@ async function run(tanks: Tank[], ticks: number): Promise<Run> {
 const FIRE: VehicleCommand = { ...IDLE_COMMAND, firePrimary: true, fireSecondary: true };
 
 function mountOf(vehicle: Vehicle, slot: 'primary' | 'secondary'): Vehicle['mounts'][number] {
-  const mount = vehicle.mounts.find((candidate) => candidate.def.slot === slot);
+  const mount = vehicle.mounts.find((candidate) => candidate.hardpoint.trigger === slot);
   if (mount === undefined) {
     throw new Error(`no ${slot} mount`);
   }
@@ -106,7 +106,8 @@ describe('muzzle clearance', () => {
     );
     const cannon = mountOf(shooter, 'primary');
     const pivotZ = shooter.turretPivot().z;
-    const expected = (WALL - cannon.def.clearanceRadius - pivotZ) / cannon.def.muzzle.forward;
+    const expected =
+      (WALL - cannon.weapon.def.barrel.radius - pivotZ) / cannon.muzzleOffset.forward;
     expect(cannon.clearance).toBeCloseTo(expected, 3);
     expect(cannon.clearance).toBeLessThan(1);
   });
