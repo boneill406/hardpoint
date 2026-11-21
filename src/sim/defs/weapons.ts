@@ -9,7 +9,8 @@ import type { WeaponDef } from '../combat/WeaponDef';
 export const CANNON: WeaponDef = {
   name: 'Cannon',
   damage: 50,
-  projectile: { speed: 70, radius: 0.07, lifetime: 2, look: 'shell' },
+  // 90 u/s: faster than the prototype's 68 (Brendan: felt slow), still slower than the MG.
+  projectile: { speed: 90, radius: 0.07, lifetime: 2, look: 'shell' },
   spread: 0,
   breaksCover: true,
   limiters: [{ kind: 'reload', seconds: 1.5 }],

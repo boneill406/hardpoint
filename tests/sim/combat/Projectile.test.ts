@@ -90,7 +90,7 @@ describe('Projectile', () => {
     for (let i = 0; i < 30; i++) {
       shell.step(1 / 60, () => undefined);
     }
-    expect(shell.transform.position.z).toBeCloseTo(1.6 + 35, 9);
+    expect(shell.transform.position.z).toBeCloseTo(1.6 + CANNON.projectile.speed / 2, 9);
     expect(shell.transform.position.x).toBeCloseTo(0, 12);
   });
 
@@ -183,7 +183,15 @@ describe('Projectile after a hit', () => {
       shell.saveTransform();
       kinds.push(shell.step(1 / 60, wallAt).kind);
     }
-    expect(kinds).toEqual(['flying', 'flying', 'flying', 'flying', 'hit', 'spent']);
+    // Flies until the step that would carry its front past z = 5, hits there, then is spent.
+    const step = CANNON.projectile.speed / 60;
+    const flyingTicks = Math.floor((5 - 0.07) / step);
+    expect(kinds).toEqual([
+      ...Array<string>(flyingTicks).fill('flying'),
+      'hit',
+      'spent',
+      ...Array<string>(4 - flyingTicks).fill('spent'),
+    ]);
     // Parked: the tick after the hit, previous and current are both the impact position.
     expect(shell.transform.position.z).toBeCloseTo(5 - 0.07, 9);
     expect(shell.previousTransform.position.z).toBeCloseTo(5 - 0.07, 9);
