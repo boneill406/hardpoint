@@ -9,13 +9,16 @@ import type { EntityView } from './EntityView';
 
 type Look = WeaponDef['projectile']['look'];
 
-/** Height (u) shots fly at: the barrel's height on the primitive tank. Cosmetic; the sim is planar. */
-const FLIGHT_HEIGHT = 0.87;
+/**
+ * Height (u) each kind of shot flies at: its barrel's height on the primitive
+ * tank (cannon 0.87, the lower coaxial MG 0.82). Cosmetic; the sim is planar.
+ */
+const FLIGHT_HEIGHT: Readonly<Record<Look, number>> = { shell: 0.87, tracer: 0.82 };
 
 /** Shell proportions after the prototype's (body, pointed nose, driving band), in u. */
 const SHELL = { diameter: 0.12, body: 0.24, nose: 0.12, band: 0.04 };
 /** The MG tracer: a thin self-lit rod. */
-const TRACER = { width: 0.05, length: 0.4 };
+const TRACER = { width: 0.035, length: 0.3 };
 
 /**
  * Motion streak: a fading trail covering how far the shot moved on screen
@@ -84,8 +87,10 @@ export class ProjectileView implements EntityView {
   private readonly streak: Mesh;
   private readonly materials: Materials;
   private readonly look: Look;
-  /** Where the tip was drawn last frame; the streak covers the gap. */
-  private lastTip: Vec2 | undefined;
+  /** Where the tip was drawn last frame; starts at the muzzle so a new shot has a streak at once. */
+  private lastTip: Vec2;
+  /** The tracer's rod, clipped so it never reaches back past the muzzle. */
+  private rod: Mesh | undefined;
 
   constructor(
     scene: Scene,
@@ -96,6 +101,7 @@ export class ProjectileView implements EntityView {
     this.root = new TransformNode(name, scene);
     const look = projectile.weapon.projectile.look;
     this.look = look;
+    this.lastTip = this.tipAt(projectile.origin, projectile.transform.heading);
     if (look === 'shell') {
       this.buildShell(scene, name);
     } else {
@@ -113,12 +119,27 @@ export class ProjectileView implements EntityView {
   }
 
   update(transform: Transform): void {
-    const { position, heading } = transform;
-    const forward = Vec2.fromHeading(heading);
-    const tip = position.add(forward.scale(this.projectile.weapon.projectile.radius));
-    this.root.position = toBabylonPosition(tip, FLIGHT_HEIGHT);
-    this.root.rotation.y = toBabylonRotationY(heading);
-    this.updateStreak(tip);
+    const tip = this.tipAt(transform.position, transform.heading);
+    this.root.position = toBabylonPosition(tip, FLIGHT_HEIGHT[this.look]);
+    this.root.rotation.y = toBabylonRotationY(transform.heading);
+    const sinceMuzzle = tip.distanceTo(this.tipAt(this.projectile.origin, transform.heading));
+    this.clipRod(sinceMuzzle);
+    this.updateStreak(tip, sinceMuzzle);
+  }
+
+  /** The front of the sim's collision circle: where the shot's tip is drawn. */
+  private tipAt(centre: Vec2, heading: number): Vec2 {
+    return centre.add(Vec2.fromHeading(heading).scale(this.projectile.weapon.projectile.radius));
+  }
+
+  /** A tracer just out of the barrel shows only the part that has left it, not a rod over the turret. */
+  private clipRod(sinceMuzzle: number): void {
+    if (this.rod === undefined) {
+      return;
+    }
+    const length = Math.max(0.001, Math.min(TRACER.length, sinceMuzzle));
+    this.rod.scaling.z = length / TRACER.length;
+    this.rod.position.z = -length / 2;
   }
 
   dispose(): void {
@@ -132,12 +153,11 @@ export class ProjectileView implements EntityView {
    * zero velocity while the view still carries it the last stretch to the
    * surface). Never reaches back past the muzzle.
    */
-  private updateStreak(tip: Vec2): void {
+  private updateStreak(tip: Vec2, sinceMuzzle: number): void {
     const { scale, maxLength } = STREAK[this.look];
-    const moved = this.lastTip === undefined ? 0 : tip.distanceTo(this.lastTip);
+    const moved = tip.distanceTo(this.lastTip);
     this.lastTip = tip;
-    const travelled = tip.distanceTo(this.projectile.origin);
-    const length = Math.min(moved * scale, maxLength, travelled);
+    const length = Math.min(moved * scale, maxLength, sinceMuzzle);
     this.streak.isVisible = length > 0.01;
     this.streak.scaling.z = Math.max(length, 0.01);
     this.streak.position.z = -length / 2;
@@ -180,6 +200,7 @@ export class ProjectileView implements EntityView {
     rod.isPickable = false;
     rod.parent = this.root;
     rod.position.z = -TRACER.length / 2;
+    this.rod = rod;
   }
 
   /** Lays a cylinder (built along y) along the flight axis (+z), centred at `z`. */

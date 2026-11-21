@@ -319,6 +319,17 @@ export class PrimitiveTankModel implements TankModel {
     coax.parent = this.barrel;
     coax.rotation.x = Math.PI / 2;
     coax.position.set(-0.2, -0.05, 0.1);
+
+    // A small muzzle brake on the coax tip (Brendan's request), like the cannon's but round.
+    const coaxBrake = MeshBuilder.CreateCylinder(
+      `${this.name}-coax-brake`,
+      { diameter: 0.1, height: 0.07, tessellation: 10 },
+      this.scene,
+    );
+    coaxBrake.material = this.material('armor-dark', palette.armorDark);
+    coaxBrake.parent = this.barrel;
+    coaxBrake.rotation.x = Math.PI / 2;
+    coaxBrake.position.set(-0.2, -0.05, 0.1 + 0.2 - 0.035);
   }
 
   private box(
