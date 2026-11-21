@@ -8,6 +8,7 @@ import { Vec2 } from '../../../src/sim/core/Vec2';
 import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
 import { INSURGENT_TANK, PLAYER_TANK } from '../../../src/sim/defs/vehicles';
 import { CANNON } from '../../../src/sim/defs/weapons';
+import type { CastHit } from '../../../src/sim/physics/PhysicsWorld';
 import { RapierPhysicsWorld } from '../../../src/sim/physics/RapierPhysicsWorld';
 import { IDLE_COMMAND, type VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
 import type { VehicleDef } from '../../../src/sim/vehicles/VehicleDef';
@@ -161,6 +162,38 @@ describe('Projectile', () => {
     const { shots, impacts, ids } = await range(room(), [shooter(MG)], seconds(3.5));
     expect(shots).toBe(30);
     expect(impacts).toHaveLength(30);
+    expect(ids).toEqual([1]);
+  });
+});
+
+describe('Projectile after a hit', () => {
+  it('stays parked at the impact point for one tick, so it is drawn reaching the surface, then goes', () => {
+    const shell = new Projectile(Vec2.ZERO, 0, CANNON, 1);
+    const wallAt = (from: Vec2, to: Vec2): CastHit | undefined =>
+      to.z >= 5
+        ? {
+            body: 9,
+            point: new Vec2(0, 5),
+            normal: new Vec2(0, -1),
+            fraction: (5 - 0.07 - from.z) / (to.z - from.z),
+          }
+        : undefined;
+    const kinds: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      shell.saveTransform();
+      kinds.push(shell.step(1 / 60, wallAt).kind);
+    }
+    expect(kinds).toEqual(['flying', 'flying', 'flying', 'flying', 'hit', 'spent']);
+    // Parked: the tick after the hit, previous and current are both the impact position.
+    expect(shell.transform.position.z).toBeCloseTo(5 - 0.07, 9);
+    expect(shell.previousTransform.position.z).toBeCloseTo(5 - 0.07, 9);
+    expect(shell.velocity.length()).toBe(0);
+    expect(shell.hasImpacted).toBe(true);
+  });
+
+  it('the impact event fires once, and the shot is gone the tick after', async () => {
+    const { impacts, ids } = await range(room(), [shooter(CANNON_ONCE)], seconds(1));
+    expect(impacts).toHaveLength(1);
     expect(ids).toEqual([1]);
   });
 });

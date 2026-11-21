@@ -123,7 +123,7 @@ export class Simulation {
   /**
    * Tick phase 7: every projectile (including those fired this tick, so they
    * leave the muzzle at once) sweeps forward. A hit stops it at the impact
-   * point and removes it at the end of the tick.
+   * point; it is removed the following tick (see `Projectile.step`).
    */
   private advanceProjectiles(): void {
     for (const projectile of this.world.ofType(Projectile)) {
@@ -135,6 +135,7 @@ export class Simulation {
         continue;
       }
       if (result.kind === 'hit') {
+        // Stays (parked at the impact point) until next tick, so it is drawn reaching the surface.
         this.events.emit('ProjectileImpact', {
           projectile: projectile.id,
           weapon: projectile.weapon.name,
@@ -142,6 +143,7 @@ export class Simulation {
           point: result.hit.point,
           normal: result.hit.normal,
         });
+        continue;
       }
       this.world.remove(projectile.id);
     }
