@@ -34,7 +34,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | Turret traverse | 4.1 rad/s | **4.0 rad/s** |
 | Turret spin-up | 0.07 s | **0.05 s** (3 ticks) |
 | Turret snap angle | 0.02 rad | **1°** |
-| Shell speed (cannon / MG) | 68 / 105 u/s | **70 / 100 u/s** |
+| Shell speed (cannon / MG) | 68 / 105 u/s | **70 / 100 u/s** (cannon raised to 90 in play) |
 | Shell radius (cannon / MG) | 0.068 / 0.035 | **0.07 / 0.04** |
 | Insurgent cannon spread | "slight" | **3° cone** |
 

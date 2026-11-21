@@ -40,6 +40,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-3 follow-up 2 · Shot tuning
+**Why (Brendan):** impacts and the single-shell read are good; shell too bright; MG streaks too long (no gap between one round and the previous round's streak); cannon shell a bit slow; shell streaks disappear within a certain radius of an obstacle.
+**Changed:** shell olive drab (#4b5320) with a dark steel band and steel nose. Streak now covers the distance the shot moved on screen since the last frame instead of velocity × frame time: the velocity is zero while a hit shot is parked, yet the view still carries it the last 1–2 u to the surface, which is why the streak vanished near obstacles. Tracer streaks half length, capped 1 u; tracer rod 0.4 u. Cannon projectile 70 → 90 u/s (GDD §4).
+**Tests:** two projectile tests now derive from the def's speed instead of hard-coding 70 u/s. 301 total.
+**Open question:** by the numbers MG rounds are 10 u apart (100 u/s, 10 rounds/s) and a streak is ~1.7 u at 60 fps, so ~7 u gaps; if the stream still looks continuous, a screenshot would show whether the frame rate or frame timing is off.
+**Acceptance:** throwaway slowed-shell build (reverted) shows the darker shell, nose leading. Streak behaviour needs Brendan's eyes.
+
 ## 2026-11-20 · M3-3 follow-up · Shots reach the surface; shell model; motion streak
 **Why (Brendan's playtest):** shots at a crate stopped short of it (closer near its corners); the cannon shell looked like several tracers; shells were plain boxes.
 **Causes:** (1) a hit moved the shot to the impact point and removed it in the same tick, so the interpolating renderer never drew that last position: shots vanished up to two ticks of travel early. Near corners the hit came earlier in its final tick, so the gap looked smaller. (2) A 0.34 u shell moving ~1.2 u per 60 Hz frame is seen as a row of copies (hold-type displays strobe fast short objects). (3) Placeholder box.
