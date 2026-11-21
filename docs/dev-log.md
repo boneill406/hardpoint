@@ -40,6 +40,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-8a · Hardpoints and barrels as data
+**Why:** Brendan wants barrels to collide and the mount mechanics to be extensible for future barrel styles and weapons fitted to hardpoints.
+**Built:** `HardpointDef` (id, `on` turret | hull, `at` forward/right, size small | large, trigger, cosmetic height) and `VehicleDef.hardpoints` + `loadout` replace the M3-2 mount list. `WeaponDef` gains `size`, `barrel` (`BarrelDef`: length, radius = collision/clearance radius, look `tube-brake` | `thin-tube`, `collides`) and `muzzles` (offsets; twin guns alternate). `WeaponMount` = weapon on a hardpoint: derived `muzzleOffset`, `advanceMuzzle`, clearance, snapshot. `Vehicle`: `mountOrigin` / `mountFacing` (turret pivot and aim, or hull centre and heading). `ShotFired` gains `hardpoint`. `createVehicle` validates loadouts (unique ids, known hardpoints, matching sizes). Render: `PrimitiveTankModel` builds a gun per fitted hardpoint, parented to turret or hull, drawn by the barrel's look. Player: `main` (large, primary) + `coax` (small, secondary); insurgent: `main`. Muzzles land exactly where the hand-set ones were.
+**Tests:** 7 new (314 total): longer barrel moves the muzzle, empty hardpoint fires nothing, twin muzzles alternate, a hull hardpoint fires along the hull whatever the turret aims at, wrong size / unknown hardpoint / duplicate ids rejected.
+**Trade-offs:** T-91.
+**Acceptance:** close-up screenshot (throwaway camera, reverted): both barrels drawn as before.
+
 ## 2026-11-20 · M3-7 follow-up · Rigid barrels; steady streaks
 **Why (Brendan):** barrel retraction looked cartoony and unrealistic ("I'd rather the barrel be rigid"); MG rounds looked "laggy" after the last change; impacts look good.
 **Changed:** `TankView` no longer moves the guns: barrels are rigid and can clip into walls again (T-75 accepted, with the sim's clear-point firing kept, so shots still never start inside or behind a wall; T-90 revised). Streaks are a fixed length per look (shell 1.4 u, tracer 1.2 u), clipped at the muzzle: the per-frame-travel length pulsed with frame-time wobble, the likely "lag" (T-88 revised). Backlog: barrel as a collision part.

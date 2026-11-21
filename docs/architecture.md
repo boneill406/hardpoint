@@ -105,7 +105,7 @@ classDiagram
   Entity <|-- Prop
   Vehicle *-- Locomotion
   Vehicle *-- Turret
-  Vehicle *-- "1..*" WeaponMount
+  Vehicle *-- "0..*" WeaponMount : weapon fitted to a hardpoint
   Vehicle *-- ArmorProfile
   Vehicle *-- Health
   Vehicle --> Controller
@@ -132,7 +132,7 @@ classDiagram
 | `PhysicsWorld` | `RapierPhysicsWorld` | test fakes | Collision/physics engine |
 | `GameMode` | `WaveSurvivalMode` | `RoomClearMode` (Robokill-style) | Spawning, progression and win/lose conditions. Vehicles, combat and AI are unchanged across modes |
 
-**Content is data.** `VehicleDef`, `WeaponDef` and `ArmorDef` are typed TypeScript objects. `VehicleFactory` assembles a `Vehicle` from a def. The insurgent tank is the player's classes plus a different def, faction and `AiController`.
+**Content is data.** `VehicleDef`, `WeaponDef` and `ArmorDef` are typed TypeScript objects. A chassis declares **hardpoints** (id, on turret or hull, position, size class, trigger) and a **loadout** (hardpoint → weapon); a weapon owns its **barrel** (length, radius, look, collides) and muzzles. Muzzle positions are derived (hardpoint + barrel length), and `createVehicle` rejects loadouts that don't fit (unknown hardpoint, wrong size). `VehicleFactory` assembles a `Vehicle` from a def. The insurgent tank is the player's classes plus a different def, faction and `AiController`.
 
 ## 5. One frame
 
