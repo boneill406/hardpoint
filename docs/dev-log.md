@@ -40,6 +40,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-3 follow-up · Shots reach the surface; shell model; motion streak
+**Why (Brendan's playtest):** shots at a crate stopped short of it (closer near its corners); the cannon shell looked like several tracers; shells were plain boxes.
+**Causes:** (1) a hit moved the shot to the impact point and removed it in the same tick, so the interpolating renderer never drew that last position: shots vanished up to two ticks of travel early. Near corners the hit came earlier in its final tick, so the gap looked smaller. (2) A 0.34 u shell moving ~1.2 u per 60 Hz frame is seen as a row of copies (hold-type displays strobe fast short objects). (3) Placeholder box.
+**Changed:** `Projectile` parks at the impact point for one tick after a hit (`hit` → `spent`, zero velocity, no cast) before the Simulation removes it (T-87); `Projectile.origin`. `ProjectileView` rebuilt: prototype-style shell (brass body, pointed nose, dark driving band) or self-lit tracer rod, tip at the front of the collision circle, plus a translucent motion streak one frame's travel long, capped at 3 u and never past the muzzle (T-88). Shared materials per scene.
+**Tests:** 2 new (301 total): a hit parks for exactly one tick at the impact point (previous = current) then is spent; the impact event fires once and the shot is gone the tick after.
+**Acceptance:** throwaway builds (reverted): close-up auto-fire shows the MG tracer with its streak leaving the coax; a slowed shell shows body, band and nose leading out of the barrel. Crate impacts and the streak at real frame rates need Brendan's eyes.
+
 ## 2026-11-20 · M3-3 · Projectiles
 **Built:**
 - `PhysicsWorld.castCircle(from, to, radius, ignore)` → `CastHit { body, point, normal, fraction }`; Rapier implementation via `castShape` with a ball, the move as velocity and time-of-impact limit 1 (so ToI = fraction of the path). Fake returns no hits.
