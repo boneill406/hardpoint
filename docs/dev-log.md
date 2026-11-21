@@ -40,6 +40,17 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-3 · Projectiles
+**Built:**
+- `PhysicsWorld.castCircle(from, to, radius, ignore)` → `CastHit { body, point, normal, fraction }`; Rapier implementation via `castShape` with a ball, the move as velocity and time-of-impact limit 1 (so ToI = fraction of the path). Fake returns no hits.
+- `Projectile` entity (owner, weapon def, constant velocity, age): `step(dt, cast)` → flying / hit (stops at the impact point) / expired. `WeaponDef.projectile` gains `lifetime` (2 s) and `look` (shell / tracer, T-86).
+- `Simulation`: each shot spawns a projectile at the muzzle; phase 7 advances every projectile the same tick (so it leaves the muzzle at once), casting while ignoring the shooter's body (the coax MG's muzzle sits over the shooter's own hull). `ProjectileImpact { projectile, weapon, target | undefined (wall), point, normal }`. `PhysicsBridge.bodyOf` / `entityOf`.
+- `ProjectileView`: brass shell or self-lit tracer streak, tip at the sim position, at barrel height, materials shared per look (T-85).
+- 12 new tests (299 total): `Projectile` with real Rapier (9: speed, lifetime, wall impact point and normal, no tunneling through a 0.2 u plate at 1.7 u/tick, MG doesn't hit its own tank, hits and names a tank, **a shot past a 45°-turned tank's corner misses**, stops at and names a crate, 30 MG rounds → exactly 30 impacts and none linger); `castCircle` (3: radius counts, fraction, ignored body).
+**Trade-offs:** T-84, T-85, T-86.
+**Acceptance:** planted bug (no owner exclusion): the self-hit test failed; restored. Throwaway auto-fire build (reverted): tracers stream from the coax toward the aim point; console clean.
+**Issues:** two test-timing slips of mine: rounds still in flight at the end of a 3 s run (fixed by running 3.5 s, after the MG has overheated and stopped).
+
 ## 2026-11-20 · M3-2 · Weapons and limiters
 **Built:**
 - `combat/WeaponDef.ts` (designer terms; `ReloadLimiterDef`, `HeatLimiterDef`), `defs/weapons.ts`: `CANNON` (50, 70 u/s, r 0.07, 1.5 s reload, breaks cover), `MACHINE_GUN` (3, 100 u/s, r 0.04, 1° cone, 0.1 s cadence + heat: 30 rounds, 0.25/s, re-arm 30%), `INSURGENT_CANNON` (12, 3° cone, 2.4 s).
