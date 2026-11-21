@@ -81,6 +81,9 @@ export class Vehicle extends Entity {
     super.saveTransform();
     this.previousLinear = this.linear;
     this.turret.saveHeading();
+    for (const mount of this.mounts) {
+      mount.saveClearance();
+    }
   }
 
   /** Tick phase 2: store what the controller decided. */
@@ -148,7 +151,7 @@ export class Vehicle extends Entity {
       if (held && mount.weapon.tryFire()) {
         shots.push({
           mount,
-          origin: this.muzzlePosition(mount),
+          origin: this.clearMuzzlePosition(mount),
           heading: this.shotHeading(mount, rng),
         });
       }
@@ -166,6 +169,17 @@ export class Vehicle extends Entity {
       .add(Vec2.fromHeading(facing + Math.PI / 2).scale(right));
   }
 
+  /**
+   * Where a shot from `mount` actually starts: the muzzle, or, if the barrel
+   * is pressed against something, the point where the pivot→muzzle line meets
+   * it, so the shot hits that obstacle at once instead of starting inside or
+   * behind it (M3-7).
+   */
+  clearMuzzlePosition(mount: WeaponMount): Vec2 {
+    const pivot = this.turretPivot();
+    return pivot.lerp(this.muzzlePosition(mount), mount.clearance);
+  }
+
   private shotHeading(mount: WeaponMount, rng: Rng): number {
     const { spread } = mount.weapon.def;
     // No draw for accurate weapons, so adding the cannon doesn't shift everyone else's spread.
@@ -181,7 +195,10 @@ export class Vehicle extends Entity {
       angularVelocity: this.angular,
       locomotion: this.locomotion.snapshot(),
       turret: this.turret.snapshot(),
-      weapons: this.mounts.map((mount) => mount.weapon.snapshot()),
+      weapons: this.mounts.map((mount) => [
+        ...mount.weapon.snapshot(),
+        { clearance: mount.clearance },
+      ]),
     };
   }
 }

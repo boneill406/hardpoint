@@ -8,7 +8,12 @@ import {
 } from '@babylonjs/core';
 import type { Mesh, Scene } from '@babylonjs/core';
 import type { Faction } from '../../../sim/vehicles/Faction';
-import type { HullDef } from '../../../sim/vehicles/VehicleDef';
+import type {
+  HullDef,
+  VehicleDef,
+  WeaponMountDef,
+  WeaponSlot,
+} from '../../../sim/vehicles/VehicleDef';
 import type { TankModel, TreadSurface } from './TankModel';
 
 // Proportions follow the prototype's tank (mantis_breach v0.1.0, tank.js), slimmed
@@ -20,7 +25,11 @@ const TRACK = { width: 0.36, height: 0.42 };
 const TREAD_PERIOD = 0.4;
 const HULL = { bodyHeight: 0.42, bodyBottom: 0.15, deckThickness: 0.14 };
 const TURRET = { radius: 0.48, height: 0.3, stretch: 1.25 };
-const BARREL = { radius: 0.07, length: 1.0 };
+const BARREL = { radius: 0.07 };
+/** Cannon muzzle brake (u); the gun node's origin is its front face. */
+const CANNON_BRAKE = { width: 0.2, height: 0.17, depth: 0.14 };
+/** Barrel height above the turret pivot (u): cannon, and the lower coaxial MG. */
+const GUN_HEIGHT: Readonly<Record<WeaponSlot, number>> = { primary: 0.16, secondary: 0.11 };
 
 interface Palette {
   readonly armor: Color3;
@@ -64,7 +73,7 @@ export class PrimitiveTankModel implements TankModel {
   readonly root: TransformNode;
   readonly hull: TransformNode;
   readonly turret: TransformNode;
-  readonly barrel: TransformNode;
+  readonly guns: Partial<Record<WeaponSlot, TransformNode>> = {};
   readonly leftTread: TreadSurface;
   readonly rightTread: TreadSurface;
   readonly halfTrackSpacing: number;
@@ -73,14 +82,17 @@ export class PrimitiveTankModel implements TankModel {
   private readonly treadMaterials: StandardMaterial[] = [];
   private readonly textures: DynamicTexture[] = [];
 
+  /**
+   * Built from the vehicle def: hull footprint, turret pivot and each gun's
+   * muzzle, so the drawn barrel tips are exactly where the sim fires from.
+   */
   constructor(
     private readonly scene: Scene,
     private readonly name: string,
-    footprint: HullDef,
+    def: VehicleDef,
     faction: Faction,
-    /** Turret pivot along the hull (u), from the vehicle def so sim muzzles and drawn barrels agree. */
-    turretPivotForward: number,
   ) {
+    const footprint = def.hull;
     const palette = PALETTES[faction];
     this.root = new TransformNode(name, scene);
     this.halfTrackSpacing = footprint.width / 2 - TRACK.width / 2;
@@ -96,13 +108,12 @@ export class PrimitiveTankModel implements TankModel {
 
     this.turret = new TransformNode(`${name}-turret`, scene);
     this.turret.parent = this.hull;
-    this.turret.position.set(0, HULL.bodyHeight / 2 + HULL.deckThickness, turretPivotForward);
+    this.turret.position.set(0, HULL.bodyHeight / 2 + HULL.deckThickness, def.turret.pivotForward);
     this.buildTurret(palette);
 
-    this.barrel = new TransformNode(`${name}-barrel`, scene);
-    this.barrel.parent = this.turret;
-    this.barrel.position.set(0, 0.16, TURRET.radius * TURRET.stretch);
-    this.buildBarrel(palette);
+    for (const mount of def.weapons) {
+      this.guns[mount.slot] = this.buildGun(mount, palette);
+    }
   }
 
   dispose(): void {
@@ -289,47 +300,66 @@ export class PrimitiveTankModel implements TankModel {
     mantlet.position.set(0, 0.26, TURRET.radius * TURRET.stretch - 0.02);
   }
 
-  private buildBarrel(palette: Palette): void {
-    const steel = this.material('steel', palette.steel);
+  /** A gun node at the muzzle tip (turret space), with its barrel built backwards from there. */
+  private buildGun(mount: WeaponMountDef, palette: Palette): TransformNode {
+    const gun = new TransformNode(`${this.name}-gun-${mount.slot}`, this.scene);
+    gun.parent = this.turret;
+    gun.position.set(mount.muzzle.right, GUN_HEIGHT[mount.slot], mount.muzzle.forward);
+    if (mount.slot === 'primary') {
+      this.buildCannon(gun, mount.muzzle.forward, palette);
+    } else {
+      this.buildCoax(gun, palette);
+    }
+    return gun;
+  }
+
+  /** Tube from the mantlet to a box muzzle brake at the tip. */
+  private buildCannon(gun: TransformNode, muzzleForward: number, palette: Palette): void {
+    const mantletFront = TURRET.radius * TURRET.stretch;
+    const length = muzzleForward - mantletFront - CANNON_BRAKE.depth / 2;
     const tube = MeshBuilder.CreateCylinder(
       `${this.name}-barrel-tube`,
-      { diameter: BARREL.radius * 2, height: BARREL.length, tessellation: 12 },
+      { diameter: BARREL.radius * 2, height: length, tessellation: 12 },
       this.scene,
     );
-    tube.material = steel;
-    tube.parent = this.barrel;
+    tube.material = this.material('steel', palette.steel);
+    tube.parent = gun;
     tube.rotation.x = Math.PI / 2;
-    tube.position.z = BARREL.length / 2;
+    tube.position.z = -CANNON_BRAKE.depth / 2 - length / 2;
 
     const brake = this.box(
       'barrel-brake',
-      { width: 0.2, height: 0.17, depth: 0.14 },
+      CANNON_BRAKE,
       this.material('armor-dark', palette.armorDark),
     );
-    brake.parent = this.barrel;
-    brake.position.z = BARREL.length;
+    brake.parent = gun;
+    brake.position.z = -CANNON_BRAKE.depth / 2;
+  }
 
-    // Coaxial machine gun, left of the cannon (as in the prototype).
-    const coax = MeshBuilder.CreateCylinder(
+  /** Coaxial machine gun (left of the cannon, as in the prototype) with a small round brake. */
+  private buildCoax(gun: TransformNode, palette: Palette): void {
+    const brakeDepth = 0.07;
+    const tubeLength = 0.4;
+    const tube = MeshBuilder.CreateCylinder(
       `${this.name}-coax`,
-      { diameter: 0.07, height: 0.4, tessellation: 8 },
+      { diameter: 0.07, height: tubeLength, tessellation: 8 },
       this.scene,
     );
-    coax.material = steel;
-    coax.parent = this.barrel;
-    coax.rotation.x = Math.PI / 2;
-    coax.position.set(-0.2, -0.05, 0.1);
+    tube.material = this.material('steel', palette.steel);
+    tube.parent = gun;
+    tube.rotation.x = Math.PI / 2;
+    tube.position.z = -brakeDepth - tubeLength / 2;
 
     // A small muzzle brake on the coax tip (Brendan's request), like the cannon's but round.
-    const coaxBrake = MeshBuilder.CreateCylinder(
+    const brake = MeshBuilder.CreateCylinder(
       `${this.name}-coax-brake`,
-      { diameter: 0.1, height: 0.07, tessellation: 10 },
+      { diameter: 0.1, height: brakeDepth, tessellation: 10 },
       this.scene,
     );
-    coaxBrake.material = this.material('armor-dark', palette.armorDark);
-    coaxBrake.parent = this.barrel;
-    coaxBrake.rotation.x = Math.PI / 2;
-    coaxBrake.position.set(-0.2, -0.05, 0.1 + 0.2 - 0.035);
+    brake.material = this.material('armor-dark', palette.armorDark);
+    brake.parent = gun;
+    brake.rotation.x = Math.PI / 2;
+    brake.position.z = -brakeDepth / 2;
   }
 
   private box(

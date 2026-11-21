@@ -37,6 +37,12 @@ export interface WeaponMountDef {
     /** To the turret's right (u); negative is left. */
     readonly right: number;
   };
+  /**
+   * Half the barrel's visible width at the muzzle (u). The pivot→muzzle
+   * clearance check sweeps a circle this size, so the drawn barrel (brake
+   * included) stops at obstacles, not just the shell (M3-7).
+   */
+  readonly clearanceRadius: number;
 }
 
 /** How the turret follows the aim point (GDD §3, M3 plan D1). */

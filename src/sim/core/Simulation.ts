@@ -84,6 +84,7 @@ export class Simulation {
     this.bodies.pullState(vehicles);
     for (const vehicle of vehicles) {
       vehicle.aimTurret(TICK_SECONDS);
+      this.checkMuzzleClearance(vehicle);
     }
     for (const vehicle of vehicles) {
       for (const shot of vehicle.fireWeapons(TICK_SECONDS, this.rng)) {
@@ -118,6 +119,25 @@ export class Simulation {
   /** Frees the physics world (Rapier memory lives outside the JS garbage collector). */
   dispose(): void {
     this.physics.dispose();
+  }
+
+  /**
+   * Tick phase 5b (M3-7): for each gun, sweep a barrel-wide circle from the
+   * turret pivot to the muzzle, ignoring the vehicle's own hull. Where it is
+   * blocked, shots start at the obstacle and the view retracts the barrel.
+   */
+  private checkMuzzleClearance(vehicle: Vehicle): void {
+    const ignore = this.bodies.bodyOf(vehicle.id);
+    const pivot = vehicle.turretPivot();
+    for (const mount of vehicle.mounts) {
+      const hit = this.physics.castCircle(
+        pivot,
+        vehicle.muzzlePosition(mount),
+        mount.def.clearanceRadius,
+        ignore,
+      );
+      mount.setClearance(hit?.fraction ?? 1);
+    }
   }
 
   /**
