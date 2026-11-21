@@ -40,6 +40,12 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-3 follow-up 3 · Shot polish
+**Why (Brendan):** a shot's first frame had no streak; MG rounds could be thinner; MG rounds appeared to leave from over the turret, not the barrel; wanted an MG muzzle brake; close to a crate, no shell is seen at all.
+**Changed:** `ProjectileView` treats the muzzle tip as the previous position on the first frame, so a shot is born with a streak. The tracer rod is clipped so it never reaches back past the muzzle (it was drawn its full length behind the tip, over the turret). Per-look flight height: shells 0.87 (cannon), tracers 0.82 (the lower coax). Tracer 0.035 × 0.3 u. `PrimitiveTankModel`: small round muzzle brake on the coax.
+**Not changed (explained):** close to a crate the shell's whole flight is shorter than one tick (1.5 u at 90 u/s), so it is drawn for at most one frame; the hit is registered correctly. Impact feedback is M6; a placeholder impact flash offered to Brendan.
+**Acceptance:** throwaway slowed-MG close-up (reverted): a round emerges from the coax brake with nothing over the turret; the stream passes behind the cannon's brake with correct depth.
+
 ## 2026-11-20 · M3-3 follow-up 2 · Shot tuning
 **Why (Brendan):** impacts and the single-shell read are good; shell too bright; MG streaks too long (no gap between one round and the previous round's streak); cannon shell a bit slow; shell streaks disappear within a certain radius of an obstacle.
 **Changed:** shell olive drab (#4b5320) with a dark steel band and steel nose. Streak now covers the distance the shot moved on screen since the last frame instead of velocity × frame time: the velocity is zero while a hit shot is parked, yet the view still carries it the last 1–2 u to the surface, which is why the streak vanished near obstacles. Tracer streaks half length, capped 1 u; tracer rod 0.4 u. Cannon projectile 70 → 90 u/s (GDD §4).
