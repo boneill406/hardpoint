@@ -95,6 +95,16 @@ export class PhysicsBridge {
     return impacts;
   }
 
+  /** The body of an entity, if it has one (to exclude a shooter from its own shots). */
+  bodyOf(id: EntityId): BodyHandle | undefined {
+    return this.bodies.get(id);
+  }
+
+  /** The entity that owns a body, or undefined for walls (bodies without an entity). */
+  entityOf(handle: BodyHandle): Entity | undefined {
+    return this.owners.get(handle);
+  }
+
   /** Number of bodies currently tracked (for tests and debugging). */
   get size(): number {
     return this.bodies.size;

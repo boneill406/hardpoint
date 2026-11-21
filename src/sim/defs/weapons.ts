@@ -9,7 +9,7 @@ import type { WeaponDef } from '../combat/WeaponDef';
 export const CANNON: WeaponDef = {
   name: 'Cannon',
   damage: 50,
-  projectile: { speed: 70, radius: 0.07 },
+  projectile: { speed: 70, radius: 0.07, lifetime: 2, look: 'shell' },
   spread: 0,
   breaksCover: true,
   limiters: [{ kind: 'reload', seconds: 1.5 }],
@@ -19,7 +19,7 @@ export const CANNON: WeaponDef = {
 export const MACHINE_GUN: WeaponDef = {
   name: 'Machine gun',
   damage: 3,
-  projectile: { speed: 100, radius: 0.04 },
+  projectile: { speed: 100, radius: 0.04, lifetime: 2, look: 'tracer' },
   spread: degToRad(1),
   breaksCover: false,
   limiters: [
@@ -32,7 +32,7 @@ export const MACHINE_GUN: WeaponDef = {
 export const INSURGENT_CANNON: WeaponDef = {
   name: 'Insurgent cannon',
   damage: 12,
-  projectile: { speed: 70, radius: 0.07 },
+  projectile: { speed: 70, radius: 0.07, lifetime: 2, look: 'shell' },
   spread: degToRad(3),
   breaksCover: true,
   limiters: [{ kind: 'reload', seconds: 2.4 }],

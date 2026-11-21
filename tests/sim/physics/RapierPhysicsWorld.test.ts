@@ -103,4 +103,35 @@ describe('RapierPhysicsWorld', () => {
       world.dispose();
     });
   });
+
+  describe('castCircle', () => {
+    it('the circle’s radius counts: passing 0.05 u beside a box, r 0.04 misses and r 0.07 hits', async () => {
+      const world = await RapierPhysicsWorld.create();
+      world.addStaticBox({ center: new Vec2(0, 5), width: 2, depth: 2, heading: 0 });
+      world.step(DT);
+      const from = new Vec2(1.05, 0);
+      const to = new Vec2(1.05, 10);
+      expect(world.castCircle(from, to, 0.04)).toBeUndefined();
+      expect(world.castCircle(from, to, 0.07)?.point.x).toBeCloseTo(1, 3);
+      world.dispose();
+    });
+
+    it('reports how far along the path the hit was', async () => {
+      const world = await RapierPhysicsWorld.create();
+      world.addStaticBox({ center: new Vec2(0, 5), width: 2, depth: 2, heading: 0 });
+      world.step(DT);
+      const hit = world.castCircle(Vec2.ZERO, new Vec2(0, 10), 0.1);
+      // The circle's front touches z = 4 when its centre is at 3.9: 39% of the way.
+      expect(hit?.fraction).toBeCloseTo(0.39, 3);
+      world.dispose();
+    });
+
+    it('ignores the given body', async () => {
+      const world = await RapierPhysicsWorld.create();
+      const box = world.addStaticBox({ center: new Vec2(0, 5), width: 2, depth: 2, heading: 0 });
+      world.step(DT);
+      expect(world.castCircle(Vec2.ZERO, new Vec2(0, 10), 0.1, box)).toBeUndefined();
+      world.dispose();
+    });
+  });
 });

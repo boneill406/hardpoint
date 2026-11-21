@@ -12,6 +12,10 @@ export interface WeaponDef {
     readonly speed: number;
     /** Collision radius of the swept shot (u). */
     readonly radius: number;
+    /** Seconds before an unobstructed shot disappears (whole ticks). */
+    readonly lifetime: number;
+    /** How the render layer draws it: a heavy shell or a bright tracer streak. */
+    readonly look: 'shell' | 'tracer';
   };
   /** Full width of the random spread cone (rad); 0 = perfectly accurate. */
   readonly spread: number;

@@ -6,6 +6,7 @@ import { MAX_VEHICLE_SPEED } from '../vehicles/VehicleDef';
 import type {
   BodyHandle,
   BodyState,
+  CastHit,
   ContactReport,
   PhysicsWorld,
   StaticBoxSpec,
@@ -144,6 +145,37 @@ export class RapierPhysicsWorld implements PhysicsWorld {
       },
       linearVelocity: new Vec2(velocity.x, velocity.y),
       angularVelocity: -body.angvel(),
+    };
+  }
+
+  castCircle(from: Vec2, to: Vec2, radius: number, ignore?: BodyHandle): CastHit | undefined {
+    const move = to.sub(from);
+    const hit = this.world.castShape(
+      { x: from.x, y: from.z },
+      0,
+      // The whole move as a velocity with a time limit of 1: time of impact = fraction of the path.
+      { x: move.x, y: move.z },
+      new RAPIER.Ball(radius),
+      0,
+      1,
+      true,
+      undefined,
+      undefined,
+      undefined,
+      ignore === undefined ? undefined : this.body(ignore),
+    );
+    if (hit === null) {
+      return undefined;
+    }
+    const body = hit.collider.parent();
+    if (body === null) {
+      return undefined;
+    }
+    return {
+      body: body.handle,
+      point: new Vec2(hit.witness1.x, hit.witness1.y),
+      normal: new Vec2(hit.normal1.x, hit.normal1.y),
+      fraction: hit.time_of_impact,
     };
   }
 

@@ -1,10 +1,12 @@
 import type { Scene } from '@babylonjs/core';
 import { Prop } from '../sim/arena/Prop';
+import { Projectile } from '../sim/combat/Projectile';
 import { lerpAngle } from '../sim/core/angles';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Transform } from '../sim/core/Transform';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { EntityView } from './views/EntityView';
+import { ProjectileView } from './views/ProjectileView';
 import { PropView } from './views/PropView';
 import { TankView } from './views/TankView';
 
@@ -76,6 +78,9 @@ export class RenderBridge {
 
   /** Throws for an entity type with no view: every entity must be visible, so this is a bug. */
   private createView(entity: Entity): EntityView {
+    if (entity instanceof Projectile) {
+      return new ProjectileView(this.scene, `projectile-${entity.id}`, entity);
+    }
     if (entity instanceof Prop) {
       return new PropView(this.scene, `${entity.kind}-${entity.id}`, entity);
     }

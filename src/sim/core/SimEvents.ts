@@ -29,4 +29,16 @@ export interface SimEvents {
     readonly origin: Vec2;
     readonly heading: number;
   };
+  /**
+   * A projectile struck something and stopped. `target` is the vehicle or prop
+   * hit, or undefined for a wall. Impact sparks and sounds hang off this (M6);
+   * damage is `Hit` (M3-4).
+   */
+  ProjectileImpact: {
+    readonly projectile: EntityId;
+    readonly weapon: string;
+    readonly target: EntityId | undefined;
+    readonly point: Vec2;
+    readonly normal: Vec2;
+  };
 }

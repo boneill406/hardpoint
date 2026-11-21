@@ -3,6 +3,7 @@ import { Vec2 } from '../../../src/sim/core/Vec2';
 import type {
   BodyHandle,
   BodyState,
+  CastHit,
   ContactReport,
   PhysicsWorld,
   StaticBoxSpec,
@@ -70,6 +71,11 @@ export class FakePhysicsWorld implements PhysicsWorld {
       throw new Error(`No fake vehicle body ${handle}`);
     }
     return state;
+  }
+
+  /** The fake has no shapes, so casts never hit; collision is tested with real Rapier. */
+  castCircle(): CastHit | undefined {
+    return undefined;
   }
 
   contacts(): readonly ContactReport[] {

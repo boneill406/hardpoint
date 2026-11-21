@@ -40,6 +40,17 @@ export interface ContactReport {
   readonly impulse: number;
 }
 
+/** What a swept cast ran into first. */
+export interface CastHit {
+  readonly body: BodyHandle;
+  /** Where the cast shape touched the body (on the body's surface). */
+  readonly point: Vec2;
+  /** The body's surface normal at `point`, pointing back toward the caster. */
+  readonly normal: Vec2;
+  /** 0..1: how far along the path the shape got before touching. */
+  readonly fraction: number;
+}
+
 /**
  * The simulation's view of the physics engine. Game rules depend on this
  * interface, never on Rapier directly, so the engine can be swapped or faked in
@@ -48,7 +59,7 @@ export interface ContactReport {
  * Everything is in sim coordinates and heading convention; conversion to the
  * engine's own conventions happens inside the implementation.
  *
- * Ray and shape casts are added in M3, when projectiles need them.
+ * Shape casts arrived with projectiles (M3-3).
  */
 export interface PhysicsWorld {
   /** Advances the physics world by one fixed simulation step of `dt` seconds. */
@@ -71,6 +82,14 @@ export interface PhysicsWorld {
    * (vehicle against vehicle, wall or prop), in a deterministic order.
    */
   contacts(): readonly ContactReport[];
+
+  /**
+   * Sweeps a circle of `radius` from `from` to `to` and returns the first body
+   * it touches, ignoring `ignore` (the shooter). A swept cast can't skip
+   * through thin walls at any speed, and tests the bodies' real oriented
+   * shapes, so nothing registers in empty space (GDD §11).
+   */
+  castCircle(from: Vec2, to: Vec2, radius: number, ignore?: BodyHandle): CastHit | undefined;
 
   /** Removes a body and its collider (a destroyed crate or tank). */
   removeBody(handle: BodyHandle): void;

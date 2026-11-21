@@ -1,4 +1,5 @@
 import { Arena } from '../arena/Arena';
+import { Projectile } from '../combat/Projectile';
 import type { ArenaDef } from '../arena/ArenaDef';
 import { PhysicsBridge } from '../physics/PhysicsBridge';
 import type { PhysicsWorld } from '../physics/PhysicsWorld';
@@ -93,8 +94,12 @@ export class Simulation {
           origin: shot.origin,
           heading: shot.heading,
         });
+        this.world.add(
+          new Projectile(shot.origin, shot.heading, shot.mount.weapon.def, vehicle.id),
+        );
       }
     }
+    this.advanceProjectiles();
     for (const impact of this.bodies.newVehicleImpacts()) {
       this.events.emit('VehiclesCollided', impact);
     }
@@ -113,6 +118,33 @@ export class Simulation {
   /** Frees the physics world (Rapier memory lives outside the JS garbage collector). */
   dispose(): void {
     this.physics.dispose();
+  }
+
+  /**
+   * Tick phase 7: every projectile (including those fired this tick, so they
+   * leave the muzzle at once) sweeps forward. A hit stops it at the impact
+   * point and removes it at the end of the tick.
+   */
+  private advanceProjectiles(): void {
+    for (const projectile of this.world.ofType(Projectile)) {
+      const ignore = this.bodies.bodyOf(projectile.owner);
+      const result = projectile.step(TICK_SECONDS, (from, to, radius) =>
+        this.physics.castCircle(from, to, radius, ignore),
+      );
+      if (result.kind === 'flying') {
+        continue;
+      }
+      if (result.kind === 'hit') {
+        this.events.emit('ProjectileImpact', {
+          projectile: projectile.id,
+          weapon: projectile.weapon.name,
+          target: this.bodies.entityOf(result.hit.body)?.id,
+          point: result.hit.point,
+          normal: result.hit.normal,
+        });
+      }
+      this.world.remove(projectile.id);
+    }
   }
 
   /** Walls never change, so they are added once, as plain static boxes rather than entities. */
