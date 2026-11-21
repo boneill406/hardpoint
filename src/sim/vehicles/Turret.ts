@@ -54,8 +54,17 @@ export class Turret {
   /**
    * Turns toward `aimPoint` as seen from `position`. With no aim point, or one
    * too close to the tank, it keeps going for its last target.
+   *
+   * `canFace` (M3-8b) says whether the barrels would be clear at a heading; if
+   * the full turn would put a barrel into something, the turret turns as far
+   * as it can and **stalls** there, trying again next tick.
    */
-  step(aimPoint: Vec2 | undefined, position: Vec2, dt: number): void {
+  step(
+    aimPoint: Vec2 | undefined,
+    position: Vec2,
+    dt: number,
+    canFace: (heading: number) => boolean = () => true,
+  ): void {
     if (aimPoint !== undefined) {
       const toAim = aimPoint.sub(position);
       if (toAim.length() >= this.def.minAimDistance) {
@@ -78,7 +87,31 @@ export class Turret {
       this.moving = true;
     }
     const turn = Math.min(Math.abs(delta), this.def.traverseRate * dt);
-    this.current = wrapAngle(this.current + Math.sign(delta) * turn);
+    this.current = this.furthestClear(Math.sign(delta) * turn, canFace);
+  }
+
+  /**
+   * The heading after turning by up to `turn`, as far as `canFace` allows.
+   * Halving search: 5 steps get within 1/32 of a tick's turn of the obstacle.
+   * If the barrels are already blocked here (e.g. the hull was shoved), any
+   * turn is allowed so the turret can't get trapped.
+   */
+  private furthestClear(turn: number, canFace: (heading: number) => boolean): number {
+    const full = wrapAngle(this.current + turn);
+    if (canFace(full) || !canFace(this.current)) {
+      return full;
+    }
+    let allowed = 0;
+    let blocked = 1;
+    for (let i = 0; i < 5; i++) {
+      const middle = (allowed + blocked) / 2;
+      if (canFace(wrapAngle(this.current + turn * middle))) {
+        allowed = middle;
+      } else {
+        blocked = middle;
+      }
+    }
+    return wrapAngle(this.current + turn * allowed);
   }
 
   snapshot(): TurretSnapshot {

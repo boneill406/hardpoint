@@ -4,8 +4,10 @@ import type {
   BodyHandle,
   BodyState,
   CastHit,
+  ColliderHandle,
   ContactReport,
   PhysicsWorld,
+  Segment,
   StaticBoxSpec,
   VehicleBodySpec,
 } from '../../../src/sim/physics/PhysicsWorld';
@@ -71,6 +73,24 @@ export class FakePhysicsWorld implements PhysicsWorld {
       throw new Error(`No fake vehicle body ${handle}`);
     }
     return state;
+  }
+
+  /** Barrel segments as last set, by collider handle. */
+  readonly barrels = new Map<ColliderHandle, Segment>();
+
+  addBarrel(_body: BodyHandle, segment: Segment): ColliderHandle {
+    const handle = this.nextHandle++;
+    this.barrels.set(handle, segment);
+    return handle;
+  }
+
+  setBarrel(collider: ColliderHandle, segment: Segment): void {
+    this.barrels.set(collider, segment);
+  }
+
+  /** No shapes, so nothing ever overlaps: turrets never stall in fake-physics tests. */
+  overlaps(): boolean {
+    return false;
   }
 
   /** The fake has no shapes, so casts never hit; collision is tested with real Rapier. */

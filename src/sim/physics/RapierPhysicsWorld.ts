@@ -7,8 +7,10 @@ import type {
   BodyHandle,
   BodyState,
   CastHit,
+  ColliderHandle,
   ContactReport,
   PhysicsWorld,
+  Segment,
   StaticBoxSpec,
   VehicleBodySpec,
 } from './PhysicsWorld';
@@ -44,6 +46,12 @@ function toRapierAngle(heading: number): number {
 
 function fromRapierAngle(rotation: number): number {
   return wrapAngle(-rotation);
+}
+
+/** A segment as a Rapier capsule: Rapier capsules run along local y, half-height excluding the round ends. */
+function capsuleSize(segment: Segment): { halfHeight: number; radius: number } {
+  const length = segment.to.distanceTo(segment.from);
+  return { halfHeight: Math.max(0.001, length / 2 - segment.radius), radius: segment.radius };
 }
 
 /**
@@ -128,6 +136,57 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     return body.handle;
   }
 
+  addBarrel(body: BodyHandle, segment: Segment): ColliderHandle {
+    const { halfHeight, radius } = capsuleSize(segment);
+    const collider = this.world.createCollider(
+      RAPIER.ColliderDesc.capsule(halfHeight, radius)
+        // Massless: a barrel blocks like the hull but doesn't change the tank's handling.
+        .setDensity(0)
+        .setFriction(0)
+        .setFrictionCombineRule(RAPIER.CoefficientCombineRule.Min)
+        .setRestitution(0)
+        .setActiveEvents(RAPIER.ActiveEvents.CONTACT_FORCE_EVENTS)
+        .setContactForceEventThreshold(0),
+      this.body(body),
+    );
+    this.setBarrel(collider.handle, segment);
+    return collider.handle;
+  }
+
+  setBarrel(handle: ColliderHandle, segment: Segment): void {
+    const collider = this.world.getCollider(handle);
+    const body = collider.parent();
+    if (body === null) {
+      throw new Error(`Barrel collider ${handle} has no body`);
+    }
+    // Express the segment's centre and direction in the body's local frame
+    // (local +y = the body's forward, local +x = its right).
+    const bodyPosition = body.translation();
+    const bodyHeading = fromRapierAngle(body.rotation());
+    const centre = segment.from.lerp(segment.to, 0.5);
+    const offset = centre.sub(new Vec2(bodyPosition.x, bodyPosition.y));
+    const forward = Vec2.fromHeading(bodyHeading);
+    const right = Vec2.fromHeading(bodyHeading + Math.PI / 2);
+    collider.setTranslationWrtParent({ x: offset.dot(right), y: offset.dot(forward) });
+    const segmentHeading = segment.to.sub(segment.from).heading();
+    collider.setRotationWrtParent(toRapierAngle(segmentHeading - bodyHeading));
+  }
+
+  overlaps(segment: Segment, ignore?: BodyHandle): boolean {
+    const { halfHeight, radius } = capsuleSize(segment);
+    const centre = segment.from.lerp(segment.to, 0.5);
+    const hit = this.world.intersectionWithShape(
+      { x: centre.x, y: centre.z },
+      toRapierAngle(segment.to.sub(segment.from).heading()),
+      new RAPIER.Capsule(halfHeight, radius),
+      undefined,
+      undefined,
+      undefined,
+      ignore === undefined ? undefined : this.body(ignore),
+    );
+    return hit !== null;
+  }
+
   setVelocity(handle: BodyHandle, linear: Vec2, angular: number): void {
     const body = this.body(handle);
     body.setLinvel({ x: linear.x, y: linear.z }, true);
@@ -173,6 +232,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     }
     return {
       body: body.handle,
+      collider: hit.collider.handle,
       point: new Vec2(hit.witness1.x, hit.witness1.y),
       normal: new Vec2(hit.normal1.x, hit.normal1.y),
       fraction: hit.time_of_impact,

@@ -4,7 +4,7 @@ import { Entity, type EntitySnapshot } from '../core/Entity';
 import type { Rng } from '../core/Rng';
 import type { Transform } from '../core/Transform';
 import { Vec2 } from '../core/Vec2';
-import type { BodyState } from '../physics/PhysicsWorld';
+import type { BodyState, Segment } from '../physics/PhysicsWorld';
 import type { Controller } from './controllers/Controller';
 import type { Faction } from './Faction';
 import type { Locomotion, LocomotionSnapshot } from './locomotion/Locomotion';
@@ -127,8 +127,26 @@ export class Vehicle extends Entity {
    * Tick phase 5, after physics: traverse the turret toward the command's aim,
    * measured from the turret's pivot so the gun line passes through the aim point.
    */
-  aimTurret(dt: number): void {
-    this.turret.step(this.activeCommand.aimPoint, this.turretPivot(), dt);
+  aimTurret(dt: number, canFace?: (heading: number) => boolean): void {
+    this.turret.step(this.activeCommand.aimPoint, this.turretPivot(), dt, canFace);
+  }
+
+  /**
+   * The barrel of `mount` as a world-space capsule, from its hardpoint to its
+   * muzzle, with the turret at `turretHeading` (default: where it is now).
+   * Used to place barrel colliders and to test whether the turret can turn.
+   */
+  barrelSegment(mount: WeaponMount, turretHeading = this.turret.heading): Segment {
+    const facing = mount.hardpoint.on === 'turret' ? turretHeading : this.transform.heading;
+    const forward = Vec2.fromHeading(facing);
+    const right = Vec2.fromHeading(facing + Math.PI / 2);
+    const { at } = mount.hardpoint;
+    const base = this.mountOrigin(mount).add(forward.scale(at.forward)).add(right.scale(at.right));
+    return {
+      from: base,
+      to: base.add(forward.scale(mount.weapon.def.barrel.length)),
+      radius: mount.weapon.def.barrel.radius,
+    };
   }
 
   /** Where the turret pivots now: on the hull's centreline, `pivotForward` from its centre. */

@@ -83,7 +83,7 @@ export class Simulation {
     this.physics.step(TICK_SECONDS);
     this.bodies.pullState(vehicles);
     for (const vehicle of vehicles) {
-      vehicle.aimTurret(TICK_SECONDS);
+      vehicle.aimTurret(TICK_SECONDS, (heading) => this.barrelsClearAt(vehicle, heading));
       this.checkMuzzleClearance(vehicle);
     }
     for (const vehicle of vehicles) {
@@ -120,6 +120,21 @@ export class Simulation {
   /** Frees the physics world (Rapier memory lives outside the JS garbage collector). */
   dispose(): void {
     this.physics.dispose();
+  }
+
+  /**
+   * Whether all of a vehicle's colliding turret barrels would be clear of
+   * everything else with the turret at `heading` (plan D16: the turret stalls
+   * rather than forcing a barrel into a wall and shoving the hull).
+   */
+  private barrelsClearAt(vehicle: Vehicle, heading: number): boolean {
+    const ignore = this.bodies.bodyOf(vehicle.id);
+    return vehicle.mounts.every(
+      (mount) =>
+        mount.hardpoint.on !== 'turret' ||
+        !mount.weapon.def.barrel.collides ||
+        !this.physics.overlaps(vehicle.barrelSegment(mount, heading), ignore),
+    );
   }
 
   /**
@@ -161,6 +176,7 @@ export class Simulation {
           weapon: projectile.weapon.name,
           look: projectile.weapon.projectile.look,
           target: this.bodies.entityOf(result.hit.body)?.id,
+          part: this.bodies.isBarrel(result.hit.collider) ? 'barrel' : 'body',
           point: result.hit.point,
           normal: result.hit.normal,
         });

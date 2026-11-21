@@ -174,6 +174,7 @@ describe('Projectile after a hit', () => {
       to.z >= 5
         ? {
             body: 9,
+            collider: 9,
             point: new Vec2(0, 5),
             normal: new Vec2(0, -1),
             fraction: (5 - 0.07 - from.z) / (to.z - from.z),

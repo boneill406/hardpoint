@@ -4,6 +4,16 @@ import type { Vec2 } from '../core/Vec2';
 /** Opaque id for a body in a `PhysicsWorld`. Only the world that issued it understands it. */
 export type BodyHandle = number;
 
+/** Opaque id for one collider (a body can have several: a tank's hull and its barrels). */
+export type ColliderHandle = number;
+
+/** A straight capsule between two points: how barrels are shaped (M3-8b). */
+export interface Segment {
+  readonly from: Vec2;
+  readonly to: Vec2;
+  readonly radius: number;
+}
+
 /** A static obstacle: wall segment, pillar or crate. */
 export interface StaticBoxSpec {
   readonly center: Vec2;
@@ -43,6 +53,8 @@ export interface ContactReport {
 /** What a swept cast ran into first. */
 export interface CastHit {
   readonly body: BodyHandle;
+  /** The specific collider hit (e.g. a barrel rather than the hull). */
+  readonly collider: ColliderHandle;
   /** Where the cast shape touched the body (on the body's surface). */
   readonly point: Vec2;
   /** The body's surface normal at `point`, pointing back toward the caster. */
@@ -70,6 +82,18 @@ export interface PhysicsWorld {
 
   /** Adds a vehicle body that moves by velocity and is pushed out of anything it hits. */
   addVehicleBody(spec: VehicleBodySpec): BodyHandle;
+
+  /**
+   * Adds a massless capsule to a vehicle body (a gun barrel, M3-8b): it moves
+   * with the body, blocks movement like the hull, and can be re-posed.
+   */
+  addBarrel(body: BodyHandle, segment: Segment): ColliderHandle;
+
+  /** Re-poses a barrel to a world-space segment (e.g. after the turret turned). */
+  setBarrel(collider: ColliderHandle, segment: Segment): void;
+
+  /** True if a capsule placed at `segment` would overlap anything other than `ignore`. */
+  overlaps(segment: Segment, ignore?: BodyHandle): boolean;
 
   /** Sets the velocity a vehicle body moves with during the next step. */
   setVelocity(handle: BodyHandle, linear: Vec2, angular: number): void;

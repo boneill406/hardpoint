@@ -41,6 +41,8 @@ export interface SimEvents {
     /** The projectile's look (shell / tracer), so effects can scale with it. */
     readonly look: 'shell' | 'tracer';
     readonly target: EntityId | undefined;
+    /** A gun barrel stops the shot but takes no damage (plan D17); everything else is `body`. */
+    readonly part: 'body' | 'barrel';
     readonly point: Vec2;
     readonly normal: Vec2;
   };

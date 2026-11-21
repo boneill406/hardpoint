@@ -11,9 +11,12 @@ import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
 import { IDLE_COMMAND, type VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
 import type { VehicleDef } from '../../../src/sim/vehicles/VehicleDef';
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
+import { nonCollidingBarrels } from '../vehicles/testVehicles';
 
-// M3-7, against real Rapier: a barrel pressed against something can't fire
-// through it, and its clearance tells the view how far to retract.
+// M3-7, against real Rapier: the muzzle-clearance safety net. Barrels are made
+// non-solid here so a barrel can be placed inside a wall; with solid barrels
+// (M3-8b) that can't normally happen, but shots must still never start
+// inside or behind anything.
 
 /** 20 × 20 room: the top wall's inner face is at z = 10. */
 const ROOM: ArenaDef = {
@@ -27,6 +30,7 @@ const ROOM: ArenaDef = {
   crates: [],
 };
 const WALL = 10;
+const SHOOTER = nonCollidingBarrels(PLAYER_TANK);
 const HALF_LENGTH = PLAYER_TANK.hull.length / 2;
 /** Hull front touching the top wall, facing it. */
 const NOSE_TO_WALL: Transform = { position: new Vec2(0, WALL - HALF_LENGTH - 0.01), heading: 0 };
@@ -91,7 +95,7 @@ function mountOf(vehicle: Vehicle, slot: 'primary' | 'secondary'): Vehicle['moun
 describe('muzzle clearance', () => {
   it('in the open both barrels are fully clear and shots start at the muzzles', async () => {
     const { shooter, shots } = await run(
-      [{ def: PLAYER_TANK, transform: { position: Vec2.ZERO, heading: 0 }, command: FIRE }],
+      [{ def: SHOOTER, transform: { position: Vec2.ZERO, heading: 0 }, command: FIRE }],
       1,
     );
     expect(mountOf(shooter, 'primary').clearance).toBe(1);
@@ -101,7 +105,7 @@ describe('muzzle clearance', () => {
 
   it('nose to a wall, the cannon is partly blocked: clear up to the barrel-wide circle touching the wall', async () => {
     const { shooter } = await run(
-      [{ def: PLAYER_TANK, transform: NOSE_TO_WALL, command: IDLE_COMMAND }],
+      [{ def: SHOOTER, transform: NOSE_TO_WALL, command: IDLE_COMMAND }],
       1,
     );
     const cannon = mountOf(shooter, 'primary');
@@ -114,7 +118,7 @@ describe('muzzle clearance', () => {
 
   it('a shot from a blocked barrel starts short of the wall and hits it the same tick', async () => {
     const { shots, impacts } = await run(
-      [{ def: PLAYER_TANK, transform: NOSE_TO_WALL, command: FIRE }],
+      [{ def: SHOOTER, transform: NOSE_TO_WALL, command: FIRE }],
       2,
     );
     const cannonShot = shots.find((shot) => shot.slot === 'primary');
@@ -127,7 +131,7 @@ describe('muzzle clearance', () => {
 
   it('no shot ever starts inside or beyond the wall, for either gun', async () => {
     const { shots, impacts } = await run(
-      [{ def: PLAYER_TANK, transform: NOSE_TO_WALL, command: FIRE }],
+      [{ def: SHOOTER, transform: NOSE_TO_WALL, command: FIRE }],
       30,
     );
     expect(shots.length).toBeGreaterThan(3);
@@ -139,12 +143,12 @@ describe('muzzle clearance', () => {
     // Enemy side-on with its near face 1 u ahead of the shooter's pivot: inside the barrel's reach.
     const shooterAt: Transform = { position: Vec2.ZERO, heading: 0 };
     const enemy: Tank = {
-      def: INSURGENT_TANK,
+      def: nonCollidingBarrels(INSURGENT_TANK),
       transform: { position: new Vec2(0, 1.75), heading: Math.PI / 2 },
       command: IDLE_COMMAND,
     };
     const { impacts, shooter } = await run(
-      [{ def: PLAYER_TANK, transform: shooterAt, command: FIRE }, enemy],
+      [{ def: SHOOTER, transform: shooterAt, command: FIRE }, enemy],
       2,
     );
     expect(mountOf(shooter, 'primary').clearance).toBeLessThan(1);
@@ -153,7 +157,7 @@ describe('muzzle clearance', () => {
 
   it('keeps the previous tick’s clearance for the view to interpolate', async () => {
     const { shooter } = await run(
-      [{ def: PLAYER_TANK, transform: NOSE_TO_WALL, command: IDLE_COMMAND }],
+      [{ def: SHOOTER, transform: NOSE_TO_WALL, command: IDLE_COMMAND }],
       3,
     );
     const cannon = mountOf(shooter, 'primary');

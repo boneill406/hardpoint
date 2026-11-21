@@ -12,13 +12,16 @@ import { RapierPhysicsWorld } from '../../../src/sim/physics/RapierPhysicsWorld'
 import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
 import type { VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
-import { drive } from '../vehicles/testVehicles';
+import { bareHull, drive } from '../vehicles/testVehicles';
 import { hullBox, obstacleBox, penetration, seconds, TOLERANCE } from './overlap';
 
-// M2-3a, against real Rapier. The key check runs every tick: how deep does the
+// M2-3a, against real Rapier. Hull collision only: the tank has no weapons
+// fitted here, so barrels (M3-8b, own tests) don't keep it off the walls.
+// The key check runs every tick: how deep does the
 // tank's oriented hull overlap any obstacle? "Treads never visibly enter
 // obstacles" (M2 done-when) means that depth stays below a hair.
 
+const HULL_ONLY = bareHull(PLAYER_TANK);
 const { length: HULL_LENGTH, width: HULL_WIDTH } = PLAYER_TANK.hull;
 
 /** 20 × 20 room: inner wall faces at x = ±10 and z = ±10. */
@@ -64,7 +67,7 @@ async function driveTank(
     arena: arenaDef,
     populate: (sim) => {
       sim.world.add(
-        createVehicle(PLAYER_TANK, {
+        createVehicle(HULL_ONLY, {
           transform: start,
           faction: 'player',
           controller: new ScriptedController(script),

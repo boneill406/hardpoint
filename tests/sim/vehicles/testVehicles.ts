@@ -50,3 +50,19 @@ export function scriptedTank(command: VehicleCommand, transform = AT_ORIGIN): Ve
     controller: new ScriptedController(() => command),
   });
 }
+
+/** The same tank with no weapons fitted: hull-only collision, for tests about the hull. */
+export function bareHull(def: VehicleDef): VehicleDef {
+  return { ...def, loadout: {} };
+}
+
+/** The same tank with its barrels made non-solid: for tests of the muzzle-clearance safety net. */
+export function nonCollidingBarrels(def: VehicleDef): VehicleDef {
+  const loadout = Object.fromEntries(
+    Object.entries(def.loadout).map(([id, weapon]) => [
+      id,
+      { ...weapon, barrel: { ...weapon.barrel, collides: false } },
+    ]),
+  );
+  return { ...def, loadout };
+}

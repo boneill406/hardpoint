@@ -12,10 +12,11 @@ import { Vehicle } from '../../../src/sim/vehicles/Vehicle';
 import type { VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
 import type { VehicleDef } from '../../../src/sim/vehicles/VehicleDef';
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
-import { drive } from '../vehicles/testVehicles';
+import { bareHull, drive } from '../vehicles/testVehicles';
 import { hullBox, penetration, seconds, TOLERANCE } from './overlap';
 
-// M2-3b, against real Rapier: tanks against tanks. The player tank (mass 30,
+// M2-3b, against real Rapier: tanks against tanks, hulls only (no weapons fitted,
+// so barrels don't touch first; barrel contact has its own tests). The player tank (mass 30,
 // engine 525) is stronger than the insurgent (mass 20, engine 160, grip 1000).
 
 /** Big open room, so walls don't interfere. */
@@ -88,6 +89,9 @@ async function duel(first: TankSpec, second: TankSpec, ticks: number): Promise<D
   return { a, b, worstOverlap, collisions, ids: [tankA.id, tankB.id] };
 }
 
+const PLAYER = bareHull(PLAYER_TANK);
+const INSURGENT = bareHull(INSURGENT_TANK);
+
 const UP: Transform = { position: new Vec2(0, -8), heading: 0 };
 const DOWN_FROM_ABOVE: Transform = { position: new Vec2(0, 8), heading: Math.PI };
 const PARKED_AT_ORIGIN: Transform = { position: Vec2.ZERO, heading: 0 };
@@ -107,8 +111,8 @@ function last<T>(items: readonly T[]): T {
 describe('tank vs tank (real Rapier)', () => {
   it('a head-on clash at full speed (closing at 11 u/s) never visibly overlaps', async () => {
     const run = await duel(
-      { def: PLAYER_TANK, start: UP, script: full },
-      { def: INSURGENT_TANK, start: DOWN_FROM_ABOVE, script: full },
+      { def: PLAYER, start: UP, script: full },
+      { def: INSURGENT, start: DOWN_FROM_ABOVE, script: full },
       seconds(4),
     );
     expect(run.worstOverlap).toBeLessThan(TOLERANCE);
@@ -116,8 +120,8 @@ describe('tank vs tank (real Rapier)', () => {
 
   it('head-on, the stronger tank wins: it keeps advancing and shoves the weaker one back', async () => {
     const run = await duel(
-      { def: PLAYER_TANK, start: UP, script: full },
-      { def: INSURGENT_TANK, start: DOWN_FROM_ABOVE, script: full },
+      { def: PLAYER, start: UP, script: full },
+      { def: INSURGENT, start: DOWN_FROM_ABOVE, script: full },
       seconds(4),
     );
     const contact = run.a.findIndex((t, i) => {
@@ -132,8 +136,8 @@ describe('tank vs tank (real Rapier)', () => {
 
   it('a weaker tank barely moves a parked stronger one (slow creep only)', async () => {
     const run = await duel(
-      { def: INSURGENT_TANK, start: BELOW, script: full },
-      { def: PLAYER_TANK, start: PARKED_AT_ORIGIN, script: idle },
+      { def: INSURGENT, start: BELOW, script: full },
+      { def: PLAYER, start: PARKED_AT_ORIGIN, script: idle },
       seconds(4),
     );
     expect(run.worstOverlap).toBeLessThan(TOLERANCE);
@@ -144,8 +148,8 @@ describe('tank vs tank (real Rapier)', () => {
     // Full throttle until just after impact (~0.75 s), then let go.
     const ramThenRelease = (tick: number): VehicleCommand => drive(tick < 50 ? 1 : 0);
     const run = await duel(
-      { def: PLAYER_TANK, start: BELOW, script: ramThenRelease },
-      { def: INSURGENT_TANK, start: SIDE_ON_AT_ORIGIN, script: idle },
+      { def: PLAYER, start: BELOW, script: ramThenRelease },
+      { def: INSURGENT, start: SIDE_ON_AT_ORIGIN, script: idle },
       seconds(3),
     );
     expect(run.worstOverlap).toBeLessThan(TOLERANCE);
@@ -157,8 +161,8 @@ describe('tank vs tank (real Rapier)', () => {
 
   it('leaning on a weaker tank bulldozes it slowly (T-71: pusher engine impulse ÷ pushed mass)', async () => {
     const run = await duel(
-      { def: PLAYER_TANK, start: BELOW, script: full },
-      { def: INSURGENT_TANK, start: SIDE_ON_AT_ORIGIN, script: idle },
+      { def: PLAYER, start: BELOW, script: full },
+      { def: INSURGENT, start: SIDE_ON_AT_ORIGIN, script: idle },
       seconds(4),
     );
     // Over the last second, long after the ram has settled.
@@ -172,8 +176,8 @@ describe('tank vs tank (real Rapier)', () => {
   describe('VehiclesCollided', () => {
     it('fires once per impact with both ids and the impulse, not every tick of pushing', async () => {
       const run = await duel(
-        { def: PLAYER_TANK, start: UP, script: full },
-        { def: INSURGENT_TANK, start: DOWN_FROM_ABOVE, script: full },
+        { def: PLAYER, start: UP, script: full },
+        { def: INSURGENT, start: DOWN_FROM_ABOVE, script: full },
         seconds(4),
       );
       expect(run.collisions).toHaveLength(1);
@@ -186,8 +190,8 @@ describe('tank vs tank (real Rapier)', () => {
       // Forward into the parked tank, back off, then hit it again.
       const rams = (tick: number): VehicleCommand => drive(tick < 90 ? 1 : tick < 180 ? -1 : 1);
       const run = await duel(
-        { def: PLAYER_TANK, start: BELOW, script: rams },
-        { def: INSURGENT_TANK, start: PARKED_AT_ORIGIN, script: idle },
+        { def: PLAYER, start: BELOW, script: rams },
+        { def: INSURGENT, start: PARKED_AT_ORIGIN, script: idle },
         seconds(5),
       );
       expect(run.collisions).toHaveLength(2);
@@ -196,8 +200,8 @@ describe('tank vs tank (real Rapier)', () => {
     it('a harder hit reports a bigger impulse', async () => {
       const ram = async (throttle: number): Promise<number> => {
         const run = await duel(
-          { def: PLAYER_TANK, start: BELOW, script: () => drive(throttle) },
-          { def: INSURGENT_TANK, start: PARKED_AT_ORIGIN, script: idle },
+          { def: PLAYER, start: BELOW, script: () => drive(throttle) },
+          { def: INSURGENT, start: PARKED_AT_ORIGIN, script: idle },
           seconds(3),
         );
         return run.collisions[0]?.impulse ?? 0;
@@ -207,8 +211,8 @@ describe('tank vs tank (real Rapier)', () => {
 
     it('does not fire for a tank hitting a wall', async () => {
       const run = await duel(
-        { def: PLAYER_TANK, start: { position: new Vec2(-20, 25), heading: 0 }, script: full },
-        { def: INSURGENT_TANK, start: { position: new Vec2(20, 25), heading: 0 }, script: full },
+        { def: PLAYER, start: { position: new Vec2(-20, 25), heading: 0 }, script: full },
+        { def: INSURGENT, start: { position: new Vec2(20, 25), heading: 0 }, script: full },
         seconds(2),
       );
       expect(run.collisions).toEqual([]);
