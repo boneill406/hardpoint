@@ -16,7 +16,7 @@ export const CANNON: WeaponDef = {
   limiters: [{ kind: 'reload', seconds: 1.5 }],
 };
 
-/** Fast chip damage: 10 rounds/s, overheats after 30 (3 s), re-arms at 30% heat. */
+/** Fast chip damage: 12 rounds/s (raised from 10 in play), overheats after 30 (2.5 s), re-arms at 30% heat. */
 export const MACHINE_GUN: WeaponDef = {
   name: 'Machine gun',
   damage: 3,
@@ -24,7 +24,7 @@ export const MACHINE_GUN: WeaponDef = {
   spread: degToRad(1),
   breaksCover: false,
   limiters: [
-    { kind: 'reload', seconds: 0.1 },
+    { kind: 'reload', seconds: 5 / 60 }, // 12 rounds/s: exactly 5 ticks between rounds
     { kind: 'heat', roundsToOverheat: 30, coolPerSecond: 0.25, rearmAt: 0.3 },
   ],
 };

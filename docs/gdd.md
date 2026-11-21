@@ -73,7 +73,7 @@ _Xbox: the `triggers` scheme, chosen by Brendan in play over `tank` (left stick 
 |---|---|---|
 | Role | Heavy, deliberate, breaks cover | Fast, chip damage, finishing |
 | Base damage | 50 | 3 per round |
-| Limiter | `ReloadLimiter`: 1.5 s (prototype 1.35; trying slower) | `ReloadLimiter` 10 rounds/s + `HeatLimiter`: 30 rounds to overheat (3 s of fire, no cooling while firing), cools 0.25/s when idle, re-arms at 30% heat |
+| Limiter | `ReloadLimiter`: 1.5 s (prototype 1.35; trying slower) | `ReloadLimiter` 12 rounds/s (raised from 10 in play) + `HeatLimiter`: 30 rounds to overheat (2.5 s of fire, no cooling while firing), cools 0.25/s when idle, re-arms at 30% heat |
 | Projectile speed | 90 u/s (prototype 68; raised in play) | 100 u/s |
 | Spread | none | 1° cone |
 | Firing | Hold to fire (fires whenever reloaded) | Hold to fire |

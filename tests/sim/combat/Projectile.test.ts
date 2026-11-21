@@ -159,7 +159,7 @@ describe('Projectile', () => {
   });
 
   it('every shot ends in exactly one impact or expiry: none linger', async () => {
-    // 30 rounds in 3 s, then the MG is overheated; the extra 0.5 s lets the last rounds land.
+    // 30 rounds in 2.5 s, then the MG is overheated until 5.3 s; the rest of the run lets the last rounds land.
     const { shots, impacts, ids } = await range(room(), [shooter(MG)], seconds(3.5));
     expect(shots).toBe(30);
     expect(impacts).toHaveLength(30);

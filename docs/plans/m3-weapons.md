@@ -25,7 +25,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 ## Starting values (GDD §3–§5 updated)
 | Value | Prototype | Slice |
 |---|---|---|
-| MG fire rate | 0.095 s (≈10.5/s) | **10 rounds/s** (6 ticks) |
+| MG fire rate | 0.095 s (≈10.5/s) | **10 rounds/s** (6 ticks); raised to **12/s** (5 ticks) in play |
 | MG rounds to overheat | ≈33 | **30** (3 s of fire; no cooling while firing) |
 | MG cooling when idle | 0.24/s | **0.25/s** (4 s full → empty) |
 | MG re-arm | 32% | **30%** (2.8 s lockout after overheating) |

@@ -53,9 +53,9 @@ describe('vehicle firing', () => {
     expect(first?.origin.z).toBeCloseTo(1.6, 12);
   });
 
-  it('holding secondary fires the coaxial MG from left of the cannon, 10 rounds per second', () => {
+  it('holding secondary fires the coaxial MG from left of the cannon, 12 rounds per second', () => {
     const shots = shotsFrom(PLAYER_TANK, SECONDARY, 60);
-    expect(shots).toHaveLength(10);
+    expect(shots).toHaveLength(12);
     expect(shots.every((shot) => shot.slot === 'secondary' && shot.weapon === 'Machine gun')).toBe(
       true,
     );
