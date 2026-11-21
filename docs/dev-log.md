@@ -40,6 +40,17 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-21 · M3-8b · Solid barrels
+**Built:**
+- `PhysicsWorld`: `addBarrel(body, segment)` (massless capsule on a vehicle body, contact events on), `setBarrel(collider, segment)` (re-pose from a world-space segment; converted to the body's local frame inside the Rapier adapter), `overlaps(segment, ignore)`; `CastHit.collider`. Types `ColliderHandle`, `Segment`.
+- `PhysicsBridge`: barrel colliders per vehicle and hardpoint, re-posed before each step, `isBarrel(collider)`.
+- `Turret.step(…, canFace)`: if the full turn would overlap, a 5-step halving search finds the furthest clear heading and the turret stalls there; allowed to turn if already blocked. `Vehicle.barrelSegment(mount, turretHeading?)`. `Simulation.barrelsClearAt` tests every colliding turret barrel.
+- `ProjectileImpact.part` (`body` | `barrel`): shots stop at barrels; M3-4 will skip damage for barrel hits.
+- Tests: hull-geometry tests (collision, tank contacts) now use a tank with no weapons fitted, and the muzzle-clearance tests use non-solid barrels (helpers `bareHull`, `nonCollidingBarrels`), so each tests one thing. 8 new barrel tests (322 total), real Rapier: nosing in stops at the barrel tip with the hull 0.4 u off the wall; the turret stalls with the barrel at the wall and the tank not shoved; it turns freely once aimed away; driving along a wall doesn't snag; top speed unchanged (massless); a barrel bumps another tank and reports a collision; shots meeting a barrel report `barrel`, shots at the hull `body`.
+**Trade-offs:** T-92, T-93, T-94; T-75 reversed.
+**Acceptance:** planted bug (no stall test): both stall tests failed; restored. Throwaway build driving into a wall at an angle: the barrel stops at the wall with no clipping, but the hull slowly slewed. Measured: ~2°/s while pushing, versus ~34° of spin from an off-centre hull ram (existing physics); kept, recorded as T-94 for Brendan to judge.
+**Issues:** my first barrel tests had geometry slips (a reach helper added the radius twice; a shot target's barrel ended 0.15 u short of the line of fire; a shooter fired before its turret had turned; a rammed target moves). All were the tests, fixed.
+
 ## 2026-11-20 · M3-8a · Hardpoints and barrels as data
 **Why:** Brendan wants barrels to collide and the mount mechanics to be extensible for future barrel styles and weapons fitted to hardpoints.
 **Built:** `HardpointDef` (id, `on` turret | hull, `at` forward/right, size small | large, trigger, cosmetic height) and `VehicleDef.hardpoints` + `loadout` replace the M3-2 mount list. `WeaponDef` gains `size`, `barrel` (`BarrelDef`: length, radius = collision/clearance radius, look `tube-brake` | `thin-tube`, `collides`) and `muzzles` (offsets; twin guns alternate). `WeaponMount` = weapon on a hardpoint: derived `muzzleOffset`, `advanceMuzzle`, clearance, snapshot. `Vehicle`: `mountOrigin` / `mountFacing` (turret pivot and aim, or hull centre and heading). `ShotFired` gains `hardpoint`. `createVehicle` validates loadouts (unique ids, known hardpoints, matching sizes). Render: `PrimitiveTankModel` builds a gun per fitted hardpoint, parented to turret or hull, drawn by the barrel's look. Player: `main` (large, primary) + `coax` (small, secondary); insurgent: `main`. Muzzles land exactly where the hand-set ones were.

@@ -50,7 +50,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | 3 | M3-3 `Projectile`, `PhysicsWorld.castCircle`, `ProjectileView` (shell, MG tracer), `ProjectileImpact` | `m3-3-projectiles` | ✅ |
 | 4 | M3-7 Muzzle clearance (barrel retraction removed after playtest: barrels stay rigid, T-75) | `m3-7-muzzle` | ✅ |
 | 4a | M3-8a Hardpoints and barrels as data (D14): refactor, derived muzzles, size validation, twin muzzles | `m3-8a-hardpoints` | ✅ |
-| 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision` | ⬜ |
+| 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision` | ✅ |
 | 5 | M3-4 `ArmorProfile` (both face rules, `?armor=`), `Health`, `DamageResolver`, `Hit`; vehicles destroyed at 0 | `m3-4-damage` | ⬜ |
 | 6 | M3-5 Crates break; three dummies; `?hp=on` overlay. **Done-when check; armor rule pick** | `m3-5-targets` | ⬜ |
 | 7 | M3-6 HUD | `m3-6-hud` | ⬜ |
