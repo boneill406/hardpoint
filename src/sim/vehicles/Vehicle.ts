@@ -1,5 +1,7 @@
+import { WeaponMount, type Shot } from '../combat/WeaponMount';
 import { wrapAngle } from '../core/angles';
 import { Entity, type EntitySnapshot } from '../core/Entity';
+import type { Rng } from '../core/Rng';
 import type { Transform } from '../core/Transform';
 import { Vec2 } from '../core/Vec2';
 import type { BodyState } from '../physics/PhysicsWorld';
@@ -17,6 +19,8 @@ export interface VehicleSnapshot extends EntitySnapshot {
   readonly angularVelocity: number;
   readonly locomotion: LocomotionSnapshot;
   readonly turret: TurretSnapshot;
+  /** Per weapon mount, each limiter's state. */
+  readonly weapons: readonly (readonly Readonly<Record<string, number>>[])[];
 }
 
 /**
@@ -30,6 +34,8 @@ export interface VehicleSnapshot extends EntitySnapshot {
 export class Vehicle extends Entity {
   /** Aims independently of the hull (stabilised). */
   readonly turret: Turret;
+  /** Guns on the turret, in def order. */
+  readonly mounts: readonly WeaponMount[];
   private linear = Vec2.ZERO;
   private previousLinear = Vec2.ZERO;
   private angular = 0;
@@ -44,6 +50,7 @@ export class Vehicle extends Entity {
   ) {
     super(transform);
     this.turret = new Turret(def.turret, transform.heading);
+    this.mounts = def.weapons.map((mount) => new WeaponMount(mount));
   }
 
   /** World-space velocity, u/s. */
@@ -110,9 +117,60 @@ export class Vehicle extends Entity {
     this.angular = state.angularVelocity;
   }
 
-  /** Tick phase 5, after physics: traverse the turret toward the command's aim, from where the tank now is. */
+  /**
+   * Tick phase 5, after physics: traverse the turret toward the command's aim,
+   * measured from the turret's pivot so the gun line passes through the aim point.
+   */
   aimTurret(dt: number): void {
-    this.turret.step(this.activeCommand.aimPoint, this.transform.position, dt);
+    this.turret.step(this.activeCommand.aimPoint, this.turretPivot(), dt);
+  }
+
+  /** Where the turret pivots now: on the hull's centreline, `pivotForward` from its centre. */
+  turretPivot(): Vec2 {
+    const { position, heading } = this.transform;
+    return position.add(Vec2.fromHeading(heading).scale(this.def.turret.pivotForward));
+  }
+
+  /**
+   * Tick phase 6, after the turret has aimed: each weapon's limiters advance,
+   * and every weapon whose trigger is held and whose limiters allow it fires.
+   * Spread comes from the simulation's `Rng`, in a fixed order (vehicles in
+   * world order, mounts in def order), so it replays identically.
+   */
+  fireWeapons(dt: number, rng: Rng): Shot[] {
+    const shots: Shot[] = [];
+    for (const mount of this.mounts) {
+      const held =
+        mount.def.slot === 'primary'
+          ? this.activeCommand.firePrimary
+          : this.activeCommand.fireSecondary;
+      mount.weapon.update(dt, held);
+      if (held && mount.weapon.tryFire()) {
+        shots.push({
+          mount,
+          origin: this.muzzlePosition(mount),
+          heading: this.shotHeading(mount, rng),
+        });
+      }
+    }
+    return shots;
+  }
+
+  /** Where `mount`'s muzzle is now: turret pivot on the hull, then the muzzle offset along the turret. */
+  muzzlePosition(mount: WeaponMount): Vec2 {
+    const pivot = this.turretPivot();
+    const facing = this.turret.heading;
+    const { forward, right } = mount.def.muzzle;
+    return pivot
+      .add(Vec2.fromHeading(facing).scale(forward))
+      .add(Vec2.fromHeading(facing + Math.PI / 2).scale(right));
+  }
+
+  private shotHeading(mount: WeaponMount, rng: Rng): number {
+    const { spread } = mount.weapon.def;
+    // No draw for accurate weapons, so adding the cannon doesn't shift everyone else's spread.
+    const offset = spread > 0 ? rng.range(-spread / 2, spread / 2) : 0;
+    return wrapAngle(this.turret.heading + offset);
   }
 
   override snapshot(): VehicleSnapshot {
@@ -123,6 +181,7 @@ export class Vehicle extends Entity {
       angularVelocity: this.angular,
       locomotion: this.locomotion.snapshot(),
       turret: this.turret.snapshot(),
+      weapons: this.mounts.map((mount) => mount.weapon.snapshot()),
     };
   }
 }

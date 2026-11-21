@@ -84,6 +84,17 @@ export class Simulation {
     for (const vehicle of vehicles) {
       vehicle.aimTurret(TICK_SECONDS);
     }
+    for (const vehicle of vehicles) {
+      for (const shot of vehicle.fireWeapons(TICK_SECONDS, this.rng)) {
+        this.events.emit('ShotFired', {
+          shooter: vehicle.id,
+          slot: shot.mount.def.slot,
+          weapon: shot.mount.weapon.def.name,
+          origin: shot.origin,
+          heading: shot.heading,
+        });
+      }
+    }
     for (const impact of this.bodies.newVehicleImpacts()) {
       this.events.emit('VehiclesCollided', impact);
     }

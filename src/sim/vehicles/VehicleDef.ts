@@ -1,3 +1,5 @@
+import type { WeaponDef } from '../combat/WeaponDef';
+
 /**
  * Design cap on any vehicle's top speed (u/s), including future chassis and
  * upgrades (`resolveBuild` must clamp to it). Physics sizes its contact
@@ -18,6 +20,23 @@ export interface VehicleDef {
   readonly hull: HullDef;
   readonly locomotion: LocomotionDef;
   readonly turret: TurretDef;
+  /** Guns on the turret, in the order they are updated and fire. */
+  readonly weapons: readonly WeaponMountDef[];
+}
+
+/** Which trigger fires a weapon: primary (cannon) or secondary (machine gun), GDD §3. */
+export type WeaponSlot = 'primary' | 'secondary';
+
+/** A weapon fitted to the turret, with its muzzle position relative to the turret pivot. */
+export interface WeaponMountDef {
+  readonly slot: WeaponSlot;
+  readonly weapon: WeaponDef;
+  readonly muzzle: {
+    /** Along the turret's facing (u). */
+    readonly forward: number;
+    /** To the turret's right (u); negative is left. */
+    readonly right: number;
+  };
 }
 
 /** How the turret follows the aim point (GDD §3, M3 plan D1). */
@@ -30,6 +49,8 @@ export interface TurretDef {
   readonly snapAngle: number;
   /** Aim points closer than this to the tank (u) are ignored, so it doesn't spin under the cursor. */
   readonly minAimDistance: number;
+  /** Where the turret pivots, along the hull from its centre (u, negative = behind). */
+  readonly pivotForward: number;
 }
 
 /** The hull footprint, which is also its collision box (GDD §3). */

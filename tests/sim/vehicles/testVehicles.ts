@@ -24,7 +24,14 @@ export const TEST_TANK: VehicleDef = {
   mass: 10,
   hull: { length: 2, width: 1 },
   locomotion: TEST_LOCOMOTION,
-  turret: { traverseRate: 3, spinUpTime: 0.05, snapAngle: 0.02, minAimDistance: 1 },
+  turret: {
+    traverseRate: 3,
+    spinUpTime: 0.05,
+    snapAngle: 0.02,
+    minAimDistance: 1,
+    pivotForward: 0,
+  },
+  weapons: [],
 };
 
 export const AT_ORIGIN: Transform = { position: Vec2.ZERO, heading: 0 };

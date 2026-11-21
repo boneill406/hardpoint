@@ -78,6 +78,8 @@ export class PrimitiveTankModel implements TankModel {
     private readonly name: string,
     footprint: HullDef,
     faction: Faction,
+    /** Turret pivot along the hull (u), from the vehicle def so sim muzzles and drawn barrels agree. */
+    turretPivotForward: number,
   ) {
     const palette = PALETTES[faction];
     this.root = new TransformNode(name, scene);
@@ -94,7 +96,7 @@ export class PrimitiveTankModel implements TankModel {
 
     this.turret = new TransformNode(`${name}-turret`, scene);
     this.turret.parent = this.hull;
-    this.turret.position.set(0, HULL.bodyHeight / 2 + HULL.deckThickness, -0.05);
+    this.turret.position.set(0, HULL.bodyHeight / 2 + HULL.deckThickness, turretPivotForward);
     this.buildTurret(palette);
 
     this.barrel = new TransformNode(`${name}-barrel`, scene);

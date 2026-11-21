@@ -34,7 +34,13 @@ export class TankView implements EntityView {
     name: string,
     private readonly vehicle: Vehicle,
   ) {
-    this.model = new PrimitiveTankModel(scene, name, vehicle.def.hull, vehicle.faction);
+    this.model = new PrimitiveTankModel(
+      scene,
+      name,
+      vehicle.def.hull,
+      vehicle.faction,
+      vehicle.def.turret.pivotForward,
+    );
   }
 
   update(transform: Transform, frame: FrameTiming): void {

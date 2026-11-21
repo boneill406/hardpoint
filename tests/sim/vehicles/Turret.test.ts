@@ -16,6 +16,7 @@ const DEF: TurretDef = {
   spinUpTime: 0.05,
   snapAngle: degToRad(1),
   minAimDistance: 1.2,
+  pivotForward: 0,
 };
 const ORIGIN = Vec2.ZERO;
 

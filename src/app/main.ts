@@ -1,3 +1,4 @@
+import { FireLatch } from '../input/FireLatch';
 import { GamepadDevice } from '../input/GamepadDevice';
 import { PAD_SCHEMES } from '../input/bindings';
 import { InputManager } from '../input/InputManager';
@@ -134,6 +135,7 @@ async function start(): Promise<void> {
   const playerTank = findPlayerTank(simulation, PLAYER_ID);
 
   const clock = new FixedClock();
+  const fireLatch = new FireLatch();
   const frameGate = createFrameGate(debug.fps);
   let lastFrameMs: number | undefined;
 
@@ -146,12 +148,15 @@ async function start(): Promise<void> {
     lastFrameMs = nowMs;
 
     // Input is sampled once per frame; every tick this frame runs on the same command (T-56).
-    const command = intentToCommand(input.read(nowMs), playerTank.transform);
+    const command = fireLatch.apply(intentToCommand(input.read(nowMs), playerTank.transform));
     const commands = new Map([[PLAYER_ID, command]]);
 
     const steps = clock.advance(elapsedSeconds);
     for (let i = 0; i < steps; i++) {
       simulation.tick(commands);
+    }
+    if (steps > 0) {
+      fireLatch.consumed();
     }
     simulation.events.flush();
     renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);

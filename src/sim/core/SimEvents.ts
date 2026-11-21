@@ -1,4 +1,6 @@
+import type { WeaponSlot } from '../vehicles/VehicleDef';
 import type { EntityId } from './Entity';
+import type { Vec2 } from './Vec2';
 
 /**
  * Every event the simulation emits, keyed by name, with its payload type.
@@ -19,4 +21,12 @@ export interface SimEvents {
    * juice in M6 (GDD §8).
    */
   VehiclesCollided: { readonly a: EntityId; readonly b: EntityId; readonly impulse: number };
+  /** A weapon fired this tick (muzzle flash, sound, recoil in M6; projectiles in M3-3). */
+  ShotFired: {
+    readonly shooter: EntityId;
+    readonly slot: WeaponSlot;
+    readonly weapon: string;
+    readonly origin: Vec2;
+    readonly heading: number;
+  };
 }

@@ -16,6 +16,9 @@ export class KeyboardMouseDevice implements InputDevice {
   private activityMs = Number.NEGATIVE_INFINITY;
   private readonly keys = new Set<string>();
   private readonly mouseButtons = new Set<number>();
+  /** Pressed since the last read, even if already released: a tap between two frames still counts. */
+  private readonly tappedKeys = new Set<string>();
+  private readonly tappedButtons = new Set<number>();
   private cursor: { readonly x: number; readonly y: number } | undefined;
   private readonly listeners = new AbortController();
 
@@ -45,10 +48,17 @@ export class KeyboardMouseDevice implements InputDevice {
   read(): PlayerIntent {
     const aimPoint =
       this.cursor === undefined ? undefined : this.screenToGround(this.cursor.x, this.cursor.y);
-    return keyboardIntent(
-      { keys: this.keys, mouseButtons: this.mouseButtons, aimPoint },
+    const intent = keyboardIntent(
+      {
+        keys: new Set([...this.keys, ...this.tappedKeys]),
+        mouseButtons: new Set([...this.mouseButtons, ...this.tappedButtons]),
+        aimPoint,
+      },
       this.bindings,
     );
+    this.tappedKeys.clear();
+    this.tappedButtons.clear();
+    return intent;
   }
 
   dispose(): void {
@@ -63,6 +73,7 @@ export class KeyboardMouseDevice implements InputDevice {
     event.preventDefault();
     if (down) {
       this.keys.add(event.code);
+      this.tappedKeys.add(event.code);
     } else {
       this.keys.delete(event.code);
     }
@@ -77,6 +88,7 @@ export class KeyboardMouseDevice implements InputDevice {
   private onPointerButton(event: PointerEvent, down: boolean): void {
     if (down) {
       this.mouseButtons.add(event.button);
+      this.tappedButtons.add(event.button);
     } else {
       this.mouseButtons.delete(event.button);
     }

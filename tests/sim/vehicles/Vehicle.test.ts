@@ -79,6 +79,7 @@ describe('Vehicle', () => {
       angularVelocity: 0,
       locomotion: { gear: 1, shiftElapsed: 0 },
       turret: tank.turret.snapshot(),
+      weapons: [],
     });
   });
 });
