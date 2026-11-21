@@ -139,6 +139,7 @@ export class Simulation {
         this.events.emit('ProjectileImpact', {
           projectile: projectile.id,
           weapon: projectile.weapon.name,
+          look: projectile.weapon.projectile.look,
           target: this.bodies.entityOf(result.hit.body)?.id,
           point: result.hit.point,
           normal: result.hit.normal,

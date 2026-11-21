@@ -14,6 +14,7 @@ import { SliceCamera, type CameraPreset } from './camera/SliceCamera';
 import { fromBabylonPosition } from './coords';
 import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { ArenaView } from './views/ArenaView';
+import { ImpactFlashes } from './vfx/ImpactFlashes';
 
 export interface RendererOptions extends RenderBridgeOptions {
   /** Static arena geometry to build (floor, walls, gates). */
@@ -35,6 +36,7 @@ export class Renderer {
   private readonly sliceCamera: SliceCamera;
   private readonly bridge: RenderBridge;
   private readonly arenaView: ArenaView;
+  private readonly impacts: ImpactFlashes;
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions) {
     // antialias on; adaptToDeviceRatio so it renders crisply on Retina screens.
@@ -58,6 +60,7 @@ export class Renderer {
     this.measureCameraView();
 
     this.bridge = new RenderBridge(this.scene, options);
+    this.impacts = new ImpactFlashes(this.scene);
   }
 
   /**
@@ -73,6 +76,7 @@ export class Renderer {
     frameSeconds: number,
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
+    this.impacts.update(frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds);
@@ -100,6 +104,11 @@ export class Renderer {
     return fromBabylonPosition(ray.origin.add(ray.direction.scale(distance)));
   }
 
+  /** A shot hit something: show the placeholder impact flash there (M6 replaces it). */
+  flashImpact(point: Vec2, look: 'shell' | 'tracer'): void {
+    this.impacts.spawn(point, look);
+  }
+
   /** Matches the drawing buffer to the canvas after the window changes size. */
   resize(): void {
     this.engine.resize();
@@ -108,6 +117,7 @@ export class Renderer {
 
   dispose(): void {
     this.bridge.dispose();
+    this.impacts.dispose();
     this.arenaView.dispose();
     this.scene.dispose();
     this.engine.dispose();

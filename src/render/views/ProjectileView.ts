@@ -13,23 +13,24 @@ type Look = WeaponDef['projectile']['look'];
  * Height (u) each kind of shot flies at: its barrel's height on the primitive
  * tank (cannon 0.87, the lower coaxial MG 0.82). Cosmetic; the sim is planar.
  */
-const FLIGHT_HEIGHT: Readonly<Record<Look, number>> = { shell: 0.87, tracer: 0.82 };
+export const FLIGHT_HEIGHT: Readonly<Record<Look, number>> = { shell: 0.87, tracer: 0.82 };
 
 /** Shell proportions after the prototype's (body, pointed nose, driving band), in u. */
 const SHELL = { diameter: 0.12, body: 0.24, nose: 0.12, band: 0.04 };
 /** The MG tracer: a thin self-lit rod. */
-const TRACER = { width: 0.035, length: 0.3 };
+const TRACER = { width: 0.035, length: 0.35 };
 
 /**
  * Motion streak: a fading trail covering how far the shot moved on screen
  * since the last frame, so a fast shot reads as one moving object instead of
  * a row of copies (the eye holds each frame; a shell moving ~3× its own length
- * per frame strobes). Tracers get half (Brendan: full-length MG streaks
- * crowded the stream). Capped so slow frame rates don't draw absurd trails.
+ * per frame strobes). Tracers get three quarters (Brendan: full length
+ * crowded the MG stream, half left it too sparse). Capped so slow frame rates
+ * don't draw absurd trails.
  */
 const STREAK: Readonly<Record<Look, { scale: number; maxLength: number; opacity: number }>> = {
   shell: { scale: 1, maxLength: 3, opacity: 0.35 },
-  tracer: { scale: 0.5, maxLength: 1, opacity: 0.5 },
+  tracer: { scale: 0.75, maxLength: 1.5, opacity: 0.5 },
 };
 
 interface Materials {

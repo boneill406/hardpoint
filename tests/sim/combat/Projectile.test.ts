@@ -107,6 +107,7 @@ describe('Projectile', () => {
     const [impact] = impacts;
     expect(impact?.target).toBeUndefined();
     expect(impact?.weapon).toBe('Cannon');
+    expect(impact?.look).toBe('shell');
     expect(impact?.point.z).toBeCloseTo(30, 2);
     expect(impact?.normal.z).toBeCloseTo(-1, 6);
   });

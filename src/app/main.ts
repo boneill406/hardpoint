@@ -134,6 +134,9 @@ async function start(): Promise<void> {
   ]);
   const playerTank = findPlayerTank(simulation, PLAYER_ID);
 
+  // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
+  simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
+
   const clock = new FixedClock();
   const fireLatch = new FireLatch();
   const frameGate = createFrameGate(debug.fps);

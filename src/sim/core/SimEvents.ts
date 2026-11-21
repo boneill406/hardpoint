@@ -37,6 +37,8 @@ export interface SimEvents {
   ProjectileImpact: {
     readonly projectile: EntityId;
     readonly weapon: string;
+    /** The projectile's look (shell / tracer), so effects can scale with it. */
+    readonly look: 'shell' | 'tracer';
     readonly target: EntityId | undefined;
     readonly point: Vec2;
     readonly normal: Vec2;
