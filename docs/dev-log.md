@@ -40,6 +40,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-3 follow-up 4 · Impact flash; MG spacing
+**Built:** `render/vfx/ImpactFlashes` (deleted the `vfx/index.ts` placeholder, T-12): a self-lit sphere at each `ProjectileImpact`, 0.7 u for shells and 0.25 u for MG rounds, growing and fading over 0.12 s (per-mesh visibility, shared material). `ProjectileImpact` gains `look`. `main.ts` subscribes; `Renderer.flashImpact` / per-frame update. T-89.
+**MG spacing:** rounds are 10 u apart by physics (100 u/s, 10/s); only the drawn share changed. Full streak (~2.2 u per round) read as continuous, half (~1.1 u) as sparse; now rod 0.35 u and streak at 75% of the frame's travel, capped 1.5 u (~1.6 u). Gameplay levers (12 rounds/s, slower rounds) left alone. T-88 updated.
+**Acceptance:** throwaway build (reverted) firing at a crate: no flash caught at 0.12 s (headless frames are further apart than the flash lasts); with a 5 s flash it shows on the crate's near face, confirming the wiring.
+
 ## 2026-11-20 · M3-3 follow-up 3 · Shot polish
 **Why (Brendan):** a shot's first frame had no streak; MG rounds could be thinner; MG rounds appeared to leave from over the turret, not the barrel; wanted an MG muzzle brake; close to a crate, no shell is seen at all.
 **Changed:** `ProjectileView` treats the muzzle tip as the previous position on the first frame, so a shot is born with a streak. The tracer rod is clipped so it never reaches back past the muzzle (it was drawn its full length behind the tip, over the turret). Per-look flight height: shells 0.87 (cannon), tracers 0.82 (the lower coax). Tracer 0.035 × 0.3 u. `PrimitiveTankModel`: small round muzzle brake on the coax.
