@@ -18,7 +18,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | Idea, undecided: barrel bob (elevation only, render-only) when the turret starts and stops traversing; maybe a tiny yaw settle | — | Brendan decides, at the latest in M6 | M3-1 |
-| Barrel pokes into walls and pillars (T-75) | T-75 | M3-7: muzzle ray (sim) sets shell spawn and barrel retraction (view) | M2-6 |
+| Point-blank shots are on screen for at most one frame (flight shorter than a tick); reassess once M6 adds muzzle flash and recoil, and if still odd add a render-only minimum visible flight (~3 frames, impact flash delayed to match) | — | M6 | M3-7 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
@@ -39,6 +39,17 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-20 · M3-7 · Muzzle clearance and barrel retraction
+**Built:**
+- `WeaponMountDef.clearanceRadius` (cannon 0.12, coax 0.06: barrel-wide). `WeaponMount` keeps `clearance` (0..1 of the pivot→muzzle line that is unobstructed) and its previous value. `Simulation` phase 5b sweeps that circle from the turret pivot to each muzzle (ignoring the own hull) after the turret aims. `Vehicle.clearMuzzlePosition`: shots start there, so a blocked barrel's shot hits the obstacle the same tick. Snapshot includes clearance.
+- View: `TankModel.guns` (one node per weapon slot, origin at the muzzle tip, barrel built backwards from it) replaces `barrel`; `PrimitiveTankModel` takes the whole `VehicleDef` and places each gun from its mount's muzzle, so drawn tips are the sim's muzzles; the coax is its own node (retracts independently). `TankView` sets each gun's z to the interpolated clearance × muzzle distance.
+- Also on this branch: MG 10 → **12 rounds/s** (exactly 5 ticks; overheats after 2.5 s; ~36 damage/s); GDD §4 and plan; MG tests updated (30th round on tick 145, next at 313).
+- 6 new tests (307 total), real Rapier: clear in the open; nose to a wall the cannon's clearance matches the circle touching the wall; a blocked shot starts short of the wall and hits it the same tick; over 30 ticks no shot from either gun starts inside or beyond the wall; point-blank against a tank, the shot hits that tank; previous clearance kept.
+**Resolved:** T-75 (barrel poking into walls).
+**Trade-offs:** T-90; T-75 reversed.
+**Acceptance:** planted bug (shots from the full muzzle): 2 tests failed; restored. Throwaway nose-to-wall build (reverted): the barrel is drawn retracted with the brake at the wall's face.
+**Also discussed:** how frames draw interpolated ticks, and why point-blank shots are seen for ~1 frame; follow-up for M6 (minimum visible flight if still odd).
 
 ## 2026-11-20 · M3-3 follow-up 4 · Impact flash; MG spacing
 **Built:** `render/vfx/ImpactFlashes` (deleted the `vfx/index.ts` placeholder, T-12): a self-lit sphere at each `ProjectileImpact`, 0.7 u for shells and 0.25 u for MG rounds, growing and fading over 0.12 s (per-mesh visibility, shared material). `ProjectileImpact` gains `look`. `main.ts` subscribes; `Renderer.flashImpact` / per-frame update. T-89.
