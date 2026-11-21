@@ -71,6 +71,7 @@ _Hardpoint (working title). Created 2026-11-18._
 | M3-4 | `ArmorProfile` (front/side/rear by hit angle), `Health`, `DamageResolver` |
 | M3-5 | Destructible crates (cannon only); static enemy-tank target dummy |
 | M3-6 | HUD: armor, reload, heat bars |
+| M3-8 | Hardpoints and barrels as data; barrels collide (driving and turret rotation), shots stop at barrels without damage (added 2026-11-20) |
 | M3-7 | Muzzle clearance: each tick the sim casts a ray from the turret pivot to the muzzle; a blocked muzzle starts the shell at the obstacle (it hits immediately, never spawns inside or behind it), and `TankView` slides the barrel back to the clear distance so the visible tip matches (T-75) |
 
 **Done when:** front hits on the dummy visibly deal less than rear hits; the machine gun overheats and re-arms; tests cover armor angles and multi-limiter weapons.
@@ -146,5 +147,4 @@ _Hardpoint (working title). Created 2026-11-18._
 - More enemy types (infantry, technicals), aliens faction
 - Settings, key rebinding, save data, music
 - Crate rebuild between waves (revisit after playtests)
-- Barrel as a collision part (blocks nosing into walls and turret rotation into them), if barrel clipping ever bothers players (T-75)
 - Realistic armor: angle of impact, ricochets, armor thickness per face (builds on the `struck` face rule if it isn't the slice default)
