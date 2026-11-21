@@ -40,6 +40,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-20 · M3-7 follow-up · Rigid barrels; steady streaks
+**Why (Brendan):** barrel retraction looked cartoony and unrealistic ("I'd rather the barrel be rigid"); MG rounds looked "laggy" after the last change; impacts look good.
+**Changed:** `TankView` no longer moves the guns: barrels are rigid and can clip into walls again (T-75 accepted, with the sim's clear-point firing kept, so shots still never start inside or behind a wall; T-90 revised). Streaks are a fixed length per look (shell 1.4 u, tracer 1.2 u), clipped at the muzzle: the per-frame-travel length pulsed with frame-time wobble, the likely "lag" (T-88 revised). Backlog: barrel as a collision part.
+**If the MG still feels laggy:** next step is a `?stats=on` overlay (fps, worst frame time) to measure, then pooling projectile and flash meshes (T-85).
+
 ## 2026-11-20 · M3-7 · Muzzle clearance and barrel retraction
 **Built:**
 - `WeaponMountDef.clearanceRadius` (cannon 0.12, coax 0.06: barrel-wide). `WeaponMount` keeps `clearance` (0..1 of the pivot→muzzle line that is unobstructed) and its previous value. `Simulation` phase 5b sweeps that circle from the turret pivot to each muzzle (ignoring the own hull) after the turret aims. `Vehicle.clearMuzzlePosition`: shots start there, so a blocked barrel's shot hits the obstacle the same tick. Snapshot includes clearance.
