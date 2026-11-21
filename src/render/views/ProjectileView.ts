@@ -21,16 +21,16 @@ const SHELL = { diameter: 0.12, body: 0.24, nose: 0.12, band: 0.04 };
 const TRACER = { width: 0.035, length: 0.35 };
 
 /**
- * Motion streak: a fading trail covering how far the shot moved on screen
- * since the last frame, so a fast shot reads as one moving object instead of
- * a row of copies (the eye holds each frame; a shell moving ~3× its own length
- * per frame strobes). Tracers get three quarters (Brendan: full length
- * crowded the MG stream, half left it too sparse). Capped so slow frame rates
- * don't draw absurd trails.
+ * Motion streak: a fixed-length fading trail behind each shot, so a fast shot
+ * reads as one moving object instead of a row of copies (the eye holds each
+ * frame; a shell moving ~3× its own length per frame strobes). Fixed rather
+ * than per-frame travel: frame times wobble, and a streak whose length pulses
+ * with them read as stutter (Brendan: MG looked "laggy"). Tracer length chosen
+ * between Brendan's "too continuous" and "too sparse".
  */
-const STREAK: Readonly<Record<Look, { scale: number; maxLength: number; opacity: number }>> = {
-  shell: { scale: 1, maxLength: 3, opacity: 0.35 },
-  tracer: { scale: 0.75, maxLength: 1.5, opacity: 0.5 },
+const STREAK: Readonly<Record<Look, { length: number; opacity: number }>> = {
+  shell: { length: 1.4, opacity: 0.35 },
+  tracer: { length: 1.2, opacity: 0.5 },
 };
 
 interface Materials {
@@ -88,8 +88,6 @@ export class ProjectileView implements EntityView {
   private readonly streak: Mesh;
   private readonly materials: Materials;
   private readonly look: Look;
-  /** Where the tip was drawn last frame; starts at the muzzle so a new shot has a streak at once. */
-  private lastTip: Vec2;
   /** The tracer's rod, clipped so it never reaches back past the muzzle. */
   private rod: Mesh | undefined;
 
@@ -102,7 +100,6 @@ export class ProjectileView implements EntityView {
     this.root = new TransformNode(name, scene);
     const look = projectile.weapon.projectile.look;
     this.look = look;
-    this.lastTip = this.tipAt(projectile.origin, projectile.transform.heading);
     if (look === 'shell') {
       this.buildShell(scene, name);
     } else {
@@ -125,7 +122,7 @@ export class ProjectileView implements EntityView {
     this.root.rotation.y = toBabylonRotationY(transform.heading);
     const sinceMuzzle = tip.distanceTo(this.tipAt(this.projectile.origin, transform.heading));
     this.clipRod(sinceMuzzle);
-    this.updateStreak(tip, sinceMuzzle);
+    this.updateStreak(sinceMuzzle);
   }
 
   /** The front of the sim's collision circle: where the shot's tip is drawn. */
@@ -148,17 +145,9 @@ export class ProjectileView implements EntityView {
     this.root.dispose(false, false);
   }
 
-  /**
-   * Stretch the trail behind the tip over how far it moved on screen since the
-   * last frame (not from the sim velocity: a shot that has hit is parked with
-   * zero velocity while the view still carries it the last stretch to the
-   * surface). Never reaches back past the muzzle.
-   */
-  private updateStreak(tip: Vec2, sinceMuzzle: number): void {
-    const { scale, maxLength } = STREAK[this.look];
-    const moved = tip.distanceTo(this.lastTip);
-    this.lastTip = tip;
-    const length = Math.min(moved * scale, maxLength, sinceMuzzle);
+  /** The trail behind the tip: a fixed length, but never reaching back past the muzzle. */
+  private updateStreak(sinceMuzzle: number): void {
+    const length = Math.min(STREAK[this.look].length, sinceMuzzle);
     this.streak.isVisible = length > 0.01;
     this.streak.scaling.z = Math.max(length, 0.01);
     this.streak.position.z = -length / 2;

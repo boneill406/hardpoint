@@ -26,8 +26,9 @@ export interface TankModel {
   readonly turret: TransformNode;
   /**
    * One node per gun, origin at its muzzle tip (+z forward along the turret);
-   * the barrel geometry extends backwards from it. Sliding a node back along z
-   * retracts that barrel (M3-7) or recoils it (M6).
+   * the barrel geometry extends backwards from it, so the drawn tip is the
+   * sim's muzzle. Barrels are rigid (Brendan); sliding a node back is for
+   * firing recoil (M6).
    */
   readonly guns: Partial<Record<WeaponSlot, TransformNode>>;
   readonly leftTread: TreadSurface;

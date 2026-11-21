@@ -41,7 +41,6 @@ export class TankView implements EntityView {
     this.model.root.position = toBabylonPosition(transform.position);
     this.model.root.rotation.y = toBabylonRotationY(transform.heading);
     this.aimTurret(transform.heading, frame.alpha);
-    this.retractGuns(frame.alpha);
     this.animateTreads(frame.seconds);
     this.animatePitch(frame.seconds);
   }
@@ -58,23 +57,6 @@ export class TankView implements EntityView {
     const { turret } = this.vehicle;
     const world = lerpAngle(turret.previousHeading, turret.heading, alpha);
     this.model.turret.rotation.y = toBabylonRotationY(wrapAngle(world - hullHeading));
-  }
-
-  /**
-   * M3-7: a gun whose pivot→muzzle line is blocked slides back so its tip sits
-   * at the sim's clear point (where its shots now start). Interpolated, so the
-   * barrel glides rather than steps.
-   */
-  private retractGuns(alpha: number): void {
-    for (const mount of this.vehicle.mounts) {
-      const gun = this.model.guns[mount.def.slot];
-      if (gun === undefined) {
-        continue;
-      }
-      const clearance =
-        mount.previousClearance + (mount.clearance - mount.previousClearance) * alpha;
-      gun.position.z = clearance * mount.def.muzzle.forward;
-    }
   }
 
   /** Speeds come from the sim's motion after physics: a pinned or shoved tank's tracks don't turn. */
