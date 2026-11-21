@@ -17,6 +17,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
 | `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
+| Idea, undecided: barrel bob (elevation only, render-only) when the turret starts and stops traversing; maybe a tiny yaw settle | — | Brendan decides, at the latest in M6 | M3-1 |
 | Barrel pokes into walls and pillars (T-75) | T-75 | M3-7: muzzle ray (sim) sets shell spawn and barrel retraction (view) | M2-6 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
@@ -38,6 +39,21 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-20 · M3-2 · Weapons and limiters
+**Built:**
+- `combat/WeaponDef.ts` (designer terms; `ReloadLimiterDef`, `HeatLimiterDef`), `defs/weapons.ts`: `CANNON` (50, 70 u/s, r 0.07, 1.5 s reload, breaks cover), `MACHINE_GUN` (3, 100 u/s, r 0.04, 1° cone, 0.1 s cadence + heat: 30 rounds, 0.25/s, re-arm 30%), `INSURGENT_CANNON` (12, 3° cone, 2.4 s).
+- `limiters/FireLimiter.ts` (interface: `canFire`, `onFired`, `update(dt, triggerHeld)`, `describe` for the HUD, `snapshot`), `ReloadLimiter`, `HeatLimiter` (cools when released or locked out, T-81). `Weapon` (all limiters must allow; at least one required). `WeaponMount` + `Shot`.
+- `VehicleDef`: `turret.pivotForward` (−0.05, also used by the view) and `weapons` (slot, weapon, muzzle offset). Player: cannon (primary, muzzle 1.65 ahead) + coaxial MG (secondary, 0.9 ahead, 0.2 left); insurgent: cannon only.
+- `Vehicle.fireWeapons` (tick phase 6): limiters advance, held triggers fire, muzzle = turret pivot + mount offset along the turret, heading = turret + spread from the sim `Rng` (none drawn for accurate weapons, T-83). Turret now aims from its pivot (T-82). `ShotFired { shooter, slot, weapon, origin, heading }`. Snapshot includes limiter state.
+- Input: `KeyboardMouseDevice` remembers presses since the last read; `FireLatch` keeps a fire press until a tick consumes it (frames with no tick), wired in `main.ts` (T-56).
+- 29 new tests (287 total): `ReloadLimiter` (3: exactly 90 ticks for 1.5 s), `HeatLimiter` (5), `Weapon` (6: two limiters, MG 6-tick cadence, 30 rounds then next shot exactly 168 ticks later, cannon every 90 ticks), vehicle firing (6: muzzle positions, turret-relative muzzles, spread cone, spread determinism, insurgent loadout), `FireLatch` (3), weapon def guards (6: whole-tick timings).
+**Trade-offs:** T-81, T-82, T-83; T-56 updated.
+**Acceptance:** planted bug (fire when *any* limiter allows): 4 tests failed; restored. No visible change in the game yet (projectiles are M3-3).
+**Issues:**
+- My first MG test assumed the lockout started at tick 180; the 30th round fires on tick 174 (rounds every 6 ticks from 0), so the next shot is correctly at 342. Rewrote it to pin exact ticks.
+- The turret-relative muzzle test exposed that the turret aimed from the hull centre, not its pivot; fixed in the sim (T-82).
+- New follow-up: barrel bob idea, undecided (Brendan).
 
 ## 2026-11-20 · M3-1 · Turret
 **Built:** `TurretDef` (traverse rate, spin-up, snap angle, minimum aim distance) in `VehicleDef`; player 4.0 rad/s, 0.05 s, 1°, 1.2 u; insurgent 1.8 rad/s. `Turret` (sim): stabilised world heading, previous heading for interpolation, spin-up then constant-rate traverse the short way round, snap within the snap angle, aim points closer than the minimum ignored; snapshot. `Vehicle.turret`, `aimTurret` as tick phase 5 (after physics). `VehicleCommand.aimPoint` optional (T-80): `intentToCommand` no longer remembers a last aim point. `TankView` turns the model's turret by the interpolated world heading minus the drawn hull heading; views now get `FrameTiming { seconds, alpha }` (alpha 1 with `?interp=off`).

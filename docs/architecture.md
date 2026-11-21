@@ -28,7 +28,7 @@ src/
     vehicles/    Vehicle, VehicleDef, VehicleCommand, Faction, VehicleFactory (createVehicle), Turret, WeaponMount
       locomotion/   Locomotion (interface), TrackedLocomotion
       controllers/  Controller (interface), PlayerController, AiController
-    combat/      Weapon, Projectile, ArmorProfile, Health, DamageResolver
+    combat/      Weapon, WeaponDef, WeaponMount, Projectile, ArmorProfile, Health, DamageResolver
       limiters/     FireLimiter (interface), ReloadLimiter, HeatLimiter
     ai/          Pathfinder (grid A*), behavior states
     physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005), PhysicsBridge (entity ↔ body)
@@ -92,7 +92,7 @@ classDiagram
     <<interface>>
     +canFire()
     +onFired()
-    +update(dt)
+    +update(dt, triggerHeld)
     +describe()
   }
   class ArmorProfile {
@@ -140,7 +140,7 @@ classDiagram
 2. **Fixed-step simulation (60 Hz),** run 0..n times per frame to catch up:
    1. Each `Controller` produces a `VehicleCommand`.
    2. `Locomotion.step` turns each command into new velocities, traction-limited (engine, brakes, track grip; M2 plan D1); `PhysicsWorld` integrates them and resolves collisions `PhysicsBridge` keeps one body per vehicle and prop (diffing ids each tick, like `RenderBridge`), pushes velocities, Rapier steps, and each vehicle takes its resolved transform back (`syncFromPhysics`). Walls are static boxes added once.
-   3. Turrets traverse toward aim (after physics, from where the tank ended up; stabilised, so hull turning doesn't swing them; no aim point = hold heading); weapons update limiters and fire.
+   3. Turrets traverse toward aim (after physics, from the turret pivot; stabilised, so hull turning doesn't swing them; no aim point = hold heading). Then each weapon's limiters advance and every held trigger whose limiters all allow fires: a `ShotFired` with the muzzle position (pivot + mount offset along the turret) and heading (turret + spread from the sim `Rng`).
    4. Projectiles advance (swept/ray tests, no tunneling); hits go to `DamageResolver`.
    5. `DamageResolver` applies `ArmorProfile.multiplier(hitAngle)` → `Health`.
    6. `GameMode.update` spawns enemies and checks win/lose.

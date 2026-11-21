@@ -42,7 +42,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | Order | Task | Branch | Status |
 |---|---|---|---|
 | 1 | M3-1 `Turret`, `TurretDef`; aim from `VehicleCommand.aimPoint`; `TankView` rotates the turret | `m3-1-turret` | ✅ |
-| 2 | M3-2 `Weapon`, `FireLimiter`, `ReloadLimiter`, `HeatLimiter`, `WeaponMount`, `defs/weapons.ts`; input tap latching | `m3-2-weapons` | ⬜ |
+| 2 | M3-2 `Weapon`, `FireLimiter`, `ReloadLimiter`, `HeatLimiter`, `WeaponMount`, `defs/weapons.ts`; input tap latching | `m3-2-weapons` | ✅ |
 | 3 | M3-3 `Projectile`, `PhysicsWorld.castCircle`, `ProjectileView` (shell, MG tracer), `ProjectileImpact` | `m3-3-projectiles` | ⬜ |
 | 4 | M3-7 Muzzle clearance and barrel retraction | `m3-7-muzzle` | ⬜ |
 | 5 | M3-4 `ArmorProfile` (both face rules, `?armor=`), `Health`, `DamageResolver`, `Hit`; vehicles destroyed at 0 | `m3-4-damage` | ⬜ |
