@@ -6,6 +6,7 @@ import { intentToCommand } from '../input/intentToCommand';
 import { KeyboardMouseDevice } from '../input/KeyboardMouseDevice';
 import { CAMERA_PRESETS } from '../render/camera/SliceCamera';
 import { Renderer } from '../render/Renderer';
+import type { EntityId } from '../sim/core/Entity';
 import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
 import { Vec2 } from '../sim/core/Vec2';
@@ -18,6 +19,7 @@ import { Vehicle } from '../sim/vehicles/Vehicle';
 import { createVehicle } from '../sim/vehicles/VehicleFactory';
 import { IDLE_COMMAND, type PlayerId, type VehicleCommand } from '../sim/vehicles/VehicleCommand';
 import { HealthOverlay } from '../ui/HealthOverlay';
+import { Hud } from '../ui/Hud';
 import { readDebugParams } from './debugParams';
 
 /**
@@ -167,9 +169,12 @@ async function start(): Promise<void> {
   const overlay = debug.hp
     ? new HealthOverlay(document.body, debug.armor ?? 'per def (direction)')
     : undefined;
-  simulation.events.on('Hit', ({ target, damage, face }) =>
-    overlay?.recordHit(target, { damage, face }),
-  );
+  simulation.events.on('Hit', ({ point, damage }) => overlay?.recordHit(point, damage));
+  const hud = new Hud(document.body);
+  const overlayProjector = {
+    vehicle: (id: EntityId) => renderer.screenPositionOf(id, 1.6),
+    point: (point: Vec2, height: number) => renderer.groundToScreen(point, height),
+  };
 
   const clock = new FixedClock();
   const fireLatch = new FireLatch();
@@ -197,7 +202,8 @@ async function start(): Promise<void> {
     }
     simulation.events.flush();
     renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
-    overlay?.update(simulation.world.ofType(Vehicle), (id) => renderer.screenPositionOf(id, 1.6));
+    hud.update(playerTank);
+    overlay?.update(simulation.world.ofType(Vehicle), overlayProjector, elapsedSeconds);
   };
   requestAnimationFrame(frame);
 }

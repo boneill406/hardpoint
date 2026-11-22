@@ -38,7 +38,7 @@ src/
   render/        Renderer, RenderBridge, coords.ts, vfx/ (ImpactFlashes), views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
-  ui/            HealthOverlay (debug, `?hp=on`), Hud, menus
+  ui/            Hud + hudState (M3-6), HealthOverlay (debug, `?hp=on`), menus
   app/           main.ts — wiring and the main loop
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
                  tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
@@ -152,10 +152,16 @@ classDiagram
 
 - **`RenderBridge`:** maps entity id → view. Each frame it diffs the world's ids against its views (creating and disposing views) rather than listening to spawn/destroy events, so it can't fall out of step; then places each view at `lerp(previousTransform, transform, alpha)` (heading via `lerpAngle`). An entity type with no view throws.
 - **`ArenaView`:** static floor, walls and gate markers, built once from the sim's `Arena` (walls aren't entities). Pillars and crates are `Prop` entities with `PropView`s.
-- **Debug URL params** (`src/app/debugParams.ts`): `?fps=N` caps the render rate to mimic a slow machine; `?interp=off` draws raw ticks to show what interpolation hides; `?pad=` picks the gamepad scheme; `?grid=on` draws a 2 u floor grid; `?cam=slice|proto` picks the camera preset; `?armor=direction|struck` sets every tank's armor face rule (M3-4); `?hp=on` shows the `HealthOverlay`: an HTML health bar and last hit over each damaged vehicle, placed with `Renderer.screenPositionOf` (M3-5).
+- **Debug URL params** (`src/app/debugParams.ts`): `?fps=N` caps the render rate to mimic a slow machine; `?interp=off` draws raw ticks to show what interpolation hides; `?pad=` picks the gamepad scheme; `?grid=on` draws a 2 u floor grid; `?cam=slice|proto` picks the camera preset; `?armor=direction|struck` sets every tank's armor face rule (M3-4); `?hp=on` shows the `HealthOverlay`: an HTML health bar over each damaged vehicle and each hit's damage as a number floating up from the impact, placed with `Renderer.screenPositionOf` / `groundToScreen` (M3-5).
 - **Views** (`TankView`, `ProjectileView` (prototype-style shell or tracer rod, tip at the front of the sim's collision circle, a motion streak one frame long, shared materials), `PropView`): own Babylon meshes; read-only access to entity state. `TankView` animates what the sim implies but doesn't model, from the vehicle's velocities after physics: treads scroll at their true surface speeds (left = forward + ω·d, right = forward − ω·d; equal and opposite when pivoting) and fade toward a plain track before the pattern could strobe; the hull pitches on a spring from the last tick's acceleration. It draws through the `TankModel` interface (root, hull, turret, barrel, treads), so a glTF model can later replace `PrimitiveTankModel` without changing the view. A future `WalkerView` owns a procedural `LegRig` (2-bone IK, foot planting). The legs are cosmetic, with no simulation impact.
 - **VFX:** placeholder `ImpactFlashes` (M3-3): a ~0.12 s self-lit burst at each `ProjectileImpact`, sized by projectile look; replaced in M6 by Babylon particle systems (presets and Node Particle Editor assets) triggered by events, plus "juice": screen shake, hit-stop, muzzle-flash lights, bloom.
 - **Camera (`SliceCamera`):** high angle between top-down and isometric, from a `CameraPreset` (`?cam=`). Eases after the followed tank's drawn position (frame-rate independent) and clamps its focus to frame the arena: sideways by the narrow bottom edge of the view (so the bottom corners can be reached), up and down by where the screen edges cross wall-top height (so whole walls fit). Measured by casting screen points onto those planes, again on every resize. `ArenaView` draws terrain beyond the walls for the wider top of the view.
+
+## 6b. HUD
+
+- **`Hud`** (`src/ui/Hud.ts`, M3-6): HTML panel bottom-left with the armor bar (pulses at ≤30%, GDD §7), the cannon's reload bar and the MG's heat bar (with its re-arm marker and an "Overheated" state). Updated once per frame from the player's `Vehicle`; never writes sim state.
+- **`hudState(vehicle)`** turns the vehicle into plain numbers (armor fraction, one gauge per weapon: heat if the weapon has a `HeatLimiter`, otherwise reload progress), so the logic is unit-tested without a DOM (`tests/ui/`). New limiter kinds need a gauge here.
+- Wave counter, enemies remaining and the breather countdown join in M5-6.
 
 ## 7. Input
 

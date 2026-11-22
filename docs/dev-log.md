@@ -39,6 +39,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-21 · M3-6 · HUD; floating damage numbers
+- **HUD (D10):** `ui/Hud` (bottom-left panel): armor `n / max` with a bar that turns red and pulses at ≤30%; cannon reload ("Ready" / "Reloading"); MG heat in % with a marker at the 30% re-arm point and a pulsing "Overheated". `ui/hudState` derives the numbers (unit-tested). Checked in headless Chrome: renders over the game at 1280 × 800.
+- **Damage numbers (Brendan's request):** in the `?hp=on` overlay each `Hit` now spawns its damage ("32.5") at the impact point, rising ~36 px and fading over 0.9 s, re-projected each frame so it stays put as the camera moves; a small random sideways nudge (render-only) keeps MG bursts apart. The bar label is just `health/max` now. `Renderer.groundToScreen` added beside `screenPositionOf`. Not yet seen in motion by me (headless capture has no firing).
+- Trade-offs: T-100 (CSS in `Hud.ts`), T-101 (damage numbers debug-only).
+
 ## 2026-11-21 · M3-5 · Breakable crates, armor dummies, `?hp=on`
 - **Crates (D7):** a `Prop` that is `destructible` and hit by a `breaksCover` weapon (cannon) is removed at the end of the tick; `PhysicsBridge` drops its collider at the next sync, so the next shell flies through. The MG stops on crates without breaking them; pillars never break.
 - **Dummies (D8):** three idle insurgents in `main.ts` at (−6, −9), (0, −9.5), (6, −9), each turned so its front, left side or rear faces the player start. The circling insurgent stays. The crates at (±4, −12) sit on the line from the start to the outer dummies: drive forward or break them.

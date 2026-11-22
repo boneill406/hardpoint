@@ -17,6 +17,12 @@ import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { ArenaView } from './views/ArenaView';
 import { ImpactFlashes } from './vfx/ImpactFlashes';
 
+/** A position on the canvas in CSS pixels from its top-left. */
+export interface ScreenPoint {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface RendererOptions extends RenderBridgeOptions {
   /** Static arena geometry to build (floor, walls, gates). */
   readonly arena: Arena;
@@ -110,16 +116,21 @@ export class Renderer {
    * top-left), `height` u above its drawn position; undefined if it isn't drawn
    * or is behind the camera. For HTML overlays; call after `render()`.
    */
-  screenPositionOf(id: EntityId, height: number): { x: number; y: number } | undefined {
+  screenPositionOf(id: EntityId, height: number): ScreenPoint | undefined {
     const drawn = this.bridge.drawnTransform(id);
+    return drawn === undefined ? undefined : this.groundToScreen(drawn.position, height);
+  }
+
+  /** Like `screenPositionOf`, for a fixed ground-plane point (e.g. where a shot hit). */
+  groundToScreen(point: Vec2, height: number): ScreenPoint | undefined {
     const canvas = this.engine.getRenderingCanvas();
-    if (drawn === undefined || canvas === null) {
+    if (canvas === null) {
       return undefined;
     }
     const width = this.engine.getRenderWidth();
     const heightPx = this.engine.getRenderHeight();
     const projected = Vector3.Project(
-      toBabylonPosition(drawn.position, height),
+      toBabylonPosition(point, height),
       Matrix.Identity(),
       this.scene.getTransformMatrix(),
       this.sliceCamera.camera.viewport.toGlobal(width, heightPx),

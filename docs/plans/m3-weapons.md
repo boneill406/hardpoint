@@ -53,7 +53,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision`, `m3-8b-barrel-fixes` | ✅ |
 | 5 | M3-4 `ArmorProfile` (both face rules, `?armor=`), `Health`, `DamageResolver`, `Hit`; vehicles destroyed at 0 | `m3-4-damage` | ✅ |
 | 6 | M3-5 Crates break; three dummies; `?hp=on` overlay. **Done-when check; armor rule pick** | `m3-5-targets` | 🔶 built; Brendan's done-when check and armor pick pending |
-| 7 | M3-6 HUD | `m3-6-hud` | ⬜ |
+| 7 | M3-6 HUD | `m3-6-hud` | ✅ |
 
 ## Tests (highlights)
 | Area | Behaviours |
