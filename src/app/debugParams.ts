@@ -19,6 +19,8 @@ export interface DebugParams {
    * compare in play; undefined keeps each def's own (`direction`).
    */
   readonly armor: FaceRule | undefined;
+  /** `?hp=on` shows health bars and the last hit over damaged vehicles (M3-5). */
+  readonly hp: boolean;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
@@ -26,7 +28,7 @@ export interface DebugParams {
 /** Brendan's pick after trying all three in play (M2 close). */
 const DEFAULT_PAD_SCHEME: PadSchemeName = 'triggers';
 
-const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam', 'armor'];
+const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam', 'armor', 'hp'];
 const FACE_RULES: readonly FaceRule[] = ['direction', 'struck'];
 const ON_OFF = ['on', 'off'];
 
@@ -73,7 +75,7 @@ export function readDebugParams(search: string): DebugParams {
     warn('armor', armor, FACE_RULES.join(' | '));
   }
 
-  for (const name of ['interp', 'grid']) {
+  for (const name of ['interp', 'grid', 'hp']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
       warn(name, value, 'on | off');
@@ -87,6 +89,7 @@ export function readDebugParams(search: string): DebugParams {
     grid: params.get('grid') === 'on',
     cam: camValid ? cam : 'slice',
     armor: armorValid ? armor : undefined,
+    hp: params.get('hp') === 'on',
     warnings,
   };
 }

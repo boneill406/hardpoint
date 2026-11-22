@@ -17,6 +17,7 @@ import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import { createVehicle } from '../sim/vehicles/VehicleFactory';
 import { IDLE_COMMAND, type PlayerId, type VehicleCommand } from '../sim/vehicles/VehicleCommand';
+import { HealthOverlay } from '../ui/HealthOverlay';
 import { readDebugParams } from './debugParams';
 
 /**
@@ -37,6 +38,31 @@ const PLAYER_ID: PlayerId = 1;
 const CIRCLER_START = { position: new Vec2(17.9, -3), heading: 0 };
 const CIRCLE_COMMAND: VehicleCommand = { ...IDLE_COMMAND, throttle: 1, turn: -1 };
 
+/**
+ * Armor test dummies (M3 plan D8): idle insurgents in open ground ahead of the
+ * player start, showing it their front, side and rear. Not respawned: reload
+ * the page.
+ */
+const DUMMIES = [
+  { position: new Vec2(-6, -9), shows: 0 },
+  { position: new Vec2(0, -9.5), shows: Math.PI / 2 },
+  { position: new Vec2(6, -9), shows: Math.PI },
+];
+
+function addDummies(simulation: Simulation): void {
+  for (const dummy of DUMMIES) {
+    // Nose toward the player start, then turned so the chosen face points at it.
+    const towardStart = SLICE_ARENA.playerStart.position.sub(dummy.position).heading();
+    simulation.world.add(
+      createVehicle(INSURGENT_TANK, {
+        transform: { position: dummy.position, heading: towardStart + dummy.shows },
+        faction: 'insurgent',
+        controller: new ScriptedController(() => IDLE_COMMAND),
+      }),
+    );
+  }
+}
+
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {
@@ -53,6 +79,7 @@ function populateDebugScene(simulation: Simulation): void {
       controller: new PlayerController(PLAYER_ID),
     }),
   );
+  addDummies(simulation);
   simulation.world.add(
     createVehicle(INSURGENT_TANK, {
       transform: CIRCLER_START,
@@ -102,7 +129,7 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}`,
   );
 
   for (const warning of debug.warnings) {
@@ -137,13 +164,12 @@ async function start(): Promise<void> {
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
-  // Until the `?hp=on` overlay (M3-5), hits are only visible in the console.
-  simulation.events.on('Hit', (hit) => {
-    const fate = hit.destroyed ? ', destroyed' : '';
-    console.info(
-      `Hit #${hit.target} (${hit.face}) −${hit.damage.toFixed(1)} by ${hit.weapon}: ${hit.healthLeft.toFixed(1)} left${fate}`,
-    );
-  });
+  const overlay = debug.hp
+    ? new HealthOverlay(document.body, debug.armor ?? 'per def (direction)')
+    : undefined;
+  simulation.events.on('Hit', ({ target, damage, face }) =>
+    overlay?.recordHit(target, { damage, face }),
+  );
 
   const clock = new FixedClock();
   const fireLatch = new FireLatch();
@@ -171,6 +197,7 @@ async function start(): Promise<void> {
     }
     simulation.events.flush();
     renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
+    overlay?.update(simulation.world.ofType(Vehicle), (id) => renderer.screenPositionOf(id, 1.6));
   };
   requestAnimationFrame(frame);
 }

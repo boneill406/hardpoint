@@ -39,6 +39,15 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-21 · M3-5 · Breakable crates, armor dummies, `?hp=on`
+- **Crates (D7):** a `Prop` that is `destructible` and hit by a `breaksCover` weapon (cannon) is removed at the end of the tick; `PhysicsBridge` drops its collider at the next sync, so the next shell flies through. The MG stops on crates without breaking them; pillars never break.
+- **Dummies (D8):** three idle insurgents in `main.ts` at (−6, −9), (0, −9.5), (6, −9), each turned so its front, left side or rear faces the player start. The circling insurgent stays. The crates at (±4, −12) sit on the line from the start to the outer dummies: drive forward or break them.
+- **Overlay (D9):** `ui/HealthOverlay` (HTML, read-only) draws a bar and "health/max −32.5 front" over each damaged vehicle, plus the active armor rule top-left. Positions come from `Renderer.screenPositionOf` (drawn transform projected to CSS pixels). Replaces the M3-4 console log (T-97 closed). `src/ui/index.ts` placeholder deleted.
+- **Tests:** `cover.test.ts` (cannon breaks a crate and its collider; MG doesn't; pillars don't), `hitLabel`, `?hp=` parsing.
+- **Not yet verified in a browser by me:** the overlay's screen placement.
+- **Pending:** Brendan's done-when check (front vs rear damage visible; MG overheats and re-arms) and the armor rule pick (`?armor=struck` vs default).
+- Trade-offs: T-98 (dummies in the debug scene), T-99 (crates vanish).
+
 ## 2026-11-21 · M3-4 · Damage and directional armor
 - **Built:** `ArmorDef` (multipliers, ±45° arcs, face rule) with `TANK_ARMOR` in `defs/armor.ts`; `ArmorProfile` (face + multiplier); `Health`; `DamageResolver`. `VehicleDef` gains `health` (player 100, insurgent 60) and `armor`. `Hit` event (target, attacker, weapon, face, damage, health left, destroyed, point). `VehicleSnapshot` includes health (clears the M1-5 follow-up).
 - **Flow:** `advanceProjectiles` emits `ProjectileImpact`, then for a hull hit on a vehicle asks `DamageResolver`; at 0 health the vehicle is removed at the end of the tick. Barrel hits (part `barrel`) deal nothing (D17). A vehicle destroyed earlier in the tick takes no more hits.

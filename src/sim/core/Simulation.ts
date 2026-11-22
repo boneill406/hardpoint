@@ -1,4 +1,5 @@
 import { Arena } from '../arena/Arena';
+import { Prop } from '../arena/Prop';
 import type { FaceRule } from '../combat/ArmorDef';
 import { DamageResolver } from '../combat/DamageResolver';
 import { Projectile } from '../combat/Projectile';
@@ -258,6 +259,8 @@ export class Simulation {
         });
         if (target instanceof Vehicle && part === 'body') {
           this.damageVehicle(target, projectile, result.hit.point, result.hit.normal);
+        } else if (target instanceof Prop) {
+          this.hitCover(target, projectile);
         }
         continue;
       }
@@ -292,6 +295,17 @@ export class Simulation {
     });
     if (result.destroyed) {
       this.world.remove(target.id);
+    }
+  }
+
+  /**
+   * Plan D7: a `breaksCover` weapon (the cannon) destroys a destructible prop
+   * (a crate) in one hit, through the normal removal path; its collider goes at
+   * the next tick's physics sync. Other shots just stop on it.
+   */
+  private hitCover(prop: Prop, projectile: Projectile): void {
+    if (prop.destructible && projectile.weapon.breaksCover) {
+      this.world.remove(prop.id);
     }
   }
 

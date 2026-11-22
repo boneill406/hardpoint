@@ -4,6 +4,7 @@ import {
   DirectionalLight,
   Engine,
   HemisphericLight,
+  Matrix,
   Scene,
   Vector3,
 } from '@babylonjs/core';
@@ -11,7 +12,7 @@ import type { Arena } from '../sim/arena/Arena';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Vec2 } from '../sim/core/Vec2';
 import { SliceCamera, type CameraPreset } from './camera/SliceCamera';
-import { fromBabylonPosition } from './coords';
+import { fromBabylonPosition, toBabylonPosition } from './coords';
 import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { ArenaView } from './views/ArenaView';
 import { ImpactFlashes } from './vfx/ImpactFlashes';
@@ -102,6 +103,35 @@ export class Renderer {
     }
     const distance = (height - ray.origin.y) / ray.direction.y;
     return fromBabylonPosition(ray.origin.add(ray.direction.scale(distance)));
+  }
+
+  /**
+   * Where entity `id` is on screen this frame (CSS pixels from the canvas's
+   * top-left), `height` u above its drawn position; undefined if it isn't drawn
+   * or is behind the camera. For HTML overlays; call after `render()`.
+   */
+  screenPositionOf(id: EntityId, height: number): { x: number; y: number } | undefined {
+    const drawn = this.bridge.drawnTransform(id);
+    const canvas = this.engine.getRenderingCanvas();
+    if (drawn === undefined || canvas === null) {
+      return undefined;
+    }
+    const width = this.engine.getRenderWidth();
+    const heightPx = this.engine.getRenderHeight();
+    const projected = Vector3.Project(
+      toBabylonPosition(drawn.position, height),
+      Matrix.Identity(),
+      this.scene.getTransformMatrix(),
+      this.sliceCamera.camera.viewport.toGlobal(width, heightPx),
+    );
+    if (projected.z < 0 || projected.z > 1) {
+      return undefined;
+    }
+    // Render pixels → CSS pixels (the engine renders at the device pixel ratio).
+    return {
+      x: (projected.x / width) * canvas.clientWidth,
+      y: (projected.y / heightPx) * canvas.clientHeight,
+    };
   }
 
   /** A shot hit something: show the placeholder impact flash there (M6 replaces it). */
