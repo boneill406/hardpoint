@@ -1,5 +1,6 @@
 import type { Transform } from '../../../src/sim/core/Transform';
 import { Vec2 } from '../../../src/sim/core/Vec2';
+import { TANK_ARMOR } from '../../../src/sim/defs/armor';
 import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
 import type { Vehicle } from '../../../src/sim/vehicles/Vehicle';
 import { IDLE_COMMAND, type VehicleCommand } from '../../../src/sim/vehicles/VehicleCommand';
@@ -23,6 +24,8 @@ export const TEST_TANK: VehicleDef = {
   name: 'Test tank',
   mass: 10,
   hull: { length: 2, width: 1 },
+  health: 100,
+  armor: TANK_ARMOR,
   locomotion: TEST_LOCOMOTION,
   turret: {
     traverseRate: 3,

@@ -1,5 +1,6 @@
 import { PAD_SCHEMES, type PadSchemeName } from '../input/bindings';
 import { CAMERA_PRESETS, type CameraPresetName } from '../render/camera/SliceCamera';
+import type { FaceRule } from '../sim/combat/ArmorDef';
 
 /** Debug switches read from the page URL, e.g. `http://localhost:5173/?fps=20&interp=off&pad=direct`. */
 export interface DebugParams {
@@ -13,6 +14,11 @@ export interface DebugParams {
   readonly grid: boolean;
   /** Camera preset (`?cam=slice|proto`), to compare framings in play. */
   readonly cam: CameraPresetName;
+  /**
+   * Armor face rule for every tank (`?armor=direction|struck`, M3 plan D5), to
+   * compare in play; undefined keeps each def's own (`direction`).
+   */
+  readonly armor: FaceRule | undefined;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
@@ -20,7 +26,8 @@ export interface DebugParams {
 /** Brendan's pick after trying all three in play (M2 close). */
 const DEFAULT_PAD_SCHEME: PadSchemeName = 'triggers';
 
-const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam'];
+const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam', 'armor'];
+const FACE_RULES: readonly FaceRule[] = ['direction', 'struck'];
 const ON_OFF = ['on', 'off'];
 
 /**
@@ -60,6 +67,12 @@ export function readDebugParams(search: string): DebugParams {
     warn('cam', cam, Object.keys(CAMERA_PRESETS).join(' | '));
   }
 
+  const armor = params.get('armor');
+  const armorValid = armor !== null && isFaceRule(armor);
+  if (armor !== null && !armorValid) {
+    warn('armor', armor, FACE_RULES.join(' | '));
+  }
+
   for (const name of ['interp', 'grid']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
@@ -73,6 +86,7 @@ export function readDebugParams(search: string): DebugParams {
     pad: padValid ? pad : DEFAULT_PAD_SCHEME,
     grid: params.get('grid') === 'on',
     cam: camValid ? cam : 'slice',
+    armor: armorValid ? armor : undefined,
     warnings,
   };
 }
@@ -84,4 +98,8 @@ function isPadSchemeName(value: string): value is PadSchemeName {
 
 function isCameraPresetName(value: string): value is CameraPresetName {
   return Object.hasOwn(CAMERA_PRESETS, value);
+}
+
+function isFaceRule(value: string): value is FaceRule {
+  return (FACE_RULES as readonly string[]).includes(value);
 }

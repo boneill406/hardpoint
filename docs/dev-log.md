@@ -15,7 +15,6 @@ Debt taken on deliberately, each with the condition that clears it.
 | `SliceCamera` angle/distance are first guesses | T-19 | M2-5: tune with a real tank on screen, then record values in the GDD | M0-3 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
-| `VehicleSnapshot` has transform + velocities only | — | M3: add health, heat and reload state so determinism checks cover them | M1-5, M2-1 |
 | Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | Idea, undecided: barrel bob (elevation only, render-only) when the turret starts and stops traversing; maybe a tiny yaw settle | — | Brendan decides, at the latest in M6 | M3-1 |
 | Point-blank shots are on screen for at most one frame (flight shorter than a tick); reassess once M6 adds muzzle flash and recoil, and if still odd add a render-only minimum visible flight (~3 frames, impact flash delayed to match) | — | M6 | M3-7 |
@@ -39,6 +38,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-21 · M3-4 · Damage and directional armor
+- **Built:** `ArmorDef` (multipliers, ±45° arcs, face rule) with `TANK_ARMOR` in `defs/armor.ts`; `ArmorProfile` (face + multiplier); `Health`; `DamageResolver`. `VehicleDef` gains `health` (player 100, insurgent 60) and `armor`. `Hit` event (target, attacker, weapon, face, damage, health left, destroyed, point). `VehicleSnapshot` includes health (clears the M1-5 follow-up).
+- **Flow:** `advanceProjectiles` emits `ProjectileImpact`, then for a hull hit on a vehicle asks `DamageResolver`; at 0 health the vehicle is removed at the end of the tick. Barrel hits (part `barrel`) deal nothing (D17). A vehicle destroyed earlier in the tick takes no more hits.
+- **Both face rules (D5):** `direction` (default) uses the shot's travel heading reversed; `struck` uses the surface normal from the cast. `?armor=struck` overrides every tank through `SimulationOptions.armorRule`.
+- **Tests:** arc edges (10°, 44°/46°, 134°/136°), `struck` vs `direction`, corner normals; against Rapier: front 32.5 / side 50 / rear 60 (capped), GDD kill counts (2 front, 1 rear), removal and shots passing through afterwards, barrel hit = no damage, a hull at 40° counts as rear by direction but side by struck, MG 3 per hit.
+- **To see it:** hits print in the console (`Hit #2 (front) −32.5 by Cannon: 27.5 left`) until M3-5's overlay. The circling insurgent can now be destroyed; reload to bring it back.
+- Trade-offs: T-95 (instant removal), T-96 (direction from shot heading), T-97 (console log).
 
 ## 2026-11-21 · M3-8b · Barrel stall fixes, smoother MG streaks
 - **Problems (Brendan):** barrels sometimes went into each other; a barrel could swing into a crate's corner; MG rounds looked slightly laggy since the move to 100 u/s.

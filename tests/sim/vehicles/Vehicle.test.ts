@@ -64,7 +64,7 @@ describe('Vehicle', () => {
     expect(tank.angularVelocity).toBe(0.3);
   });
 
-  it('snapshot adds velocities to the transform', () => {
+  it('snapshot adds velocities, turret and health to the transform', () => {
     const tank = scriptedTank(drive(1));
     tank.assignId(1);
     tank.applyCommand(drive(1));
@@ -79,6 +79,7 @@ describe('Vehicle', () => {
       angularVelocity: 0,
       locomotion: { gear: 1, shiftElapsed: 0 },
       turret: tank.turret.snapshot(),
+      health: 100,
       weapons: [],
     });
   });

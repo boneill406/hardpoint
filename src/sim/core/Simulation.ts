@@ -1,4 +1,6 @@
 import { Arena } from '../arena/Arena';
+import type { FaceRule } from '../combat/ArmorDef';
+import { DamageResolver } from '../combat/DamageResolver';
 import { Projectile } from '../combat/Projectile';
 import { capsuleAxis, segmentDistance } from './segments';
 import type { ArenaDef } from '../arena/ArenaDef';
@@ -10,6 +12,7 @@ import type { EntitySnapshot } from './Entity';
 import { EventBus } from './EventBus';
 import { Rng } from './Rng';
 import type { SimEvents } from './SimEvents';
+import type { Vec2 } from './Vec2';
 import { TICK_SECONDS } from './time';
 import { World } from './World';
 
@@ -25,6 +28,8 @@ export interface SimulationOptions {
   readonly arena?: ArenaDef;
   /** Adds the starting entities. Runs inside the constructor, so their spawn events are queued. */
   readonly populate?: (simulation: Simulation) => void;
+  /** Overrides every vehicle's armor face rule (`?armor=`, M3 plan D5); omitted = each def's own. */
+  readonly armorRule?: FaceRule;
 }
 
 /** The whole simulation state as plain numbers: equal snapshots mean equal games. */
@@ -46,6 +51,7 @@ export class Simulation {
   readonly arena: Arena | undefined;
   private readonly physics: PhysicsWorld;
   private readonly bodies: PhysicsBridge;
+  private readonly damage: DamageResolver;
   private ticks = 0;
 
   constructor(options: SimulationOptions) {
@@ -53,6 +59,7 @@ export class Simulation {
     this.physics = options.physics;
     this.world = new World(this.events);
     this.bodies = new PhysicsBridge(this.physics);
+    this.damage = new DamageResolver(options.armorRule);
     this.arena = options.arena === undefined ? undefined : new Arena(options.arena);
     if (this.arena !== undefined) {
       this.addWalls(this.arena);
@@ -238,18 +245,53 @@ export class Simulation {
       }
       if (result.kind === 'hit') {
         // Stays (parked at the impact point) until next tick, so it is drawn reaching the surface.
+        const target = this.bodies.entityOf(result.hit.body);
+        const part = this.bodies.isBarrel(result.hit.collider) ? 'barrel' : 'body';
         this.events.emit('ProjectileImpact', {
           projectile: projectile.id,
           weapon: projectile.weapon.name,
           look: projectile.weapon.projectile.look,
-          target: this.bodies.entityOf(result.hit.body)?.id,
-          part: this.bodies.isBarrel(result.hit.collider) ? 'barrel' : 'body',
+          target: target?.id,
+          part,
           point: result.hit.point,
           normal: result.hit.normal,
         });
+        if (target instanceof Vehicle && part === 'body') {
+          this.damageVehicle(target, projectile, result.hit.point, result.hit.normal);
+        }
         continue;
       }
       this.world.remove(projectile.id);
+    }
+  }
+
+  /**
+   * Tick phase 7b (M3-4): a hull hit deals armor-scaled damage; at 0 health
+   * the vehicle is removed at the end of the tick. Barrel hits never get here
+   * (plan D17), and a vehicle already destroyed this tick takes no more hits.
+   */
+  private damageVehicle(target: Vehicle, projectile: Projectile, point: Vec2, normal: Vec2): void {
+    const result = this.damage.resolve({
+      target,
+      weapon: projectile.weapon,
+      shotHeading: projectile.transform.heading,
+      normal,
+    });
+    if (result === undefined) {
+      return;
+    }
+    this.events.emit('Hit', {
+      target: target.id,
+      attacker: projectile.owner,
+      weapon: projectile.weapon.name,
+      face: result.face,
+      damage: result.damage,
+      healthLeft: result.healthLeft,
+      destroyed: result.destroyed,
+      point,
+    });
+    if (result.destroyed) {
+      this.world.remove(target.id);
     }
   }
 

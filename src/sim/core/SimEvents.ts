@@ -1,3 +1,4 @@
+import type { ArmorFace } from '../combat/ArmorDef';
 import type { WeaponSlot } from '../vehicles/VehicleDef';
 import type { EntityId } from './Entity';
 import type { Vec2 } from './Vec2';
@@ -45,5 +46,22 @@ export interface SimEvents {
     readonly part: 'body' | 'barrel';
     readonly point: Vec2;
     readonly normal: Vec2;
+  };
+  /**
+   * A shot damaged a vehicle (M3-4): emitted after its `ProjectileImpact`.
+   * Hit flashes, the HUD and the `?hp=on` overlay hang off this. A hit that
+   * destroys the target also removes it (`EntityDestroyed` at the end of the tick).
+   */
+  Hit: {
+    readonly target: EntityId;
+    /** Who fired; friendly fire counts (GDD §5). */
+    readonly attacker: EntityId;
+    readonly weapon: string;
+    readonly face: ArmorFace;
+    /** Health removed, after the armor multiplier. */
+    readonly damage: number;
+    readonly healthLeft: number;
+    readonly destroyed: boolean;
+    readonly point: Vec2;
   };
 }

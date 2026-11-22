@@ -1,5 +1,6 @@
 import { degToRad } from '../core/angles';
 import type { HardpointDef, VehicleDef } from '../vehicles/VehicleDef';
+import { TANK_ARMOR } from './armor';
 import { CANNON, INSURGENT_CANNON, MACHINE_GUN } from './weapons';
 
 // Vehicle tuning (GDD §3, §5; M2 plan D3, D4). Starting values: edit and save,
@@ -32,6 +33,8 @@ export const PLAYER_TANK: VehicleDef = {
   name: 'Player tank',
   mass: 30,
   hull: { length: 2.4, width: 1.6 },
+  health: 100,
+  armor: TANK_ARMOR,
   locomotion: {
     kind: 'tracked',
     topSpeed: 7,
@@ -58,6 +61,8 @@ export const INSURGENT_TANK: VehicleDef = {
   name: 'Insurgent tank',
   mass: 20,
   hull: { length: 2.4, width: 1.6 },
+  health: 60,
+  armor: TANK_ARMOR,
   locomotion: {
     kind: 'tracked',
     topSpeed: 4,

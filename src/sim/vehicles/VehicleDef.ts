@@ -1,3 +1,4 @@
+import type { ArmorDef } from '../combat/ArmorDef';
 import type { WeaponDef } from '../combat/WeaponDef';
 
 /**
@@ -18,6 +19,10 @@ export interface VehicleDef {
   /** Relative units. Heavier vehicles shove harder and are harder to shove (M2-3). */
   readonly mass: number;
   readonly hull: HullDef;
+  /** Hit points when undamaged (the GDD's "armor" bar). */
+  readonly health: number;
+  /** Damage multipliers by face (GDD §5). */
+  readonly armor: ArmorDef;
   readonly locomotion: LocomotionDef;
   readonly turret: TurretDef;
   /** Where weapons can attach, in the order they are updated and fire (M3 plan D14). */

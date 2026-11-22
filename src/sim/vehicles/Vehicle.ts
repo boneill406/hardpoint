@@ -1,3 +1,5 @@
+import { ArmorProfile } from '../combat/ArmorProfile';
+import { Health } from '../combat/Health';
 import { WeaponMount, type Shot } from '../combat/WeaponMount';
 import { wrapAngle } from '../core/angles';
 import { Entity, type EntitySnapshot } from '../core/Entity';
@@ -19,6 +21,7 @@ export interface VehicleSnapshot extends EntitySnapshot {
   readonly angularVelocity: number;
   readonly locomotion: LocomotionSnapshot;
   readonly turret: TurretSnapshot;
+  readonly health: number;
   /** Per weapon mount, each limiter's state. */
   readonly weapons: readonly (readonly Readonly<Record<string, number>>[])[];
 }
@@ -36,6 +39,10 @@ export class Vehicle extends Entity {
   readonly turret: Turret;
   /** Guns on the turret, in def order. */
   readonly mounts: readonly WeaponMount[];
+  /** Hit points; at 0 the simulation removes the vehicle (M3-4). */
+  readonly health: Health;
+  /** Which face a hit counts against, and its multiplier. */
+  readonly armor: ArmorProfile;
   private linear = Vec2.ZERO;
   private previousLinear = Vec2.ZERO;
   private angular = 0;
@@ -50,6 +57,8 @@ export class Vehicle extends Entity {
   ) {
     super(transform);
     this.turret = new Turret(def.turret, transform.heading);
+    this.health = new Health(def.health);
+    this.armor = new ArmorProfile(def.armor);
     this.mounts = def.hardpoints.flatMap((hardpoint) => {
       const weapon = def.loadout[hardpoint.id];
       return weapon === undefined ? [] : [new WeaponMount(hardpoint, weapon)];
@@ -225,6 +234,7 @@ export class Vehicle extends Entity {
       angularVelocity: this.angular,
       locomotion: this.locomotion.snapshot(),
       turret: this.turret.snapshot(),
+      health: this.health.current,
       weapons: this.mounts.map((mount) => mount.snapshot()),
     };
   }

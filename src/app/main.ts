@@ -102,7 +102,7 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}`,
   );
 
   for (const warning of debug.warnings) {
@@ -115,6 +115,7 @@ async function start(): Promise<void> {
     physics: await RapierPhysicsWorld.create(),
     arena: SLICE_ARENA,
     populate: populateDebugScene,
+    ...(debug.armor === undefined ? {} : { armorRule: debug.armor }),
   });
   const canvas = getCanvas();
   if (simulation.arena === undefined) {
@@ -136,6 +137,13 @@ async function start(): Promise<void> {
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
+  // Until the `?hp=on` overlay (M3-5), hits are only visible in the console.
+  simulation.events.on('Hit', (hit) => {
+    const fate = hit.destroyed ? ', destroyed' : '';
+    console.info(
+      `Hit #${hit.target} (${hit.face}) −${hit.damage.toFixed(1)} by ${hit.weapon}: ${hit.healthLeft.toFixed(1)} left${fate}`,
+    );
+  });
 
   const clock = new FixedClock();
   const fireLatch = new FireLatch();
