@@ -16,7 +16,7 @@ export interface DebugParams {
   readonly cam: CameraPresetName;
   /**
    * Armor face rule for every tank (`?armor=direction|struck`, M3 plan D5), to
-   * compare in play; undefined keeps each def's own (`direction`).
+   * compare in play; undefined keeps each def's own (`struck` since the M3 pick).
    */
   readonly armor: FaceRule | undefined;
   /** `?hp=on` shows health bars and the last hit over damaged vehicles (M3-5). */

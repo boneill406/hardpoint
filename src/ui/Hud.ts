@@ -18,7 +18,8 @@ const CSS = `
 .hud-armor.critical { animation: hud-pulse 0.7s ease-in-out infinite alternate; }
 .hud-reload .hud-fill { background: #c9b27a; }
 .hud-reload.ready .hud-fill { background: #e8d9a0; }
-.hud-heat .hud-fill { background: linear-gradient(90deg, #d6a64a, #e0533d); }
+.hud-heat .hud-fill { width: 100%;
+  background: linear-gradient(90deg, #5fbf4f 0%, #e3d04a 40%, #e8913a 70%, #e0533d 100%); }
 .hud-heat.overheated .hud-value { color: #ff6a50; animation: hud-pulse 0.35s ease-in-out infinite alternate; }
 @keyframes hud-pulse { from { opacity: 1; } to { opacity: 0.45; } }
 `;
@@ -72,7 +73,8 @@ export class Hud {
   }
 
   private addWeaponRow(gauge: WeaponGauge): Row {
-    const row = this.addRow(gauge.name, gauge.kind === 'heat' ? 'hud-heat' : 'hud-reload');
+    const label = gauge.kind === 'heat' ? `${gauge.name} heat` : gauge.name;
+    const row = this.addRow(label, gauge.kind === 'heat' ? 'hud-heat' : 'hud-reload');
     this.weapons.push(row);
     return row;
   }
@@ -84,7 +86,8 @@ export class Hud {
       row.root.classList.toggle('ready', gauge.ready);
       return;
     }
-    row.fill.style.width = percent(gauge.heat);
+    // The gradient spans the whole bar (green cold → red full); heat reveals it from the left.
+    row.fill.style.clipPath = `inset(0 ${(100 - clamp01(gauge.heat) * 100).toFixed(1)}% 0 0)`;
     row.marker.style.display = 'block';
     row.marker.style.left = percent(gauge.rearmAt);
     row.value.textContent = gauge.overheated ? 'Overheated' : `${Math.round(gauge.heat * 100)}%`;
@@ -115,6 +118,10 @@ export class Hud {
   }
 }
 
+function clamp01(fraction: number): number {
+  return Math.min(1, Math.max(0, fraction));
+}
+
 function percent(fraction: number): string {
-  return `${(Math.min(1, Math.max(0, fraction)) * 100).toFixed(1)}%`;
+  return `${(clamp01(fraction) * 100).toFixed(1)}%`;
 }

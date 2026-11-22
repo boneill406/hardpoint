@@ -4,8 +4,8 @@ export type ArmorFace = 'front' | 'side' | 'rear';
 /**
  * How a hit's face is decided (M3 plan D5). Both are built so Brendan can
  * compare them in play (`?armor=struck`) and keep one at the M3-5 check.
- * - `direction`: where the shot came from relative to the hull (GDD default).
- * - `struck`: the face the shell actually hit, from the surface normal.
+ * - `struck`: the face the shell actually hit, from the surface normal (the slice default, picked at M3).
+ * - `direction`: where the shot came from relative to the hull.
  */
 export type FaceRule = 'direction' | 'struck';
 

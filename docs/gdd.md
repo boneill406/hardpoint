@@ -81,7 +81,7 @@ _Xbox: the `triggers` scheme, chosen by Brendan in play over `tank` (left stick 
 | vs. pillars/walls | Impact only | Impact only |
 
 **Damage formula:** `damage = base × armorMultiplier(hit angle relative to target hull)`.
-Front = within ±45° of hull forward; rear = within ±45° of hull back; otherwise side. The angle is where the shot came from relative to the hull (rule `direction`). A second rule, `struck` (the face the shell actually hit), is built for comparison in play (`?armor=struck`, M3 plan D5); the pick is recorded here.
+Front = within ±45° of hull forward; rear = within ±45° of hull back; otherwise side. **Rule `struck` (picked in play at M3):** the face is the one the shell actually hit (from the surface normal; a corner hit goes to the face it is more square to). The alternative rule `direction` (where the shot came from relative to the hull) stays available as `?armor=direction` (M3 plan D5).
 
 **Between-wave repair:** +20% of max armor (+20), capped at max.
 

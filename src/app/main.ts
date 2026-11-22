@@ -11,6 +11,7 @@ import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
 import { Vec2 } from '../sim/core/Vec2';
 import { ScriptedController } from '../sim/debug/ScriptedController';
+import { TANK_ARMOR } from '../sim/defs/armor';
 import { SLICE_ARENA } from '../sim/defs/arenas';
 import { INSURGENT_TANK, PLAYER_TANK } from '../sim/defs/vehicles';
 import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
@@ -167,7 +168,7 @@ async function start(): Promise<void> {
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
   const overlay = debug.hp
-    ? new HealthOverlay(document.body, debug.armor ?? 'per def (direction)')
+    ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
     : undefined;
   simulation.events.on('Hit', ({ point, damage }) => overlay?.recordHit(point, damage));
   const hud = new Hud(document.body);

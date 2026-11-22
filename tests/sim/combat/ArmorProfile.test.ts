@@ -68,10 +68,10 @@ describe('ArmorProfile, rule "struck"', () => {
     );
   });
 
-  it('the def picks the rule when none is given', () => {
-    const struck = new ArmorProfile({ ...TANK_ARMOR, faceRule: 'struck' });
+  it('the def picks the rule when none is given; the slice tanks use struck (M3 pick)', () => {
+    const direction = new ArmorProfile({ ...TANK_ARMOR, faceRule: 'direction' });
     const hit: ArmorHit = { hullHeading: 0, shotHeading: 0, normal: new Vec2(1, 0) };
-    expect(struck.faceOf(hit)).toBe('side');
-    expect(armor.faceOf(hit)).toBe('rear');
+    expect(direction.faceOf(hit)).toBe('rear');
+    expect(armor.faceOf(hit)).toBe('side');
   });
 });

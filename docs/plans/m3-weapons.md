@@ -1,6 +1,6 @@
 # M3 Plan — Turret, weapons, damage
 
-_Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../milestones.md) § M3. Status: **in progress** (update the task table as work lands)._
+_Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../milestones.md) § M3. Status: **done** 2026-11-21 (done-when checked in play by Brendan)._
 
 **Goal:** shoot things, and directional armor works.
 **Done when:** front hits on the dummy visibly deal less than rear hits; the machine gun overheats and re-arms; tests cover armor angles and multi-limiter weapons. Plus M3-7: the barrel never visibly enters obstacles.
@@ -12,7 +12,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | D2 | Weapons are data | `WeaponDef` in `defs/weapons.ts` (damage, projectile speed and radius, spread cone, `breaksCover`, limiters) in designer units; per-shot values derived. **MG = `ReloadLimiter` (cadence) + `HeatLimiter`**, the architecture's two-limiter case. Cannon = `ReloadLimiter`. Insurgent cannon defined now, fired by the AI in M4. Spread uses the sim `Rng` |
 | D3 | Firing | **Hold to fire**: each weapon fires whenever its limiters allow. Taps shorter than a frame are latched so they still fire once (T-56) |
 | D4 | Projectiles | `Projectile` entity moved by the sim (not a physics body). Each tick a **swept circle cast** from its last position to its new one (`PhysicsWorld.castCircle`, real oriented boxes): no tunneling, no hits in empty space. Ignores its shooter; expires after 2 s. Friendly fire on (GDD §5) |
-| D5 | Armor face | **Both rules built, chosen per `ArmorDef.faceRule`**: `direction` (default: where the shot came from relative to the hull, GDD's ±45° arcs) and `struck` (the face the shell hit, from the cast's normal; corners go to the face it's more square to). `?armor=struck` switches all tanks for comparison at the M3-5 check; Brendan then keeps one (or both) |
+| D5 | Armor face | **Both rules built, chosen per `ArmorDef.faceRule`**: `direction` (default: where the shot came from relative to the hull, GDD's ±45° arcs) and `struck` (the face the shell hit, from the cast's normal; corners go to the face it's more square to). `?armor=struck` switches all tanks for comparison at the M3-5 check; Brendan then keeps one (or both). **Picked: `struck` is the default; `?armor=direction` stays as a toggle** |
 | D6 | Damage | `ArmorProfile` (from `ArmorDef`, `defs/armor.ts`), `Health`, `DamageResolver`: damage = base × multiplier. At 0 health the vehicle is removed (`EntityDestroyed`). Events: `ShotFired`, `Hit { target, attacker, damage, face, point }`, `ProjectileImpact` |
 | D7 | Crates | Cannon (`breaksCover`) removes a crate in one hit, through the normal remove path; the MG doesn't affect crates |
 | D8 | Dummies | Debug scene: three stationary insurgent dummies facing front / side / rear toward the player start; the circling insurgent stays. No respawn (reload the page) |
@@ -52,7 +52,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | 4a | M3-8a Hardpoints and barrels as data (D14): refactor, derived muzzles, size validation, twin muzzles | `m3-8a-hardpoints` | ✅ |
 | 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision`, `m3-8b-barrel-fixes` | ✅ |
 | 5 | M3-4 `ArmorProfile` (both face rules, `?armor=`), `Health`, `DamageResolver`, `Hit`; vehicles destroyed at 0 | `m3-4-damage` | ✅ |
-| 6 | M3-5 Crates break; three dummies; `?hp=on` overlay. **Done-when check; armor rule pick** | `m3-5-targets` | 🔶 built; Brendan's done-when check and armor pick pending |
+| 6 | M3-5 Crates break; three dummies; `?hp=on` overlay. **Done-when check; armor rule pick** | `m3-5-targets` | ✅ (armor pick: `struck`) |
 | 7 | M3-6 HUD | `m3-6-hud` | ✅ |
 
 ## Tests (highlights)

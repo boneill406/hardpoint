@@ -148,14 +148,14 @@ describe('damage (real Rapier)', () => {
     simulation.dispose();
   });
 
-  it('?armor=struck counts the face the shell hit, not where it came from', async () => {
+  it('struck (default) counts the face the shell hit; ?armor=direction counts where it came from', async () => {
     // Hull turned 40°: the shot comes from 140° off its nose (direction: rear), but
     // its line through the hull enters the right side face first.
-    const direction = await shootAt({ targetHeading: degToRad(40), shooterX: 0 }, 1);
-    const struck = await shootAt(
-      { targetHeading: degToRad(40), shooterX: 0, armorRule: 'struck' },
+    const direction = await shootAt(
+      { targetHeading: degToRad(40), shooterX: 0, armorRule: 'direction' },
       1,
     );
+    const struck = await shootAt({ targetHeading: degToRad(40), shooterX: 0 }, 1);
     expect(direction.hits[0]?.face).toBe('rear');
     expect(struck.hits[0]?.face).toBe('side');
     expect(struck.hits[0]?.damage).toBeCloseTo(50, 9);
