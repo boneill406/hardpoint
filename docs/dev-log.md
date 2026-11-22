@@ -42,6 +42,7 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ## 2026-11-21 · M3 close · Armor pick, HUD heat bar
 - **Armor pick:** Brendan chose `struck`; `TANK_ARMOR.faceRule` is now `struck`, and `?armor=direction` switches back (T-102). GDD §5, plan D5, architecture updated; tests that relied on the old default now name their rule.
 - **MG bar:** labelled "Machine gun heat". Its gradient (green → yellow → orange → red) now spans the full bar and the heat reveals it from the left (`clip-path`), instead of the whole gradient squeezing into the filled part.
+- **MG bar colour:** starts at the yellow-green the old gradient had at the 30% re-arm line (#c2cc4b), not bright green (Brendan).
 - **Overlay on by default:** health bars and floating damage numbers now show without a URL flag; `?hp=off` hides them (T-101 closed). Still a debug-styled overlay; whether enemy health bars belong in the finished game is a GDD §7 question for M6.
 - **M3 done:** done-when checked in play by Brendan (front vs rear damage visible, MG overheats and re-arms).
 

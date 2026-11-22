@@ -19,7 +19,7 @@ const CSS = `
 .hud-reload .hud-fill { background: #c9b27a; }
 .hud-reload.ready .hud-fill { background: #e8d9a0; }
 .hud-heat .hud-fill { width: 100%;
-  background: linear-gradient(90deg, #5fbf4f 0%, #e3d04a 40%, #e8913a 70%, #e0533d 100%); }
+  background: linear-gradient(90deg, #c2cc4b 0%, #e3d04a 40%, #e8913a 70%, #e0533d 100%); }
 .hud-heat.overheated .hud-value { color: #ff6a50; animation: hud-pulse 0.35s ease-in-out infinite alternate; }
 @keyframes hud-pulse { from { opacity: 1; } to { opacity: 0.45; } }
 `;
