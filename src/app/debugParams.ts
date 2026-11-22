@@ -19,7 +19,10 @@ export interface DebugParams {
    * compare in play; undefined keeps each def's own (`struck` since the M3 pick).
    */
   readonly armor: FaceRule | undefined;
-  /** `?hp=on` shows health bars and the last hit over damaged vehicles (M3-5). */
+  /**
+   * Health bars and floating damage numbers over damaged vehicles (M3-5). On by
+   * default since M3 close (Brendan); `?hp=off` hides them.
+   */
   readonly hp: boolean;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
@@ -89,7 +92,7 @@ export function readDebugParams(search: string): DebugParams {
     grid: params.get('grid') === 'on',
     cam: camValid ? cam : 'slice',
     armor: armorValid ? armor : undefined,
-    hp: params.get('hp') === 'on',
+    hp: params.get('hp') !== 'off',
     warnings,
   };
 }

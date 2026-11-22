@@ -4,7 +4,7 @@ import { readDebugParams } from '../../src/app/debugParams';
 describe('readDebugParams', () => {
   it('reads valid parameters with no warnings', () => {
     const params = readDebugParams(
-      '?fps=20&interp=off&pad=direct&grid=on&cam=proto&armor=struck&hp=on',
+      '?fps=20&interp=off&pad=direct&grid=on&cam=proto&armor=struck&hp=off',
     );
     expect(params).toEqual({
       fps: 20,
@@ -13,12 +13,12 @@ describe('readDebugParams', () => {
       grid: true,
       cam: 'proto',
       armor: 'struck',
-      hp: true,
+      hp: false,
       warnings: [],
     });
   });
 
-  it('defaults everything when there is no query string (pad: triggers, camera: slice)', () => {
+  it('defaults everything when there is no query string (pad: triggers, camera: slice, hp: on)', () => {
     expect(readDebugParams('')).toEqual({
       fps: undefined,
       interpolate: true,
@@ -26,7 +26,7 @@ describe('readDebugParams', () => {
       grid: false,
       cam: 'slice',
       armor: undefined,
-      hp: false,
+      hp: true,
       warnings: [],
     });
   });
