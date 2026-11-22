@@ -92,8 +92,11 @@ export interface PhysicsWorld {
   /** Re-poses a barrel to a world-space segment (e.g. after the turret turned). */
   setBarrel(collider: ColliderHandle, segment: Segment): void;
 
-  /** True if a capsule placed at `segment` would overlap anything other than `ignore`. */
-  overlaps(segment: Segment, ignore?: BodyHandle): boolean;
+  /**
+   * True if a capsule placed at `segment` would overlap anything other than
+   * the `ignore` body and the `skip` colliders.
+   */
+  overlaps(segment: Segment, ignore?: BodyHandle, skip?: ReadonlySet<ColliderHandle>): boolean;
 
   /** Sets the velocity a vehicle body moves with during the next step. */
   setVelocity(handle: BodyHandle, linear: Vec2, angular: number): void;

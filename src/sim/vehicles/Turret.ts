@@ -55,9 +55,9 @@ export class Turret {
    * Turns toward `aimPoint` as seen from `position`. With no aim point, or one
    * too close to the tank, it keeps going for its last target.
    *
-   * `canFace` (M3-8b) says whether the barrels would be clear at a heading; if
-   * the full turn would put a barrel into something, the turret turns as far
-   * as it can and **stalls** there, trying again next tick.
+   * `canFace` (M3-8b) says whether the barrels may be at a heading (not
+   * deeper into anything than now); if the full turn isn't allowed, the turret
+   * turns as far as it can and **stalls** there, trying again next tick.
    */
   step(
     aimPoint: Vec2 | undefined,
@@ -93,12 +93,10 @@ export class Turret {
   /**
    * The heading after turning by up to `turn`, as far as `canFace` allows.
    * Halving search: 5 steps get within 1/32 of a tick's turn of the obstacle.
-   * If the barrels are already blocked here (e.g. the hull was shoved), any
-   * turn is allowed so the turret can't get trapped.
    */
   private furthestClear(turn: number, canFace: (heading: number) => boolean): number {
     const full = wrapAngle(this.current + turn);
-    if (canFace(full) || !canFace(this.current)) {
+    if (canFace(full)) {
       return full;
     }
     let allowed = 0;

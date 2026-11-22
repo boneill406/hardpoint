@@ -172,7 +172,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
     collider.setRotationWrtParent(toRapierAngle(segmentHeading - bodyHeading));
   }
 
-  overlaps(segment: Segment, ignore?: BodyHandle): boolean {
+  overlaps(segment: Segment, ignore?: BodyHandle, skip?: ReadonlySet<ColliderHandle>): boolean {
     const { halfHeight, radius } = capsuleSize(segment);
     const centre = segment.from.lerp(segment.to, 0.5);
     const hit = this.world.intersectionWithShape(
@@ -183,6 +183,7 @@ export class RapierPhysicsWorld implements PhysicsWorld {
       undefined,
       undefined,
       ignore === undefined ? undefined : this.body(ignore),
+      skip === undefined ? undefined : (collider) => !skip.has(collider.handle),
     );
     return hit !== null;
   }

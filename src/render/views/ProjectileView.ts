@@ -1,4 +1,10 @@
-import { Color3, MeshBuilder, StandardMaterial, TransformNode } from '@babylonjs/core';
+import {
+  Color3,
+  MeshBuilder,
+  StandardMaterial,
+  TransformNode,
+  VertexBuffer,
+} from '@babylonjs/core';
 import type { Mesh, Scene } from '@babylonjs/core';
 import type { Projectile } from '../../sim/combat/Projectile';
 import type { WeaponDef } from '../../sim/combat/WeaponDef';
@@ -21,16 +27,22 @@ const SHELL = { diameter: 0.12, body: 0.24, nose: 0.12, band: 0.04 };
 const TRACER = { width: 0.035, length: 0.35 };
 
 /**
- * Motion streak: a fixed-length fading trail behind each shot, so a fast shot
- * reads as one moving object instead of a row of copies (the eye holds each
- * frame; a shell moving ~3× its own length per frame strobes). Fixed rather
- * than per-frame travel: frame times wobble, and a streak whose length pulses
- * with them read as stutter (Brendan: MG looked "laggy"). Tracer length chosen
- * between Brendan's "too continuous" and "too sparse".
+ * Motion streak: a fixed-length trail behind each shot, fading from `opacity`
+ * at the tip to nothing at the tail, so a fast shot reads as one moving object
+ * instead of a row of copies (the eye holds each frame).
+ *
+ * - Fixed rather than per-frame travel: frame times wobble, and a streak whose
+ *   length pulses with them reads as stutter.
+ * - Longer than one 60 fps frame of travel (cannon 1.5 u, MG 1.7 u), so each
+ *   frame's streak reaches back over the last frame's tip. Shorter, and the
+ *   round visibly jumps across a gap every frame (Brendan: the MG "laggy"
+ *   once it went to 100 u/s).
+ * - The fade keeps the longer streak from reading as a solid bar, so rounds
+ *   8 u apart (12/s at 100 u/s) don't look joined.
  */
 const STREAK: Readonly<Record<Look, { length: number; opacity: number }>> = {
-  shell: { length: 1.4, opacity: 0.35 },
-  tracer: { length: 1.2, opacity: 0.5 },
+  shell: { length: 2.0, opacity: 0.5 },
+  tracer: { length: 2.4, opacity: 0.75 },
 };
 
 interface Materials {
@@ -78,6 +90,22 @@ function materialsFor(scene: Scene): Materials {
 }
 
 /**
+ * Gives a unit box built along z a per-vertex alpha: opaque at its front
+ * (+z, the tip) and transparent at its back, so the streak fades out behind
+ * the shot. The material's alpha scales the whole thing.
+ */
+function fadeTowardTail(mesh: Mesh): void {
+  const positions = mesh.getVerticesData(VertexBuffer.PositionKind) ?? [];
+  const colors: number[] = [];
+  for (let i = 0; i < positions.length; i += 3) {
+    const z = positions[i + 2] ?? 0;
+    colors.push(1, 1, 1, z > 0 ? 1 : 0);
+  }
+  mesh.setVerticesData(VertexBuffer.ColorKind, colors);
+  mesh.hasVertexAlpha = true;
+}
+
+/**
  * A shell or tracer in flight (M3-3). Built pointing along +z with its tip at
  * the origin of `root`, which sits at the front of the sim's collision circle,
  * so a shot that hits ends with its tip on the surface. Smoke trails and
@@ -105,7 +133,7 @@ export class ProjectileView implements EntityView {
     } else {
       this.buildTracer(scene, name);
     }
-    // A unit-length box stretched each frame to the frame's travel.
+    // A unit-length box, scaled to the streak's length each frame.
     this.streak = MeshBuilder.CreateBox(
       `${name}-streak`,
       { width: look === 'shell' ? SHELL.diameter * 0.7 : TRACER.width, height: 0.04, depth: 1 },
@@ -113,6 +141,7 @@ export class ProjectileView implements EntityView {
     );
     this.streak.material = this.materials.streak[look];
     this.streak.isPickable = false;
+    fadeTowardTail(this.streak);
     this.streak.parent = this.root;
   }
 

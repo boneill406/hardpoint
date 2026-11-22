@@ -107,6 +107,11 @@ export class PhysicsBridge {
     return impacts;
   }
 
+  /** Every barrel collider, so physics queries can leave barrels out (they're checked in the sim). */
+  get barrelColliderSet(): ReadonlySet<ColliderHandle> {
+    return this.barrelColliders;
+  }
+
   /** True if a collider is a gun barrel (shots stop there but deal no damage, plan D17). */
   isBarrel(collider: ColliderHandle): boolean {
     return this.barrelColliders.has(collider);

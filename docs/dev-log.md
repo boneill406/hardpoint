@@ -40,6 +40,15 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-21 · M3-8b · Barrel stall fixes, smoother MG streaks
+- **Problems (Brendan):** barrels sometimes went into each other; a barrel could swing into a crate's corner; MG rounds looked slightly laggy since the move to 100 u/s.
+- **Cause 1:** the stall rule only asked "would the barrel overlap at the new angle?", with an escape hatch: if it already overlapped, turn freely (so it couldn't get stuck). Any small overlap (the solver leaves contacts slightly penetrated, a corner caught by the hull turning) opened the hatch, and the turret swept straight in.
+- **Cause 2:** barrel-vs-barrel was left to physics. Two turrets turning toward each other in the same tick each saw the other's barrel where it *was*, so both moved and the solver shoved the tanks apart.
+- **Fix:** `Simulation.barrelDepth` measures penetration depth (radius halving on the Rapier overlap query, skipping barrel colliders) plus a sim-side segment-to-segment check against other tanks' barrels (`core/segments.ts`: `segmentDistance`, `capsuleAxis`). A turn is allowed only if it doesn't deepen the overlap; the escape hatch is gone (a barrel pushed in can still swing *out*).
+- **Tests:** `segments.test.ts`; in `barrels.test.ts`, crate corner, two turrets meeting (fails with the barrel-vs-barrel check removed), and a barrel spawned 0.2 u into a pillar (fails under the old rule). The crate-corner scenario passes under both rules, so it isn't a proven repro of what Brendan saw.
+- **MG streak:** the 1.2 u streak was shorter than one frame of travel (1.7 u at 60 fps), so each round jumped a visible gap every frame. Streaks now outlast a frame (tracer 2.4 u, shell 2.0 u) and fade from tip to tail so rounds 8 u apart don't read as joined. Render-only.
+- Trade-offs: T-93 revised (depth rule), T-88 revised (lengths, fade).
+
 ## 2026-11-21 · M3-8b · Solid barrels
 **Built:**
 - `PhysicsWorld`: `addBarrel(body, segment)` (massless capsule on a vehicle body, contact events on), `setBarrel(collider, segment)` (re-pose from a world-space segment; converted to the body's local frame inside the Rapier adapter), `overlaps(segment, ignore)`; `CastHit.collider`. Types `ColliderHandle`, `Segment`.

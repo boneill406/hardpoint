@@ -22,7 +22,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | D12 | Snapshot | `VehicleSnapshot` adds turret heading, health, limiter state; projectiles snapshot position and velocity |
 | D14 | Hardpoints (added 2026-11-20) | `VehicleDef.hardpoints` (id, on turret or hull, position, size class, trigger, cosmetic height) + `loadout` (hardpoint id → weapon). The weapon owns its barrel (`BarrelDef`: length, collision radius, look, `collides`) and muzzle offsets (twin guns alternate). Muzzles are derived (hardpoint + barrel length), so swapping weapons moves muzzles, collision and drawn barrels together. Size classes validated when a vehicle is built. Replaces the M3-2 mount list |
 | D15 | Barrel collision (added) | Each colliding barrel is an extra collider on the vehicle's body, re-posed every tick from the turret heading (massless, so handling is unchanged). Nosing in stops at the barrel |
-| D16 | Turret blocked (added) | Before the turret turns, the sim tests whether a barrel would overlap anything at the new angle; if so the turret **stalls** (no shoving the hull) |
+| D16 | Turret blocked (added) | Before the turret turns, the sim measures how deep a barrel would overlap anything (including other barrels) at the new angle; a turn may not deepen it, so the turret **stalls** (no shoving the hull) |
 | D17 | Shots and barrels (added) | Shots **stop at barrels but deal no damage** to them: `ProjectileImpact` gains `part: 'hull' \| 'barrel'`, and the damage resolver (M3-4) skips barrel hits. Muzzle clearance treats other tanks' barrels as obstacles. Both cannon and coax barrels collide |
 | D13 | Round numbers on whole ticks | Timings must be whole numbers of 60 Hz ticks (0.095 s = 5.7 ticks would give an uneven 5/6-tick MG cadence). Starting values below; a def test enforces whole ticks |
 
@@ -50,7 +50,7 @@ _Approved by Brendan 2026-11-20. Milestone definition: [`milestones.md`](../mile
 | 3 | M3-3 `Projectile`, `PhysicsWorld.castCircle`, `ProjectileView` (shell, MG tracer), `ProjectileImpact` | `m3-3-projectiles` | ✅ |
 | 4 | M3-7 Muzzle clearance (barrel retraction removed after playtest: barrels stay rigid, T-75) | `m3-7-muzzle` | ✅ |
 | 4a | M3-8a Hardpoints and barrels as data (D14): refactor, derived muzzles, size validation, twin muzzles | `m3-8a-hardpoints` | ✅ |
-| 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision` | ✅ |
+| 4b | M3-8b Barrel collision (D15–D17): attached colliders, turret stall, impacts report the part hit | `m3-8b-barrel-collision`, `m3-8b-barrel-fixes` | ✅ |
 | 5 | M3-4 `ArmorProfile` (both face rules, `?armor=`), `Health`, `DamageResolver`, `Hit`; vehicles destroyed at 0 | `m3-4-damage` | ⬜ |
 | 6 | M3-5 Crates break; three dummies; `?hp=on` overlay. **Done-when check; armor rule pick** | `m3-5-targets` | ⬜ |
 | 7 | M3-6 HUD | `m3-6-hud` | ⬜ |
