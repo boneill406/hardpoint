@@ -1,4 +1,5 @@
 import type { Vehicle } from '../sim/vehicles/Vehicle';
+import { amountLabel } from './amountLabel';
 import { hudState, type WeaponGauge } from './hudState';
 
 /** Styles live with the component: the HUD is the only HTML in the game so far. */
@@ -14,8 +15,10 @@ const CSS = `
 .hud-fill { height: 100%; width: 0; }
 .hud-marker { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255, 255, 255, 0.55); }
 .hud-armor .hud-fill { background: #7fbf5f; }
-.hud-armor.critical .hud-fill { background: #e0533d; }
-.hud-armor.critical { animation: hud-pulse 0.7s ease-in-out infinite alternate; }
+/* Critical pulses the fill's colour, not the row's opacity: an opacity animation puts the row on
+   its own compositing layer, and Safari then leaves stale paint when the fill shrinks (M3-6 fix). */
+.hud-armor.critical .hud-fill { background: #e0533d; animation: hud-critical 0.7s ease-in-out infinite alternate; }
+@keyframes hud-critical { from { background-color: #e0533d; } to { background-color: #7a2a20; } }
 .hud-reload .hud-fill { background: #c9b27a; }
 .hud-reload.ready .hud-fill { background: #e8d9a0; }
 .hud-heat .hud-fill { width: 100%;
@@ -58,7 +61,7 @@ export class Hud {
     const state = hudState(player);
     const { armor } = state;
     this.armor.fill.style.width = percent(armor.fraction);
-    this.armor.value.textContent = `${Math.ceil(armor.current)} / ${armor.max}`;
+    this.armor.value.textContent = `${amountLabel(armor.current)} / ${armor.max}`;
     this.armor.root.classList.toggle('critical', armor.critical);
 
     state.weapons.forEach((gauge, index) => {

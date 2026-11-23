@@ -1,6 +1,7 @@
 import type { EntityId } from '../sim/core/Entity';
 import type { Vec2 } from '../sim/core/Vec2';
 import type { Vehicle } from '../sim/vehicles/Vehicle';
+import { amountLabel } from './amountLabel';
 
 /** Screen positions in CSS pixels (from `Renderer`), so this file needs no Babylon import. */
 export interface OverlayProjector {
@@ -8,11 +9,6 @@ export interface OverlayProjector {
   vehicle(id: EntityId): { x: number; y: number } | undefined;
   /** A ground-plane point, `height` u up. */
   point(point: Vec2, height: number): { x: number; y: number } | undefined;
-}
-
-/** The damage a hit did, as shown floating up: whole numbers plain, otherwise one decimal (32.5, 3, 62.5). */
-export function damageLabel(damage: number): string {
-  return Number.isInteger(damage) ? String(damage) : damage.toFixed(1);
 }
 
 const BAR_WIDTH = 56;
@@ -64,7 +60,7 @@ export class HealthOverlay {
   /** Called for each `Hit` event: starts a damage number at the impact point. */
   recordHit(point: Vec2, damage: number): void {
     const element = document.createElement('div');
-    element.textContent = damageLabel(damage);
+    element.textContent = amountLabel(damage);
     Object.assign(element.style, {
       position: 'absolute',
       left: '0',
@@ -103,7 +99,7 @@ export class HealthOverlay {
       tag.root.style.transform = `translate(${point.x - BAR_WIDTH / 2}px, ${point.y}px)`;
       tag.fill.style.width = `${(current / max) * 100}%`;
       tag.fill.style.background = current / max > 0.3 ? '#6fcf5b' : '#e0533d';
-      tag.label.textContent = `${damageLabel(current)}/${max}`;
+      tag.label.textContent = `${amountLabel(current)}/${max}`;
     }
     for (const [id, tag] of this.tags) {
       if (!shown.has(id)) {

@@ -39,6 +39,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M3-6 fix · Armor bar stale green in Safari; one number format
+- **Bug (Brendan, Safari):** below 30% armor the bar showed red at the right width plus a stale green piece out to where it went critical, still there at 0. Cause: the critical pulse animated the whole row's `opacity`, which puts it on its own compositing layer; Safari then didn't repaint the area the fill shrank away from. Chrome repaints, so a headless Chrome check showed nothing. **Fix:** the pulse now animates the fill's `background-color` (red ↔ dark red), so there's no separate layer. Not yet checked in Safari by me (no headless Safari here).
+- **Mismatched numbers:** the HUD showed armor rounded up to whole numbers, the health bar over the tank one decimal. Both now use **`amountLabel`** (`src/ui/amountLabel.ts`, replaces `damageLabel`): one decimal, whole numbers plain, float noise rounded away (84.4, 25, 32.5). The damage numbers use it too.
+- **Tests:** `amountLabel` (formatting and float noise). One full `npm test` run had 4 determinism/hunt tests fail; they passed alone and on the next full run (likely timeouts under load). Watch for it recurring.
+
 ## 2026-11-23 · M4-5b · Hazard-sign fire telegraph; windup 0.4 s
 - **Why:** Brendan wasn't convinced by the orange muzzle sphere. Options discussed: aim line, ground marker, hull flash, barrel pull-back, sound, particles, or slow shells instead of a windup. Brendan picked a hazard-label warning sign by the barrel.
 - **`TelegraphSigns`** (`src/ui/`): an inline-SVG warning triangle (black edge, black "!") over the shooting gun's muzzle, 34 px, fixed on screen. Dark amber at first, it fills hazard-yellow from the bottom over the windup (full = the shot), pops in with a small overshoot, and blinks with an orange glow for the last 30%. Removed on `ShotFired`, `TelegraphCancelled`, the shooter disappearing, or 0.1 s past its time. The animation is the pure `telegraphSignFrame` (`src/ui/telegraphSign.ts`).
