@@ -40,6 +40,16 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-4a · Path following and stuck recovery
+- **`PathFollower`** (`sim/ai`): pure-pursuit steering toward a point 2 u along the path; turn ∝ heading error (full at 25°); pivot in place beyond 60°; throttle eases with error and over the last 2 u (min 0.25); stops within 0.5 u. Reports the steering point (`toward`) so the controller can aim the turret along the path.
+- **Stuck recovery (D7):** a 1 s window with < 0.3 u moved and < 15° turned → reverse 0.6 s with a turn (alternating side), then `replan`; after 3 back-offs toward the same goal, `gave-up`. Pivoting counts as progress.
+- **`AiDef`** (`sim/ai`) with `INSURGENT_AI.driving` in `defs/ai.ts` (D17); engagement fields come in M4-4b.
+- **Issue 1, barrel snag:** the first real run stalled next to the centre pillar. The turret is stabilised, so while the hull turned to go round, the barrel kept pointing straight at the pillar and its tip (1.6 u from the pivot) caught the face. Fix: the follower reports its steering point and the controller aims there (T-108).
+- **Issue 2, paths too close to cover:** a 20-trip sweep had one trip give up beside a crate. The grid only kept cell *centres* 1.0 u from cover, but straightened paths run anywhere inside open cells, so they could pass ~0.65 u from cover; the tank is 0.8 u half-wide. Fix: a cell is open only if every point in it is ≥ 1.0 u away (centre test + half the cell diagonal). NavGrid tests updated to the new rule, plus a property test over every open cell's corners.
+- **After the fixes:** 60/60 sweep trips (3 seeds) arrive; 2 needed back-offs (random starts against cover). A 20-trip version is now a regression test (~1.5 s).
+- **Tests:** steering (straight, pivot both ways, proportional turn, slow/arrive, minimum throttle, look-ahead round a corner, idle), stuck (window → back-off → replan, pivot isn't stuck, alternating back-off, gave-up after 3, new goal resets), real Rapier (round the centre pillar, pivot then drive, ramming a pillar on a bad path → back-off → replan → arrive, 20-trip sweep).
+- Trade-offs: T-103 revised (whole-cell rule), T-108 (turret along path), T-109 (stuck rule).
+
 ## 2026-11-23 · M4-3 · Line of sight; read-only world view for controllers
 - **`ControllerContext`** now carries `world: SimQueries`, and `vehicle` is a `VehicleView` (read-only interface that `Vehicle` implements: no copying). A compile-time test (literal types asserting `applyCommand`, `drive` and `health.damage` aren't on the context's vehicle type) fails typecheck if the context ever hands out the live object again; checked by swapping the type back (3 errors).
 - **Process slip:** the first push went out with a lint/typecheck failure (unused import; lint rejected `@ts-expect-error` calls) because my command chain didn't stop on it; CI caught it. Fixed in a follow-up commit; checks now gate the commit.

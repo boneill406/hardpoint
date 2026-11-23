@@ -4,7 +4,7 @@ import { Vec2 } from '../core/Vec2';
 export interface NavGridOptions {
   /** Cell edge (u). */
   readonly cellSize: number;
-  /** A cell is blocked if its centre is closer than this (u) to an obstacle. */
+  /** Every point of an open cell is at least this far (u) from any obstacle. */
   readonly clearance: number;
 }
 
@@ -25,8 +25,9 @@ export interface FloorBounds {
 /**
  * Where tanks can drive, as a grid of open and blocked cells (M4 plan D2).
  * Built from the simulation's own shapes (CLAUDE.md rule 5): walls, pillars
- * and the crates still standing. Each obstacle is grown by `clearance`, so the
- * pathfinder can treat a tank as a point on the grid. Immutable: when a crate
+ * and the crates still standing. A cell is open only if every point in it is
+ * at least `clearance` from all of them, so the pathfinder can treat a tank as a
+ * point anywhere on open cells (a path between cell centres included). Immutable: when a crate
  * breaks, the simulation builds a new one.
  */
 export class NavGrid {
@@ -43,10 +44,13 @@ export class NavGrid {
     this.cols = Math.ceil((bounds.maxX - bounds.minX) / cellSize);
     this.rows = Math.ceil((bounds.maxZ - bounds.minZ) / cellSize);
     this.blocked = new Uint8Array(this.cols * this.rows);
+    // Test from the centre with the clearance grown by half the cell's diagonal, so the
+    // whole cell (not just its centre) is clear: paths can run anywhere inside open cells.
+    const reach = options.clearance + (cellSize * Math.SQRT2) / 2;
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const centre = this.centreOf({ col, row });
-        if (obstacles.some((box) => distanceToBox(centre, box) < options.clearance)) {
+        if (obstacles.some((box) => distanceToBox(centre, box) < reach)) {
           this.blocked[this.index(col, row)] = 1;
         }
       }

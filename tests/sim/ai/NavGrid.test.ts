@@ -17,14 +17,38 @@ describe('NavGrid', () => {
     expect(grid.centreOf({ col: 0, row: 0 })).toEqual(new Vec2(-9.75, -9.75));
   });
 
-  it('blocks cells whose centre is within the clearance of an obstacle, and only those', () => {
+  it('every point of an open cell is at least the clearance from every obstacle', () => {
+    const crate = { center: new Vec2(3, -4), width: 1.5, depth: 1.5 };
+    const grid = new NavGrid(BOUNDS, [PILLAR, crate], OPTIONS);
+    const half = OPTIONS.cellSize / 2;
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        if (!grid.isOpen(col, row)) continue;
+        const centre = grid.centreOf({ col, row });
+        for (const [dx, dz] of [
+          [-half, -half],
+          [half, -half],
+          [-half, half],
+          [half, half],
+        ] as const) {
+          const corner = centre.add(new Vec2(dx, dz));
+          for (const box of [PILLAR, crate]) {
+            const gx = Math.max(Math.abs(corner.x - box.center.x) - box.width / 2, 0);
+            const gz = Math.max(Math.abs(corner.z - box.center.z) - box.depth / 2, 0);
+            expect(Math.hypot(gx, gz)).toBeGreaterThanOrEqual(OPTIONS.clearance - 1e-9);
+          }
+        }
+      }
+    }
+  });
+
+  it('blocks a cell whose far side is clear but whose near side is too close', () => {
     const grid = new NavGrid(BOUNDS, [PILLAR], OPTIONS);
-    // Pillar face at x = 1: centres at x = 1.75 (0.75 away) blocked, 2.25 (1.25 away) open.
+    // Pillar face at x = 1. The cell x 2.0–2.5 has its near edge 1.0 away, but corners are
+    // tested from the centre with half the diagonal added, so it is blocked; x 2.5–3.0 is open.
     expect(grid.isOpenAt(new Vec2(0, 0))).toBe(false);
-    expect(grid.isOpenAt(new Vec2(1.75, 0))).toBe(false);
-    expect(grid.isOpenAt(new Vec2(2.25, 0))).toBe(true);
-    // Corners are rounded: (1.75, 1.75) is √(0.75² + 0.75²) ≈ 1.06 from the corner.
-    expect(grid.isOpenAt(new Vec2(1.75, 1.75))).toBe(true);
+    expect(grid.isOpenAt(new Vec2(2.25, 0))).toBe(false);
+    expect(grid.isOpenAt(new Vec2(2.75, 0))).toBe(true);
   });
 
   it('cells off the grid count as blocked', () => {
@@ -46,8 +70,8 @@ describe('NavGrid', () => {
     expect(near).toBeDefined();
     if (near === undefined) return;
     expect(grid.isOpen(near.col, near.row)).toBe(true);
-    // The nearest clear centres are 2.25 u out along an axis.
-    expect(grid.centreOf(near).length()).toBeLessThan(2.5);
+    // The nearest open cells start 2.5 u out along an axis.
+    expect(grid.centreOf(near).length()).toBeLessThan(3);
   });
 
   it('nearestOpen returns undefined when nothing is open', () => {

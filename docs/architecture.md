@@ -30,7 +30,7 @@ src/
       controllers/  Controller (interface), PlayerController, AiController
     combat/      Weapon, WeaponDef, WeaponMount, Projectile, ArmorProfile, Health, DamageResolver
       limiters/     FireLimiter (interface), ReloadLimiter, HeatLimiter
-    ai/          NavGrid (open/blocked cells, grown by clearance), Pathfinder (grid A* + straightening), behavior states
+    ai/          NavGrid (open/blocked cells: every point of an open cell ≥ clearance from cover), Pathfinder (grid A* + straightening), PathFollower (path → throttle/turn, stuck recovery), AiDef, behavior states
     physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005), PhysicsBridge (entity ↔ body)
     arena/       Arena, ArenaDef, Prop (pillars, crates)
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
