@@ -15,7 +15,6 @@ Debt taken on deliberately, each with the condition that clears it.
 | `SliceCamera` angle/distance are first guesses | T-19 | M2-5: tune with a real tank on screen, then record values in the GDD | M0-3 |
 | Bundle ~9.7 MB (2.7 MB gzip) | T-17, T-23 | Only if load time matters: Babylon per-module imports, non-compat Rapier | M0-3, M0-4 |
 | Placeholder `index.ts` files in empty `src/` folders | T-12 | Delete each when its folder gets a real module | M0-2 |
-| Circling insurgent in the `main.ts` debug scene | T-49 | M4: real enemies | M1-6, M2-2, M2-4 |
 | MG heat bar colours don't feel quite right yet (gradient now `#c2cc4b` → yellow → orange → red, fixed across the bar) | — | Brendan revisits; at the latest in the M6 polish pass | M3-6 |
 | Idea, undecided: barrel bob (elevation only, render-only) when the turret starts and stops traversing; maybe a tiny yaw settle | — | Brendan decides, at the latest in M6 | M3-1 |
 | Point-blank shots are on screen for at most one frame (flight shorter than a tick); reassess once M6 adds muzzle flash and recoil, and if still odd add a render-only minimum visible flight (~3 frames, impact flash delayed to match) | — | M6 | M3-7 |
@@ -39,6 +38,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-23 · M4-4b · AI controller, firing spots, debug scene
+- **`AiController`** (`vehicles/controllers`): GDD §5 states. *Advance*: pick a firing spot, follow a path to it (replan every 0.5 s, staggered by id; re-pick if the spot loses sight or the target moves off the rings), gun along the path. *Engage*: stop, turn the hull until the target is within 15° of the nose, track with the turret, hold the trigger when within 2° and in sight. *Reposition*: after 1.5 s without sight, the target behind (> 135°) within 8 u, out of range (> 16 u), or the follower gave up; picks a new spot ≥ 3 u away. *Idle*: no living hostile. `debug` snapshot for the views.
+- **`chooseFiringSpot`** (`ai/FiringSpots`): 72 candidates (rings 8/10/12 u × 24), open and with sight; cost = distance + 6 near an ally (< 4 u) − 4 beside cover when repositioning; best 6 get a real path check. `EngageDef` in `AiDef`; `aimLead` 0.
+- **Debug scene** moved to `app/debugScene.ts`: player + `?enemies=0..3` hunters (top, left, right gates, 2.5 u inside), `?dummies=on`. Circler removed (T-49, T-98 closed). **Debug views:** `?ai=on` (path line, spot ring, state label), `?nav=on` (blocked cells, thin instances, rebuilt when the grid changes).
+- **First real run:** from the top gate the insurgent went round the centre pillar to a spot 12 u from the player, engaged at ~8 s and landed 7.8-damage front hits (some stopped on the player's barrel: no damage). With three enemies and a normal player, the player died inside 20 s (the test now uses a tough player to check positions).
+- **Tests:** state transitions with a fake world (`tests/sim/ai/fakeWorld.ts`: real nav-grid rules, hand-moved vehicles, scripted sight): spot on the rings, nearest spot, arrive+sight → engage, arrive without sight → reposition, idle, hull turning and the 15° band, fire only aligned and in sight, no lead, lost sight 1.5 s → reposition ≥ 3 u, target behind, out of range. Spot choice: sight/open filter, ally spacing, cover trade-off, min move, none. Real Rapier: top-gate hunt hits a still player; three gates all engage at separate spots; same seed → identical hunt.
+- Trade-offs: T-110 (ties by order), T-111 (straight-line scoring), T-112 (cover = any blocked cell), T-113 (fire only when engaging).
 
 ## 2026-11-23 · M4-4a · Path following and stuck recovery
 - **`PathFollower`** (`sim/ai`): pure-pursuit steering toward a point 2 u along the path; turn ∝ heading error (full at 25°); pivot in place beyond 60°; throttle eases with error and over the last 2 u (min 0.25); stops within 0.5 u. Reports the steering point (`toward`) so the controller can aim the turret along the path.

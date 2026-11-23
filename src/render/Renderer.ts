@@ -8,12 +8,16 @@ import {
   Scene,
   Vector3,
 } from '@babylonjs/core';
+import type { NavGrid } from '../sim/ai/NavGrid';
 import type { Arena } from '../sim/arena/Arena';
 import type { Entity, EntityId } from '../sim/core/Entity';
 import type { Vec2 } from '../sim/core/Vec2';
+import type { Vehicle } from '../sim/vehicles/Vehicle';
 import { SliceCamera, type CameraPreset } from './camera/SliceCamera';
 import { fromBabylonPosition, toBabylonPosition } from './coords';
 import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
+import { AiDebugView } from './debug/AiDebugView';
+import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
 import { ImpactFlashes } from './vfx/ImpactFlashes';
 
@@ -30,6 +34,16 @@ export interface RendererOptions extends RenderBridgeOptions {
   readonly grid: boolean;
   /** Camera angle, distance and field of view (`?cam=`). */
   readonly camera: CameraPreset;
+  /** `?nav=on`: tint blocked navigation cells. */
+  readonly nav: boolean;
+  /** `?ai=on`: draw enemy paths and firing spots. */
+  readonly ai: boolean;
+}
+
+/** What the debug views need each frame; ignored when they are off. */
+export interface DebugState {
+  readonly navGrid: NavGrid | undefined;
+  readonly vehicles: readonly Vehicle[];
 }
 
 /**
@@ -44,6 +58,8 @@ export class Renderer {
   private readonly bridge: RenderBridge;
   private readonly arenaView: ArenaView;
   private readonly impacts: ImpactFlashes;
+  private readonly navView: NavGridView | undefined;
+  private readonly aiView: AiDebugView | undefined;
 
   constructor(canvas: HTMLCanvasElement, options: RendererOptions) {
     // antialias on; adaptToDeviceRatio so it renders crisply on Retina screens.
@@ -68,6 +84,8 @@ export class Renderer {
 
     this.bridge = new RenderBridge(this.scene, options);
     this.impacts = new ImpactFlashes(this.scene);
+    this.navView = options.nav ? new NavGridView(this.scene) : undefined;
+    this.aiView = options.ai ? new AiDebugView(this.scene) : undefined;
   }
 
   /**
@@ -89,6 +107,12 @@ export class Renderer {
       this.sliceCamera.follow(followed.position, frameSeconds);
     }
     this.scene.render();
+  }
+
+  /** Updates the debug views (`?nav=on`, `?ai=on`) before `render()`. Cheap when they are off. */
+  updateDebug(state: DebugState): void {
+    this.navView?.show(state.navGrid);
+    this.aiView?.update(state.vehicles);
   }
 
   /**
@@ -159,6 +183,8 @@ export class Renderer {
   dispose(): void {
     this.bridge.dispose();
     this.impacts.dispose();
+    this.navView?.dispose();
+    this.aiView?.dispose();
     this.arenaView.dispose();
     this.scene.dispose();
     this.engine.dispose();

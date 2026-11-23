@@ -24,6 +24,14 @@ export interface DebugParams {
    * default since M3 close (Brendan); `?hp=off` hides them.
    */
   readonly hp: boolean;
+  /** Hunting insurgents in the debug scene (`?enemies=0..3`, default 1), from the top, left, right gates. */
+  readonly enemies: number;
+  /** `?dummies=on` adds the M3 armor dummies. */
+  readonly dummies: boolean;
+  /** `?ai=on` draws each enemy's path, firing spot and state. */
+  readonly ai: boolean;
+  /** `?nav=on` tints the cells enemies may not drive on. */
+  readonly nav: boolean;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
@@ -31,7 +39,21 @@ export interface DebugParams {
 /** Brendan's pick after trying all three in play (M2 close). */
 const DEFAULT_PAD_SCHEME: PadSchemeName = 'triggers';
 
-const KNOWN = ['fps', 'interp', 'pad', 'grid', 'cam', 'armor', 'hp'];
+const KNOWN = [
+  'fps',
+  'interp',
+  'pad',
+  'grid',
+  'cam',
+  'armor',
+  'hp',
+  'enemies',
+  'dummies',
+  'ai',
+  'nav',
+];
+const DEFAULT_ENEMIES = 1;
+const MAX_ENEMIES = 3;
 const FACE_RULES: readonly FaceRule[] = ['direction', 'struck'];
 const ON_OFF = ['on', 'off'];
 
@@ -78,7 +100,15 @@ export function readDebugParams(search: string): DebugParams {
     warn('armor', armor, FACE_RULES.join(' | '));
   }
 
-  for (const name of ['interp', 'grid', 'hp']) {
+  const enemiesText = params.get('enemies');
+  const enemies = Number(enemiesText);
+  const enemiesValid =
+    enemiesText !== null && Number.isInteger(enemies) && enemies >= 0 && enemies <= MAX_ENEMIES;
+  if (enemiesText !== null && !enemiesValid) {
+    warn('enemies', enemiesText, `a whole number 0–${MAX_ENEMIES}`);
+  }
+
+  for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
       warn(name, value, 'on | off');
@@ -93,6 +123,10 @@ export function readDebugParams(search: string): DebugParams {
     cam: camValid ? cam : 'slice',
     armor: armorValid ? armor : undefined,
     hp: params.get('hp') !== 'off',
+    enemies: enemiesValid ? enemies : DEFAULT_ENEMIES,
+    dummies: params.get('dummies') === 'on',
+    ai: params.get('ai') === 'on',
+    nav: params.get('nav') === 'on',
     warnings,
   };
 }

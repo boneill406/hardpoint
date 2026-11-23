@@ -1,10 +1,43 @@
 /**
  * How an AI-driven tank behaves, as plain data (M4 plan D17, CLAUDE.md rule
  * 8). A harder or more cautious enemy is a new `AiDef`, not new code. Values
- * live in `src/sim/defs/ai.ts`. The engagement fields join in M4-4b.
+ * live in `src/sim/defs/ai.ts`.
  */
 export interface AiDef {
   readonly driving: DrivingDef;
+  readonly engage: EngageDef;
+}
+
+/** Choosing where to fight from and how to fight there (M4 plan D8–D10). */
+export interface EngageDef {
+  /** Firing spots are sampled on rings this far from the target (u). */
+  readonly rings: readonly number[];
+  /** Candidate spots per ring, evenly spaced. */
+  readonly samplesPerRing: number;
+  /** Re-plan the path (and re-check the spot) this often while advancing (s, whole ticks). */
+  readonly replanInterval: number;
+  /** While engaging, turn the hull until the target is within this of its nose (rad). */
+  readonly hullTolerance: number;
+  /** Fire only when the turret is within this of the aim (rad). */
+  readonly turretTolerance: number;
+  /** Reposition after this long without line of sight (s). */
+  readonly lostSightTime: number;
+  /** The target counts as "behind" beyond this angle off the nose (rad)... */
+  readonly behindAngle: number;
+  /** ...when closer than this (u). */
+  readonly behindDistance: number;
+  /** Reposition if the target gets further than this (u). */
+  readonly maxRange: number;
+  /** 0 = aim where the target is; 1 = full intercept of its current velocity (plan D9). */
+  readonly aimLead: number;
+  /** Spots within this of an ally (u) cost `allyPenalty` extra, so enemies spread out. */
+  readonly allySpacing: number;
+  readonly allyPenalty: number;
+  /** When repositioning, spots with cover within this (u) cost `coverBonus` less. */
+  readonly coverRadius: number;
+  readonly coverBonus: number;
+  /** A new spot when repositioning must be at least this far from where it is (u). */
+  readonly minMove: number;
 }
 
 /** Following a path (M4 plan D4) and getting unstuck (D7). Distances in u, times in s, angles in rad. */

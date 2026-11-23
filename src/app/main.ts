@@ -9,19 +9,18 @@ import { Renderer } from '../render/Renderer';
 import type { EntityId } from '../sim/core/Entity';
 import { FixedClock } from '../sim/core/FixedClock';
 import { Simulation } from '../sim/core/Simulation';
-import { Vec2 } from '../sim/core/Vec2';
-import { ScriptedController } from '../sim/debug/ScriptedController';
+import type { Vec2 } from '../sim/core/Vec2';
 import { TANK_ARMOR } from '../sim/defs/armor';
 import { SLICE_ARENA } from '../sim/defs/arenas';
-import { INSURGENT_TANK, PLAYER_TANK } from '../sim/defs/vehicles';
 import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
 import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
 import { Vehicle } from '../sim/vehicles/Vehicle';
-import { createVehicle } from '../sim/vehicles/VehicleFactory';
-import { IDLE_COMMAND, type PlayerId, type VehicleCommand } from '../sim/vehicles/VehicleCommand';
+import type { PlayerId } from '../sim/vehicles/VehicleCommand';
 import { HealthOverlay } from '../ui/HealthOverlay';
+import { AiStateLabels } from '../ui/AiStateLabels';
 import { Hud } from '../ui/Hud';
 import { readDebugParams } from './debugParams';
+import { populateDebugScene } from './debugScene';
 
 /**
  * Application entry point. Wires input, simulation and rendering together and
@@ -33,63 +32,12 @@ const SEED = 1;
 /** The one local player in the slice. */
 const PLAYER_ID: PlayerId = 1;
 
-/**
- * Temporary debug scene (T-49): an insurgent tank circling (radius ≈ 2.9 u) in
- * open ground right of centre, as something to drive around and, from M2-3,
- * shove. Real enemies replace it in M4.
- */
-const CIRCLER_START = { position: new Vec2(17.9, -3), heading: 0 };
-const CIRCLE_COMMAND: VehicleCommand = { ...IDLE_COMMAND, throttle: 1, turn: -1 };
-
-/**
- * Armor test dummies (M3 plan D8): idle insurgents in open ground ahead of the
- * player start, showing it their front, side and rear. Not respawned: reload
- * the page.
- */
-const DUMMIES = [
-  { position: new Vec2(-6, -9), shows: 0 },
-  { position: new Vec2(0, -9.5), shows: Math.PI / 2 },
-  { position: new Vec2(6, -9), shows: Math.PI },
-];
-
-function addDummies(simulation: Simulation): void {
-  for (const dummy of DUMMIES) {
-    // Nose toward the player start, then turned so the chosen face points at it.
-    const towardStart = SLICE_ARENA.playerStart.position.sub(dummy.position).heading();
-    simulation.world.add(
-      createVehicle(INSURGENT_TANK, {
-        transform: { position: dummy.position, heading: towardStart + dummy.shows },
-        faction: 'insurgent',
-        controller: new ScriptedController(() => IDLE_COMMAND),
-      }),
-    );
-  }
-}
-
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
   if (!(canvas instanceof HTMLCanvasElement)) {
     throw new Error('Missing <canvas id="game"> in index.html');
   }
   return canvas;
-}
-
-function populateDebugScene(simulation: Simulation): void {
-  simulation.world.add(
-    createVehicle(PLAYER_TANK, {
-      transform: SLICE_ARENA.playerStart,
-      faction: 'player',
-      controller: new PlayerController(PLAYER_ID),
-    }),
-  );
-  addDummies(simulation);
-  simulation.world.add(
-    createVehicle(INSURGENT_TANK, {
-      transform: CIRCLER_START,
-      faction: 'insurgent',
-      controller: new ScriptedController(() => CIRCLE_COMMAND),
-    }),
-  );
 }
 
 /** The vehicle driven by `playerId`; input needs its transform to resolve stick aim and `direct` driving. */
@@ -132,7 +80,7 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}, enemies ${debug.enemies}${debug.dummies ? ' + dummies' : ''}, ai ${debug.ai ? 'on' : 'off'}, nav ${debug.nav ? 'on' : 'off'}`,
   );
 
   for (const warning of debug.warnings) {
@@ -144,7 +92,12 @@ async function start(): Promise<void> {
     seed: SEED,
     physics: await RapierPhysicsWorld.create(),
     arena: SLICE_ARENA,
-    populate: populateDebugScene,
+    populate: (sim) =>
+      populateDebugScene(sim, {
+        playerId: PLAYER_ID,
+        enemies: debug.enemies,
+        dummies: debug.dummies,
+      }),
     ...(debug.armor === undefined ? {} : { armorRule: debug.armor }),
   });
   const canvas = getCanvas();
@@ -156,6 +109,8 @@ async function start(): Promise<void> {
     arena: simulation.arena,
     grid: debug.grid,
     camera: CAMERA_PRESETS[debug.cam],
+    nav: debug.nav,
+    ai: debug.ai,
   });
   window.addEventListener('resize', () => renderer.resize());
 
@@ -172,6 +127,7 @@ async function start(): Promise<void> {
     : undefined;
   simulation.events.on('Hit', ({ point, damage }) => overlay?.recordHit(point, damage));
   const hud = new Hud(document.body);
+  const aiLabels = debug.ai ? new AiStateLabels(document.body) : undefined;
   const overlayProjector = {
     vehicle: (id: EntityId) => renderer.screenPositionOf(id, 1.6),
     point: (point: Vec2, height: number) => renderer.groundToScreen(point, height),
@@ -202,9 +158,12 @@ async function start(): Promise<void> {
       fireLatch.consumed();
     }
     simulation.events.flush();
+    const vehicles = simulation.world.ofType(Vehicle);
+    renderer.updateDebug({ navGrid: simulation.navGrid, vehicles });
     renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
     hud.update(playerTank);
-    overlay?.update(simulation.world.ofType(Vehicle), overlayProjector, elapsedSeconds);
+    overlay?.update(vehicles, overlayProjector, elapsedSeconds);
+    aiLabels?.update(vehicles, overlayProjector.vehicle);
   };
   requestAnimationFrame(frame);
 }
