@@ -19,14 +19,14 @@ describe('PlayerController', () => {
     );
   });
 
-  it('the context gives a read-only vehicle: mutating calls do not compile (M4 plan D1)', () => {
-    const decideAndMutate = (context: ControllerContext): void => {
-      // @ts-expect-error: VehicleView has no applyCommand
-      context.vehicle.applyCommand(IDLE_COMMAND);
-      // @ts-expect-error: health is read-only (no damage)
-      context.vehicle.health.damage(10);
-    };
-    expect(typeof decideAndMutate).toBe('function');
+  it('the context gives a read-only vehicle: no mutating methods in its type (M4 plan D1)', () => {
+    // Checked by the compiler: if the context handed out the live Vehicle, these
+    // literal types would be `true` and the assignments would not compile.
+    type Seen = ControllerContext['vehicle'];
+    const canApplyCommand: 'applyCommand' extends keyof Seen ? true : false = false;
+    const canDrive: 'drive' extends keyof Seen ? true : false = false;
+    const canDamage: 'damage' extends keyof Seen['health'] ? true : false = false;
+    expect([canApplyCommand, canDrive, canDamage]).toEqual([false, false, false]);
   });
 
   it('a missing command means idle, not the previous command', () => {

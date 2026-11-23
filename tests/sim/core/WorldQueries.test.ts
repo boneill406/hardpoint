@@ -4,7 +4,6 @@ import type { SimQueries } from '../../../src/sim/core/SimQueries';
 import { Simulation } from '../../../src/sim/core/Simulation';
 import type { Transform } from '../../../src/sim/core/Transform';
 import { Vec2 } from '../../../src/sim/core/Vec2';
-import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
 import { VEHICLE_AVOIDANCE } from '../../../src/sim/defs/ai';
 import { INSURGENT_TANK, PLAYER_TANK } from '../../../src/sim/defs/vehicles';
 import { RapierPhysicsWorld } from '../../../src/sim/physics/RapierPhysicsWorld';
