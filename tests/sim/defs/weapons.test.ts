@@ -19,8 +19,8 @@ describe.each([CANNON, MACHINE_GUN, INSURGENT_CANNON])('$name def', (def: Weapon
 
   it('times every limiter in whole 60 Hz ticks (even cadence, exact lockouts)', () => {
     for (const limiter of def.limiters) {
-      if (limiter.kind === 'reload') {
-        expect(wholeTicks(limiter.seconds), `${def.name} reload`).toBe(true);
+      if (limiter.kind === 'reload' || limiter.kind === 'windup') {
+        expect(wholeTicks(limiter.seconds), `${def.name} ${limiter.kind}`).toBe(true);
       } else {
         expect(Number.isInteger(limiter.roundsToOverheat)).toBe(true);
         expect(wholeTicks(1 / limiter.coolPerSecond), `${def.name} full cool`).toBe(true);

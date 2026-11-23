@@ -11,6 +11,7 @@ export const TANK_ARMOR: ArmorDef = {
   front: 0.65,
   side: 1.0,
   rear: 1.25,
+  barrel: 0.65,
   frontArc: degToRad(45),
   rearArc: degToRad(45),
   // Brendan's pick at the M3 check: the face the shell hit. `?armor=direction` still switches back.

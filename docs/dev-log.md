@@ -39,6 +39,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-5 · Fire telegraph (windup); barrel hits deal damage
+- **`WindupLimiter`:** trigger held `seconds` (insurgent cannon: 0.3 s = 18 ticks) before the shot; releasing cancels; each shot needs a fresh windup. **`Weapon`** updates other limiters first and feeds windups "held and otherwise ready", so the windup is the last 0.3 s before each shot (insurgent cadence 2.4 + 0.3 s). `Weapon.telegraph()` reports started / cancelled per tick; the sim emits **`ShotTelegraphed`** (shooter, hardpoint, weapon, seconds) and **`TelegraphCancelled`**.
+- **Placeholder glow** (`render/vfx/TelegraphGlows`): an orange sphere at the muzzle, swelling over the windup and following the turret; ends on `ShotFired`, a cancel, or timeout. M6 replaces it. Not yet seen in motion by me (headless capture can't reach an enemy shot quickly).
+- **AI:** keeps holding through aim drift up to 3 × 2° once a windup runs (`EngageDef.holdSlack`), so tracking you doesn't cancel every telegraph (T-116).
+- **Barrel hits deal damage** (Brendan): `ArmorDef.barrel` multiplier, ×0.65 like the front (my pick: barrels sit over the front, so it reads as hitting armor); `Hit.face` is `'barrel'` for these. GDD §3/§5 and M3 plan D17 amended (T-114).
+- **Tests:** WindupLimiter (18 ticks, release resets, fresh windup per shot, progress), Weapon (windup after reload: shots at 18, 180, 342; telegraph 18 ticks before each; cancel; player cannon unchanged), sim events (telegraph then shot at +18; cancel), AI hold slack, barrel hit = 32.5. The insurgent firing test window grew from 150 to 200 ticks for the extra 0.3 s.
+- Trade-offs: T-114, T-115 (windup special-case in `Weapon`), T-116.
+
 ## 2026-11-23 · M4-4b · AI controller, firing spots, debug scene
 - **`AiController`** (`vehicles/controllers`): GDD §5 states. *Advance*: pick a firing spot, follow a path to it (replan every 0.5 s, staggered by id; re-pick if the spot loses sight or the target moves off the rings), gun along the path. *Engage*: stop, turn the hull until the target is within 15° of the nose, track with the turret, hold the trigger when within 2° and in sight. *Reposition*: after 1.5 s without sight, the target behind (> 135°) within 8 u, out of range (> 16 u), or the follower gave up; picks a new spot ≥ 3 u away. *Idle*: no living hostile. `debug` snapshot for the views.
 - **`chooseFiringSpot`** (`ai/FiringSpots`): 72 candidates (rings 8/10/12 u × 24), open and with sight; cost = distance + 6 near an ally (< 4 u) − 4 beside cover when repositioning; best 6 get a real path check. `EngageDef` in `AiDef`; `aimLead` 0.

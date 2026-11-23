@@ -122,6 +122,15 @@ async function start(): Promise<void> {
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
+  simulation.events.on('ShotTelegraphed', ({ shooter, hardpoint, seconds }) =>
+    renderer.startTelegraph(shooter, hardpoint, seconds),
+  );
+  simulation.events.on('TelegraphCancelled', ({ shooter, hardpoint }) =>
+    renderer.endTelegraph(shooter, hardpoint),
+  );
+  simulation.events.on('ShotFired', ({ shooter, hardpoint }) =>
+    renderer.endTelegraph(shooter, hardpoint),
+  );
   const overlay = debug.hp
     ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
     : undefined;

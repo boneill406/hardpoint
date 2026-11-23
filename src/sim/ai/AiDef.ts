@@ -20,6 +20,12 @@ export interface EngageDef {
   readonly hullTolerance: number;
   /** Fire only when the turret is within this of the aim (rad). */
   readonly turretTolerance: number;
+  /**
+   * Once the trigger is held (a windup running, M4-5), keep holding while the
+   * aim stays within `turretTolerance × holdSlack`, so tracking a moving target
+   * doesn't cancel the telegraphed shot.
+   */
+  readonly holdSlack: number;
   /** Reposition after this long without line of sight (s). */
   readonly lostSightTime: number;
   /** The target counts as "behind" beyond this angle off the nose (rad)... */

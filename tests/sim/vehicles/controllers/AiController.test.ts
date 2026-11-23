@@ -110,11 +110,25 @@ describe('AiController: Engage', () => {
     const s = scene();
     arriveAndEngage(s);
     const onTarget = s.me.turret.heading;
-    expect(s.decide().firePrimary).toBe(true);
     s.me.turret.heading = onTarget + degToRad(5);
     expect(s.decide().firePrimary).toBe(false);
     s.me.turret.heading = onTarget;
+    expect(s.decide().firePrimary).toBe(true);
     s.world.sight = () => false;
+    expect(s.decide().firePrimary).toBe(false);
+  });
+
+  it('once holding the trigger, keeps holding through small aim drift (up to 3 × 2°), so a windup survives tracking', () => {
+    const s = scene();
+    arriveAndEngage(s);
+    const onTarget = s.me.turret.heading;
+    expect(s.decide().firePrimary).toBe(true);
+    s.me.turret.heading = onTarget + degToRad(5);
+    expect(s.decide().firePrimary).toBe(true);
+    s.me.turret.heading = onTarget + degToRad(7);
+    expect(s.decide().firePrimary).toBe(false);
+    // Not holding any more: back to the strict 2° to start again.
+    s.me.turret.heading = onTarget + degToRad(5);
     expect(s.decide().firePrimary).toBe(false);
   });
 

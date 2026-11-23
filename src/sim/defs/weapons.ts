@@ -45,5 +45,9 @@ export const INSURGENT_CANNON: WeaponDef = {
   projectile: { speed: 70, radius: 0.07, lifetime: 2, look: 'shell' },
   spread: degToRad(3),
   breaksCover: true,
-  limiters: [{ kind: 'reload', seconds: 2.4 }],
+  limiters: [
+    { kind: 'reload', seconds: 2.4 },
+    // Fire telegraph (GDD §5): 0.3 s of muzzle glow before each shot (M4 plan D11).
+    { kind: 'windup', seconds: 0.3 },
+  ],
 };

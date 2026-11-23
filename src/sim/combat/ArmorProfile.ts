@@ -1,6 +1,6 @@
 import { angleDelta } from '../core/angles';
 import type { Vec2 } from '../core/Vec2';
-import type { ArmorDef, ArmorFace, FaceRule } from './ArmorDef';
+import type { ArmorDef, ArmorFace, FaceRule, HitZone } from './ArmorDef';
 
 /** What the armor needs to know about one hit. */
 export interface ArmorHit {
@@ -41,7 +41,7 @@ export class ArmorProfile {
     return 'side';
   }
 
-  multiplier(face: ArmorFace): number {
-    return this.def[face];
+  multiplier(zone: HitZone): number {
+    return this.def[zone];
   }
 }

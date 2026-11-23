@@ -34,6 +34,8 @@ export class AiController implements Controller {
   private spot: Vec2 | undefined;
   private readonly follower: PathFollower;
   private ticksWithoutSight = 0;
+  /** Holding the trigger last tick (a windup may be running). */
+  private holding = false;
   private needsSpot = true;
 
   constructor(private readonly def: AiDef) {
@@ -119,7 +121,10 @@ export class AiController implements Controller {
     const aimPoint = this.aimPoint(self, target);
     const pivot = self.turretPivot();
     const aimError = angleDelta(self.turret.heading, aimPoint.sub(pivot).heading());
-    const fire = seen && Math.abs(aimError) <= engage.turretTolerance;
+    // Once holding (winding up), small aim drift while tracking doesn't cancel the shot.
+    const tolerance = engage.turretTolerance * (this.holding ? engage.holdSlack : 1);
+    const fire = seen && Math.abs(aimError) <= tolerance;
+    this.holding = fire;
     return { ...IDLE_COMMAND, turn, aimPoint, firePrimary: fire };
   }
 
@@ -202,6 +207,7 @@ export class AiController implements Controller {
 
   private startReposition(): void {
     this.mode = 'reposition';
+    this.holding = false;
   }
 
   /** While moving, the turret looks along the path (T-108). */

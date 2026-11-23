@@ -1,4 +1,4 @@
-import type { ArmorFace } from '../combat/ArmorDef';
+import type { HitZone } from '../combat/ArmorDef';
 import type { WeaponSlot } from '../vehicles/VehicleDef';
 import type { EntityId } from './Entity';
 import type { Vec2 } from './Vec2';
@@ -42,7 +42,7 @@ export interface SimEvents {
     /** The projectile's look (shell / tracer), so effects can scale with it. */
     readonly look: 'shell' | 'tracer';
     readonly target: EntityId | undefined;
-    /** A gun barrel stops the shot but takes no damage (plan D17); everything else is `body`. */
+    /** A gun barrel (damaged by the armor's `barrel` multiplier since M4-5) or the `body`. */
     readonly part: 'body' | 'barrel';
     readonly point: Vec2;
     readonly normal: Vec2;
@@ -57,11 +57,24 @@ export interface SimEvents {
     /** Who fired; friendly fire counts (GDD §5). */
     readonly attacker: EntityId;
     readonly weapon: string;
-    readonly face: ArmorFace;
+    /** The hull face, or `barrel` (M4-5). */
+    readonly face: HitZone;
     /** Health removed, after the armor multiplier. */
     readonly damage: number;
     readonly healthLeft: number;
     readonly destroyed: boolean;
     readonly point: Vec2;
   };
+  /**
+   * A weapon began its windup (M4-5): it will fire in `seconds` unless the
+   * trigger is released. Drives the enemy fire telegraph (muzzle glow).
+   */
+  ShotTelegraphed: {
+    readonly shooter: EntityId;
+    readonly hardpoint: string;
+    readonly weapon: string;
+    readonly seconds: number;
+  };
+  /** A windup ended without a shot (trigger released, e.g. sight lost): hide the telegraph. */
+  TelegraphCancelled: { readonly shooter: EntityId; readonly hardpoint: string };
 }

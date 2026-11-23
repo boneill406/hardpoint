@@ -16,7 +16,7 @@ import { drive } from '../vehicles/testVehicles';
 import { seconds } from './overlap';
 
 // M3-8b, against real Rapier: barrels are solid. They stop the tank nosing in,
-// stall the turret against walls, bump other tanks, and stop shots (no damage).
+// stall the turret against walls, bump other tanks, and stop shots (damage: see damage.test.ts).
 
 /** 30 × 30 room: the top wall's inner face is at z = 15. */
 const ROOM: ArenaDef = {

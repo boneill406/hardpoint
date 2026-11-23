@@ -1,5 +1,5 @@
 /** What a limiter tells the HUD (M3-6): a reload bar or a heat bar. */
-export type LimiterStatus = ReloadStatus | HeatStatus;
+export type LimiterStatus = ReloadStatus | HeatStatus | WindupStatus;
 
 export interface ReloadStatus {
   readonly kind: 'reload';
@@ -12,6 +12,14 @@ export interface HeatStatus {
   /** 0 cold … 1 full. */
   readonly heat: number;
   readonly overheated: boolean;
+}
+
+/** A windup in progress (M4-5): drives the fire telegraph. */
+export interface WindupStatus {
+  readonly kind: 'windup';
+  /** 0 … 1 through the windup. */
+  readonly progress: number;
+  readonly active: boolean;
 }
 
 /**

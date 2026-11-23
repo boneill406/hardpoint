@@ -45,7 +45,7 @@ export interface BarrelDef {
   readonly collides: boolean;
 }
 
-export type LimiterDef = ReloadLimiterDef | HeatLimiterDef;
+export type LimiterDef = ReloadLimiterDef | HeatLimiterDef | WindupLimiterDef;
 
 /** A fixed wait between shots: the cannon's reload, or a machine gun's cadence. */
 export interface ReloadLimiterDef {
@@ -63,4 +63,11 @@ export interface HeatLimiterDef {
   readonly coolPerSecond: number;
   /** After overheating, the weapon fires again once heat has fallen to this (0..1). */
   readonly rearmAt: number;
+}
+
+/** Hold the trigger this long before each shot: the enemy fire telegraph (M4 plan D11). */
+export interface WindupLimiterDef {
+  readonly kind: 'windup';
+  /** Seconds of held trigger, counted only once the gun is otherwise ready (whole ticks). */
+  readonly seconds: number;
 }

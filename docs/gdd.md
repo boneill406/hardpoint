@@ -42,7 +42,7 @@ Escalation is **count only**. All enemies use the same definition.
 | Property | Starting value | Notes |
 |---|---|---|
 | Armor (health) | 100 | |
-| Directional armor | front ×0.65, side ×1.0, rear ×1.25 | Applies to damage the player receives |
+| Directional armor | front ×0.65, side ×1.0, rear ×1.25; a shot stopped by a gun barrel ×0.65 (as front) | Applies to damage the player receives |
 | Drive speed | 7.0 u/s | Prototype's 8.4 felt too fast (M2 plan, D3) |
 | Reverse speed | 60% of drive speed (4.2 u/s) | Prototype reversed at full speed |
 | Acceleration | 0.4 s to top speed; 0.25 s to stop | Inertia; the prototype reached speed instantly. Tuned by Brendan in play (2026-11-19) |
@@ -91,11 +91,11 @@ Weaker than the player by design, so numbers carry the threat.
 | Property | Starting value |
 |---|---|
 | Armor (health) | 60 |
-| Directional armor | front ×0.65, side ×1.0, rear ×1.25 |
+| Directional armor | front ×0.65, side ×1.0, rear ×1.25; barrel ×0.65 |
 | Drive speed / turn | 4.0 u/s / 1.4 rad/s; reverse 60%; 0.5 s to top speed, 0.15 s to stop, 0.2 s gear change; same footprint as the player |
 | Mass / track grip | 20 / 50 u/s² (lighter than the player, so it can be shoved; grip 50 means a full-speed ram knocks it ~1 u sideways rather than skating ~6 u) |
 | Turret traverse | 1.8 rad/s |
-| Weapon | Cannon: 12 base damage, 2.4 s reload, 3° aim spread |
+| Weapon | Cannon: 12 base damage, 2.4 s reload, 3° aim spread, 0.3 s windup (telegraph) before each shot |
 | Visual | Same primitive tank, insurgent colors, distinct silhouette detail |
 
 Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 each), **rear = 1 hit** (62.5). The one-shot rear kill is the deliberate payoff for flanking. Machine gun alone needs ~20 side hits, about two-thirds of a heat bar.

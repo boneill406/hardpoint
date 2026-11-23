@@ -16,8 +16,8 @@ import { IDLE_COMMAND, type VehicleCommand } from '../../../src/sim/vehicles/Veh
 import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import { seconds } from '../physics/overlap';
 
-// M3-4, against real Rapier: hull hits deal armor-scaled damage, barrel hits
-// deal none, and a vehicle at 0 health is removed.
+// M3-4, against real Rapier: hits deal armor-scaled damage (barrels at their own
+// multiplier since M4-5), and a vehicle at 0 health is removed.
 
 const ROOM: ArenaDef = {
   name: 'Range',
@@ -136,15 +136,17 @@ describe('damage (real Rapier)', () => {
     simulation.dispose();
   });
 
-  it('a shot that stops on a barrel deals no damage', async () => {
+  it('a shot that stops on a barrel deals damage at the barrel multiplier (front: 50 × 0.65)', async () => {
     // Target faces the shooter with its gun along the line of fire (x = 0).
     const { hits, impacts, target, simulation } = await shootAt(
       { targetHeading: Math.PI, shooterX: 0 },
       1,
     );
     expect(impacts[0]).toMatchObject({ target: 2, part: 'barrel' });
-    expect(hits).toHaveLength(0);
-    expect(target.health.current).toBe(INSURGENT_TANK.health);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ face: 'barrel' });
+    expect(hits[0]?.damage).toBeCloseTo(50 * TANK_ARMOR.barrel, 9);
+    expect(target.health.current).toBeCloseTo(INSURGENT_TANK.health - 32.5, 9);
     simulation.dispose();
   });
 
@@ -186,7 +188,13 @@ describe('DamageResolver', () => {
       controller: new ScriptedController(() => IDLE_COMMAND),
     });
     const resolver = new DamageResolver();
-    const fromBehind = { target, weapon: CANNON, shotHeading: 0, normal: new Vec2(0, -1) };
+    const fromBehind = {
+      target,
+      weapon: CANNON,
+      shotHeading: 0,
+      normal: new Vec2(0, -1),
+      part: 'body' as const,
+    };
     expect(resolver.resolve(fromBehind)?.destroyed).toBe(true);
     expect(resolver.resolve(fromBehind)).toBeUndefined();
   });

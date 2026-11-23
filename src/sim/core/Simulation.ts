@@ -135,6 +135,7 @@ export class Simulation {
           new Projectile(shot.origin, shot.heading, shot.mount.weapon.def, vehicle.id),
         );
       }
+      this.emitTelegraphs(vehicle);
     }
     this.advanceProjectiles();
     for (const impact of this.bodies.newVehicleImpacts()) {
@@ -253,6 +254,24 @@ export class Simulation {
     }
   }
 
+  /** Tick phase 6b (M4-5): windups that started or were cancelled this tick. */
+  private emitTelegraphs(vehicle: Vehicle): void {
+    for (const mount of vehicle.mounts) {
+      const change = mount.weapon.telegraph();
+      const hardpoint = mount.hardpoint.id;
+      if (change === 'started') {
+        this.events.emit('ShotTelegraphed', {
+          shooter: vehicle.id,
+          hardpoint,
+          weapon: mount.weapon.def.name,
+          seconds: mount.weapon.windupSeconds,
+        });
+      } else if (change === 'cancelled') {
+        this.events.emit('TelegraphCancelled', { shooter: vehicle.id, hardpoint });
+      }
+    }
+  }
+
   /**
    * Tick phase 7: every projectile (including those fired this tick, so they
    * leave the muzzle at once) sweeps forward. A hit stops it at the impact
@@ -280,8 +299,8 @@ export class Simulation {
           point: result.hit.point,
           normal: result.hit.normal,
         });
-        if (target instanceof Vehicle && part === 'body') {
-          this.damageVehicle(target, projectile, result.hit.point, result.hit.normal);
+        if (target instanceof Vehicle) {
+          this.damageVehicle(target, projectile, result.hit, part);
         } else if (target instanceof Prop) {
           this.hitCover(target, projectile);
         }
@@ -292,16 +311,24 @@ export class Simulation {
   }
 
   /**
-   * Tick phase 7b (M3-4): a hull hit deals armor-scaled damage; at 0 health
-   * the vehicle is removed at the end of the tick. Barrel hits never get here
-   * (plan D17), and a vehicle already destroyed this tick takes no more hits.
+   * Tick phase 7b (M3-4): a hit deals armor-scaled damage (a hull face by the
+   * armor rule, or the barrel multiplier: M4-5); at 0 health the vehicle is
+   * removed at the end of the tick. A vehicle already destroyed this tick takes
+   * no more hits.
    */
-  private damageVehicle(target: Vehicle, projectile: Projectile, point: Vec2, normal: Vec2): void {
+  private damageVehicle(
+    target: Vehicle,
+    projectile: Projectile,
+    hit: { readonly point: Vec2; readonly normal: Vec2 },
+    part: 'body' | 'barrel',
+  ): void {
+    const { point } = hit;
     const result = this.damage.resolve({
       target,
       weapon: projectile.weapon,
       shotHeading: projectile.transform.heading,
-      normal,
+      normal: hit.normal,
+      part,
     });
     if (result === undefined) {
       return;

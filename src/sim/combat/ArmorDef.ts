@@ -1,6 +1,9 @@
 /** Which side of a hull a hit counts against (GDD §5). */
 export type ArmorFace = 'front' | 'side' | 'rear';
 
+/** Where a hit landed for damage: a hull face, or a gun barrel (M4-5, Brendan: barrels take damage). */
+export type HitZone = ArmorFace | 'barrel';
+
 /**
  * How a hit's face is decided (M3 plan D5). Both are built so Brendan can
  * compare them in play (`?armor=struck`) and keep one at the M3-5 check.
@@ -18,6 +21,11 @@ export interface ArmorDef {
   readonly front: number;
   readonly side: number;
   readonly rear: number;
+  /**
+   * Multiplier for a shot stopped by a gun barrel. The slice uses the front
+   * value: barrels sit over the front, so a barrel hit counts as hitting armor.
+   */
+  readonly barrel: number;
   /** Half-width of the front arc around hull forward (rad); GDD: 45°. */
   readonly frontArc: number;
   /** Half-width of the rear arc around hull back (rad); GDD: 45°. */

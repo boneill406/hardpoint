@@ -44,6 +44,7 @@ export const INSURGENT_AI: AiDef = {
     replanInterval: 0.5,
     hullTolerance: degToRad(15),
     turretTolerance: degToRad(2),
+    holdSlack: 3,
     lostSightTime: 1.5,
     behindAngle: degToRad(135),
     behindDistance: 8,
