@@ -40,6 +40,17 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-1, M4-2 · Navigation grid and pathfinder
+- **M4 plan approved** (D1: controllers get a read-only `SimQueries` view, option A; D11 windup limiter; D14 debug scene; aim lead becomes `AiDef.aimLead`, 0 in the slice).
+- **M4-1:** the insurgent def already matches GDD §5 on every value; no code.
+- **`NavGrid`** (`sim/ai`): 0.5 u cells over the floor; a cell is blocked if its centre is within 1.0 u of a wall, pillar or standing crate (`NAV_GRID` in `defs/ai.ts`). Immutable; helpers for cell lookup, nearest open cell, and "is this straight line all open".
+- **`Pathfinder`:** A*, 8 neighbours, octile heuristic, no corner cutting; deterministic tie-break (insertion order). The cell path is straightened by string-pulling. A blocked start or goal snaps to the nearest open cell. Optional extra cell cost (for other tanks, D6).
+- **`Simulation`** builds the grid with the arena and rebuilds it at the end of any tick that broke a crate (`navGrid` getter).
+- **Issue found by a test:** straightening ignored the extra cost, so a path routed around a costly area got pulled straight back through it. Shortcuts may now only cross cells no costlier than the stretch they replace.
+- **Measured:** corner-to-corner path 0.9 ms; full grid build ~10 ms.
+- **Tests:** NavGrid (clearance edges, rounded corners, off-grid, nearest open), Pathfinder (straight, around a crate, sealed area → none, no diagonal squeeze, blocked start/goal, cost avoidance, deterministic), slice arena (start open, every gate reaches the start, broken crate reopens its cells).
+- Trade-offs: T-103 (circle clearance), T-104 (full rebuild), T-105 (sampled straightening).
+
 ## 2026-11-21 · M3 close · Armor pick, HUD heat bar
 - **Armor pick:** Brendan chose `struck`; `TANK_ARMOR.faceRule` is now `struck`, and `?armor=direction` switches back (T-102). GDD §5, plan D5, architecture updated; tests that relied on the old default now name their rule.
 - **MG bar:** labelled "Machine gun heat". Its gradient (green → yellow → orange → red) now spans the full bar and the heat reveals it from the left (`clip-path`), instead of the whole gradient squeezing into the filled part.

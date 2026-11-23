@@ -30,11 +30,11 @@ src/
       controllers/  Controller (interface), PlayerController, AiController
     combat/      Weapon, WeaponDef, WeaponMount, Projectile, ArmorProfile, Health, DamageResolver
       limiters/     FireLimiter (interface), ReloadLimiter, HeatLimiter
-    ai/          Pathfinder (grid A*), behavior states
+    ai/          NavGrid (open/blocked cells, grown by clearance), Pathfinder (grid A* + straightening), behavior states
     physics/     PhysicsWorld (interface), RapierPhysicsWorld (Rapier 2D, ADR-0005), PhysicsBridge (entity ↔ body)
     arena/       Arena, ArenaDef, Prop (pillars, crates)
     modes/       GameMode (interface), WaveSurvivalMode, WaveDef
-    defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts
+    defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts, ai.ts
   render/        Renderer, RenderBridge, coords.ts, vfx/ (ImpactFlashes), views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
@@ -144,6 +144,7 @@ classDiagram
    4. Projectiles (spawned from this tick's shots, at the muzzle) advance: each sweeps a circle of its radius from where it was to where it will be (`PhysicsWorld.castCircle`, ignoring its shooter), so it can't tunnel and only hits real shapes. A hit stops it at the impact point (`ProjectileImpact`), parks it there for one more tick so the interpolated view reaches the surface, then removes it; hits go to `DamageResolver` (M3-4).
    5. A hull hit on a vehicle goes to `DamageResolver`: `ArmorProfile` picks the face (`struck`, the slice default: the face hit, from the cast normal; or `direction`: where the shot came from relative to the hull; both with ±45° front and rear arcs; `?armor=` overrides every def, M3 plan D5), and `damage = base × multiplier` comes off `Health`, emitting `Hit`. Barrel hits deal nothing. At 0 health the vehicle is removed at the end of the tick (`EntityDestroyed`); a vehicle already destroyed this tick takes no further hits. A hit on a destructible prop (a crate) from a `breaksCover` weapon (the cannon) removes it the same way (M3-5).
    6. `GameMode.update` spawns enemies and checks win/lose.
+   6b. After removals, if cover was destroyed this tick, the `NavGrid` is rebuilt from the walls and the props still standing (M4-2); `Simulation.navGrid` returns the new one.
    7. Events are emitted: `ShotFired`, `Hit`, `EntityDestroyed`, `VehiclesCollided` (once per tank-vs-tank impact, with impulse), `WeaponStateChanged`, `WaveStarted`, `RunEnded`. `EventBus.emit` only queues them (typed by the `SimEvents` name → payload map).
 3. **Render:** `RenderBridge` keeps one view per entity id, interpolates between the last two ticks, and applies state to Babylon nodes.
 4. **React to events:** after the frame's ticks, `events.flush()` delivers the queue in emission order (M1 plan, D2), so subscribers never run mid-tick. VFX, camera shake, hit-stop, audio and HUD subscribe to simulation events. The simulation never calls "play explosion."

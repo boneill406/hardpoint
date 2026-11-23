@@ -1,8 +1,10 @@
+import { NavGrid } from '../ai/NavGrid';
 import { Arena } from '../arena/Arena';
 import { Prop } from '../arena/Prop';
 import type { FaceRule } from '../combat/ArmorDef';
 import { DamageResolver } from '../combat/DamageResolver';
 import { Projectile } from '../combat/Projectile';
+import { NAV_GRID } from '../defs/ai';
 import { capsuleAxis, segmentDistance } from './segments';
 import type { ArenaDef } from '../arena/ArenaDef';
 import { PhysicsBridge } from '../physics/PhysicsBridge';
@@ -53,6 +55,9 @@ export class Simulation {
   private readonly physics: PhysicsWorld;
   private readonly bodies: PhysicsBridge;
   private readonly damage: DamageResolver;
+  private nav: NavGrid | undefined;
+  /** Set when cover is destroyed; the grid is rebuilt once at the end of the tick. */
+  private navStale = false;
   private ticks = 0;
 
   constructor(options: SimulationOptions) {
@@ -65,8 +70,17 @@ export class Simulation {
     if (this.arena !== undefined) {
       this.addWalls(this.arena);
       this.arena.spawnProps(this.world);
+      this.nav = this.buildNavGrid(this.arena);
     }
     options.populate?.(this);
+  }
+
+  /**
+   * Where tanks can drive (M4 plan D2), or undefined without an arena. A new
+   * grid after cover breaks, so a reference taken earlier is a past snapshot.
+   */
+  get navGrid(): NavGrid | undefined {
+    return this.nav;
   }
 
   /** Completed ticks since the simulation started. */
@@ -122,6 +136,10 @@ export class Simulation {
       this.events.emit('VehiclesCollided', impact);
     }
     this.world.applyRemovals();
+    if (this.navStale && this.arena !== undefined) {
+      this.nav = this.buildNavGrid(this.arena);
+      this.navStale = false;
+    }
     this.ticks++;
   }
 
@@ -306,7 +324,24 @@ export class Simulation {
   private hitCover(prop: Prop, projectile: Projectile): void {
     if (prop.destructible && projectile.weapon.breaksCover) {
       this.world.remove(prop.id);
+      this.navStale = true;
     }
+  }
+
+  /** Walls, plus every prop still standing (called after removals, so a broken crate's cells reopen). */
+  private buildNavGrid(arena: Arena): NavGrid {
+    const cover = this.world.ofType(Prop).map((prop) => ({
+      center: prop.transform.position,
+      width: prop.size.width,
+      depth: prop.size.depth,
+    }));
+    const bounds = {
+      minX: -arena.halfWidth,
+      maxX: arena.halfWidth,
+      minZ: -arena.halfDepth,
+      maxZ: arena.halfDepth,
+    };
+    return new NavGrid(bounds, [...arena.walls, ...cover], NAV_GRID);
   }
 
   /** Walls never change, so they are added once, as plain static boxes rather than entities. */
