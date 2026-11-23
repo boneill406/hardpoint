@@ -74,7 +74,7 @@ stateDiagram-v2
 |---|---|---|---|
 | 1 | M4-1 Insurgent def check against GDD §5 | (with M4-2) | ✅ all values match |
 | 2 | M4-2 `NavGrid`, `Pathfinder` (A*, smoothing, rebuild on crate break) | `m4-2-pathfinder` | ✅ |
-| 3 | M4-3 Line of sight; `SimQueries` on `ControllerContext` | `m4-3-sight` | ⬜ |
+| 3 | M4-3 Line of sight; `SimQueries` on `ControllerContext` | `m4-3-sight` | ✅ |
 | 4 | M4-4a `PathFollower` + stuck recovery | `m4-4a-follow` | ⬜ |
 | 5 | M4-4b `AiController` states, firing spots, engage; debug scene (D14), `?ai=on`, `?nav=on` | `m4-4b-ai` | ⬜ |
 | 6 | M4-5 `WindupLimiter`, `ShotTelegraphed`, placeholder muzzle glow | `m4-5-telegraph` | ⬜ |

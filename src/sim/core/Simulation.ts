@@ -18,6 +18,7 @@ import type { SimEvents } from './SimEvents';
 import type { Vec2 } from './Vec2';
 import { TICK_SECONDS } from './time';
 import { World } from './World';
+import { WorldQueries } from './WorldQueries';
 
 /** A turn may not deepen a barrel's overlap by more than this (u): float noise only. */
 const DEPTH_EPSILON = 1e-4;
@@ -55,6 +56,7 @@ export class Simulation {
   private readonly physics: PhysicsWorld;
   private readonly bodies: PhysicsBridge;
   private readonly damage: DamageResolver;
+  private readonly queries: WorldQueries;
   private nav: NavGrid | undefined;
   /** Set when cover is destroyed; the grid is rebuilt once at the end of the tick. */
   private navStale = false;
@@ -66,6 +68,7 @@ export class Simulation {
     this.world = new World(this.events);
     this.bodies = new PhysicsBridge(this.physics);
     this.damage = new DamageResolver(options.armorRule);
+    this.queries = new WorldQueries(this.world, this.physics, this.bodies, () => this.nav);
     this.arena = options.arena === undefined ? undefined : new Arena(options.arena);
     if (this.arena !== undefined) {
       this.addWalls(this.arena);
@@ -99,7 +102,9 @@ export class Simulation {
     }
     const vehicles = this.world.ofType(Vehicle);
     for (const vehicle of vehicles) {
-      vehicle.applyCommand(vehicle.controller.decide({ tick: this.ticks, commands, vehicle }));
+      vehicle.applyCommand(
+        vehicle.controller.decide({ tick: this.ticks, commands, vehicle, world: this.queries }),
+      );
     }
     for (const vehicle of vehicles) {
       vehicle.drive(TICK_SECONDS);

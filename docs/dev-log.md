@@ -40,6 +40,12 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-3 · Line of sight; read-only world view for controllers
+- **`ControllerContext`** now carries `world: SimQueries`, and `vehicle` is a `VehicleView` (read-only interface that `Vehicle` implements: no copying). A compile-time test (`@ts-expect-error` on `applyCommand` and `health.damage`) fails if the context ever hands out the live object again; checked by swapping the type back.
+- **`WorldQueries`** (the sim's implementation): `vehicles()`, `vehicle(id)`, `lineOfSight(from, to, { viewer, target })` (circle r 0.1 swept by Rapier; the viewer's own body is ignored; reaching the target counts as clear), `findPath(from, to, forVehicle)` (cells within 2.5 u of other tanks cost +4), `navGrid`. Tuning in `defs/ai.ts`.
+- **Tests:** sight blocked by a pillar, a tank in between, a crate until it breaks; clear past a 45°-turned tank's corner; viewer's own hull ignored; paths bend around other tanks but not their own; grid replaced after a crate breaks. Two first-run failures were test setup mistakes (no controller to capture the view; a line ending exactly on a wall face).
+- Trade-offs: T-106 (option A), T-107 (planar sight).
+
 ## 2026-11-23 · M4-1, M4-2 · Navigation grid and pathfinder
 - **M4 plan approved** (D1: controllers get a read-only `SimQueries` view, option A; D11 windup limiter; D14 debug scene; aim lead becomes `AiDef.aimLead`, 0 in the slice).
 - **M4-1:** the insurgent def already matches GDD §5 on every value; no code.

@@ -13,6 +13,7 @@ import type { Locomotion, LocomotionSnapshot } from './locomotion/Locomotion';
 import { Turret, type TurretSnapshot } from './Turret';
 import { IDLE_COMMAND, type VehicleCommand } from './VehicleCommand';
 import type { VehicleDef } from './VehicleDef';
+import type { VehicleView } from './VehicleView';
 
 /** Vehicle state worth comparing in determinism checks, on top of the transform. */
 export interface VehicleSnapshot extends EntitySnapshot {
@@ -34,7 +35,7 @@ export interface VehicleSnapshot extends EntitySnapshot {
  *
  * Build one with `createVehicle` (VehicleFactory.ts), not directly.
  */
-export class Vehicle extends Entity {
+export class Vehicle extends Entity implements VehicleView {
   /** Aims independently of the hull (stabilised). */
   readonly turret: Turret;
   /** Guns on the turret, in def order. */
