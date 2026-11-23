@@ -85,7 +85,7 @@ _Hardpoint (working title). Created 2026-11-18._
 | M4-2 | Grid A* `Pathfinder` (navigation grid built from the arena; rebuilt when crates break) |
 | M4-3 | Line-of-sight checks |
 | M4-4 | `AiController` state machine: Advance / Engage / Reposition; keeps front armor toward the player |
-| M4-5 | Fire telegraph event (~0.3 s), aim spread |
+| M4-5 | Fire telegraph event (0.4 s, hazard sign over the barrel), aim spread |
 | M4-6 | Friendly fire + "hold fire if an ally blocks the shot" check |
 
 **Done when:** an enemy paths around cover, engages, repositions when blocked, and never gets permanently stuck; pathfinding and state transitions are tested.
@@ -110,7 +110,7 @@ _Hardpoint (working title). Created 2026-11-18._
 | ID | Task |
 |---|---|
 | M6-1 | Screen shake, hit-stop, hit flash |
-| M6-2 | Muzzle flash light, cannon recoil |
+| M6-2 | Muzzle flash light, cannon recoil; spent shell casings ejected as you fire (MG stream, cannon case) |
 | M6-3 | Explosions and smoke via Babylon particle presets / Node Particle Editor assets |
 | M6-4 | Crate break-apart chunks; tread marks; MG heat glow |
 | M6-5 | Bloom and basic post-processing |

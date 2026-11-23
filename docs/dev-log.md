@@ -39,6 +39,15 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-5b · Hazard-sign fire telegraph; windup 0.4 s
+- **Why:** Brendan wasn't convinced by the orange muzzle sphere. Options discussed: aim line, ground marker, hull flash, barrel pull-back, sound, particles, or slow shells instead of a windup. Brendan picked a hazard-label warning sign by the barrel.
+- **`TelegraphSigns`** (`src/ui/`): an inline-SVG warning triangle (black edge, black "!") over the shooting gun's muzzle, 34 px, fixed on screen. Dark amber at first, it fills hazard-yellow from the bottom over the windup (full = the shot), pops in with a small overshoot, and blinks with an orange glow for the last 30%. Removed on `ShotFired`, `TelegraphCancelled`, the shooter disappearing, or 0.1 s past its time. The animation is the pure `telegraphSignFrame` (`src/ui/telegraphSign.ts`).
+- **`Renderer.muzzleScreenPosition`:** the sim's muzzle offset applied to the tank's interpolated position, so the sign doesn't jitter at 60 Hz ticks. `render/vfx/TelegraphGlows` deleted.
+- **Windup 0.3 → 0.4 s** (24 ticks) in `INSURGENT_CANNON`: enemy shots every 2.8 s (was 2.7). Reload left at 2.4; drop it to 2.3 if enemies feel slow.
+- **Shell casings** added to M6-2 and GDD §8 (Brendan's polish idea).
+- **Tests:** sign frame (fill 0 → 1 exactly at the shot, pop-in, urgent at 70%, expiry); windup tests moved to 24 ticks (shots at 24, 192, 360). Sign look checked in a static screenshot; not yet seen in a live fight.
+- Trade-offs: T-117.
+
 ## 2026-11-23 · M4-5 · Fire telegraph (windup); barrel hits deal damage
 - **`WindupLimiter`:** trigger held `seconds` (insurgent cannon: 0.3 s = 18 ticks) before the shot; releasing cancels; each shot needs a fresh windup. **`Weapon`** updates other limiters first and feeds windups "held and otherwise ready", so the windup is the last 0.3 s before each shot (insurgent cadence 2.4 + 0.3 s). `Weapon.telegraph()` reports started / cancelled per tick; the sim emits **`ShotTelegraphed`** (shooter, hardpoint, weapon, seconds) and **`TelegraphCancelled`**.
 - **Placeholder glow** (`render/vfx/TelegraphGlows`): an orange sphere at the muzzle, swelling over the windup and following the turret; ends on `ShotFired`, a cancel, or timeout. M6 replaces it. Not yet seen in motion by me (headless capture can't reach an enemy shot quickly).

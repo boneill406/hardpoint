@@ -19,6 +19,7 @@ import type { PlayerId } from '../sim/vehicles/VehicleCommand';
 import { HealthOverlay } from '../ui/HealthOverlay';
 import { AiStateLabels } from '../ui/AiStateLabels';
 import { Hud } from '../ui/Hud';
+import { TelegraphSigns } from '../ui/TelegraphSigns';
 import { readDebugParams } from './debugParams';
 import { populateDebugScene } from './debugScene';
 
@@ -31,6 +32,8 @@ import { populateDebugScene } from './debugScene';
 const SEED = 1;
 /** The one local player in the slice. */
 const PLAYER_ID: PlayerId = 1;
+/** Height (u) of the point the fire-telegraph sign sits on: just above the barrel tip. */
+const MUZZLE_SIGN_HEIGHT = 1.0;
 
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
@@ -122,15 +125,14 @@ async function start(): Promise<void> {
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
+  const telegraphs = new TelegraphSigns(document.body);
   simulation.events.on('ShotTelegraphed', ({ shooter, hardpoint, seconds }) =>
-    renderer.startTelegraph(shooter, hardpoint, seconds),
+    telegraphs.start(shooter, hardpoint, seconds),
   );
   simulation.events.on('TelegraphCancelled', ({ shooter, hardpoint }) =>
-    renderer.endTelegraph(shooter, hardpoint),
+    telegraphs.end(shooter, hardpoint),
   );
-  simulation.events.on('ShotFired', ({ shooter, hardpoint }) =>
-    renderer.endTelegraph(shooter, hardpoint),
-  );
+  simulation.events.on('ShotFired', ({ shooter, hardpoint }) => telegraphs.end(shooter, hardpoint));
   const overlay = debug.hp
     ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
     : undefined;
@@ -173,6 +175,10 @@ async function start(): Promise<void> {
     hud.update(playerTank);
     overlay?.update(vehicles, overlayProjector, elapsedSeconds);
     aiLabels?.update(vehicles, overlayProjector.vehicle);
+    telegraphs.update((shooter, hardpoint) => {
+      const vehicle = vehicles.find((candidate) => candidate.id === shooter);
+      return vehicle && renderer.muzzleScreenPosition(vehicle, hardpoint, MUZZLE_SIGN_HEIGHT);
+    }, elapsedSeconds);
   };
   requestAnimationFrame(frame);
 }

@@ -67,7 +67,7 @@ export interface SimEvents {
   };
   /**
    * A weapon began its windup (M4-5): it will fire in `seconds` unless the
-   * trigger is released. Drives the enemy fire telegraph (muzzle glow).
+   * trigger is released. Drives the enemy fire telegraph (hazard sign).
    */
   ShotTelegraphed: {
     readonly shooter: EntityId;

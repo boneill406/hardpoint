@@ -47,7 +47,7 @@ stateDiagram-v2
 | D8 | Firing spots | Candidates on rings 8, 10 and 12 u around the player (24 angles each), kept if the cell is open and has line of sight to the player. Scored by straight-line distance from the AI (shorter is better; only the best 6 get a real path check, T-111), plus: **Reposition prefers spots next to cover** (a blocked cell within 2 u), and spots near other enemies score worse (spread out). Ties keep sampling order (deterministic; the sim `Rng` would make `SimQueries` stateful, T-110) |
 | D9 | Engage | Stop. Turn the **hull** so its front faces the player (within 15°), since front armor is ×0.65. Turret tracks the player, **leading by `AiDef.aimLead`** (0 = aim at where the player is, 1 = full intercept). The slice uses **0** (fair and readable; at 10 u the shell takes ~0.14 s, so a moving player is missed, a still one is hit); difficulty levels can raise it later without code (Brendan: "maybe it depends on AI difficulty"). Fire when the turret is within 2° of the aim and line of sight is clear |
 | D10 | Leaving Engage | Reposition if line of sight has been lost for 1.5 s (GDD), or the player is in its rear arc (> 135° off the hull's nose) within 8 u: it would rather move than turn its weak rear toward you |
-| D11 | Fire telegraph (M4-5) ✅ approved | A new limiter, **`WindupLimiter`** (0.3 s = 18 ticks): the trigger must be held that long before the gun fires; releasing cancels. `Weapon` counts the windup only while its other limiters would allow a shot, so it always runs right before the shot, never during the reload (shots every 2.4 + 0.3 s). The AI keeps holding through aim drift up to 3 × its 2° tolerance once a windup runs. The sim emits `ShotTelegraphed` when a windup starts, and the render layer shows a placeholder **muzzle glow** for it (real flash in M6). Only the insurgent cannon has it in its def, so it's data, not AI code (and the "charge-up" limiter from architecture.md §4 comes for free). The AI just holds the trigger when it wants to fire. Alternative: a timer inside `AiController` (simpler, but then only the AI could ever have a windup) |
+| D11 | Fire telegraph (M4-5) ✅ approved | A new limiter, **`WindupLimiter`** (0.4 s = 24 ticks; 0.3 s at first, raised in M4-5b): the trigger must be held that long before the gun fires; releasing cancels. `Weapon` counts the windup only while its other limiters would allow a shot, so it always runs right before the shot, never during the reload (shots every 2.4 + 0.4 s). The AI keeps holding through aim drift up to 3 × its 2° tolerance once a windup runs. The sim emits `ShotTelegraphed` when a windup starts, and the HUD layer shows a **hazard sign** over the barrel for it (M4-5b, Brendan: replaced the first placeholder, an orange muzzle glow that didn't read well). Only the insurgent cannon has it in its def, so it's data, not AI code (and the "charge-up" limiter from architecture.md §4 comes for free). The AI just holds the trigger when it wants to fire. Alternative: a timer inside `AiController` (simpler, but then only the AI could ever have a windup) |
 | D12 | Spread | Already in place: 3° cone from the sim `Rng` (M3) |
 | D13 | Friendly fire check (M4-6) | Before and during the windup, cast along the barrel to the player's distance; if the first vehicle in the way is an ally, release the trigger. Friendly fire stays on (GDD): an ally that drives into the shot after it's fired still gets hit |
 | D14 | Debug scene ✅ approved | Replace the circler and the three dummies (T-49, T-98) with **one hunting insurgent** from the top gate. `?enemies=N` (1–3) adds more from the other gates, for the spread-out and friendly-fire checks. `?dummies=on` brings the M3 dummies back for armor testing |
@@ -66,7 +66,7 @@ stateDiagram-v2
 | Lost sight → reposition | 1.5 s |
 | Player-behind trigger | > 135° off the nose, within 8 u |
 | Stuck | < 0.3 u in 1 s → reverse 0.6 s; 3 tries → new spot |
-| Telegraph | 0.3 s (18 ticks) |
+| Telegraph | 0.4 s (24 ticks; was 0.3) |
 | Aim lead (`AiDef.aimLead`) | 0 (none) |
 
 ## Tasks (build order)
@@ -78,6 +78,7 @@ stateDiagram-v2
 | 4 | M4-4a `PathFollower` + stuck recovery | `m4-4a-follow` | ✅ |
 | 5 | M4-4b `AiController` states, firing spots, engage; debug scene (D14), `?ai=on`, `?nav=on` | `m4-4b-ai` | ✅ |
 | 6 | M4-5 `WindupLimiter`, `ShotTelegraphed`, placeholder muzzle glow | `m4-5-telegraph` | ✅ (+ barrel hits deal damage) |
+| 6b | M4-5b Hazard-sign telegraph replaces the glow; windup 0.4 s | `m4-5b-hazard-sign` | ✅ |
 | 7 | M4-6 Ally-in-line hold fire | `m4-6-friendly-fire` | ⬜ |
 
 ## Tests (highlights)
@@ -89,7 +90,7 @@ stateDiagram-v2
 | PathFollower | Turns in place when the goal is behind; drives straight on a straight path; slows at the end |
 | Stuck | A tank pinned against a wall by a scripted pusher reverses out and replans; never stuck > N s in a scenario run |
 | States | Advance → Engage on reaching a spot with sight; Engage → Reposition after 1.5 s without sight; player behind → Reposition; Engage turns its front toward the player |
-| Firing | Fires only when aligned with sight; windup emits `ShotTelegraphed` 18 ticks before `ShotFired`; release cancels; holds fire with an ally in line |
+| Firing | Fires only when aligned with sight; windup emits `ShotTelegraphed` 24 ticks before `ShotFired`; release cancels; holds fire with an ally in line |
 | Integration | Against real Rapier: an enemy from the top gate reaches a firing spot around the centre pillar and hits a still player; same seed → same game |
 
 ## Trade-offs to record

@@ -38,7 +38,7 @@ src/
   render/        Renderer, RenderBridge, coords.ts, vfx/ (ImpactFlashes), views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
-  ui/            Hud + hudState (M3-6), HealthOverlay (debug, `?hp=on`), menus
+  ui/            Hud + hudState (M3-6), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), menus
   app/           main.ts — wiring and the main loop
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
                  tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
@@ -128,7 +128,7 @@ classDiagram
 |---|---|---|---|
 | `Locomotion` | `TrackedLocomotion` | `LeggedLocomotion`, hover | Handling (speed, turn rate, strafing) and control mapping. All drive the same simple collision body |
 | `Controller` | `PlayerController`, `AiController` | `RemoteController` (co-op) | Who drives a vehicle. Player and enemies share `Vehicle` |
-| `FireLimiter` | `ReloadLimiter` (cannon), `HeatLimiter` (MG), `WindupLimiter` (enemy fire telegraph: the trigger must be held 0.3 s once the gun is otherwise ready) | `AmmoLimiter`, burst, charge-up | How a weapon is gated. A weapon fires only if **all** its limiters allow |
+| `FireLimiter` | `ReloadLimiter` (cannon), `HeatLimiter` (MG), `WindupLimiter` (enemy fire telegraph: the trigger must be held 0.4 s once the gun is otherwise ready) | `AmmoLimiter`, burst, charge-up | How a weapon is gated. A weapon fires only if **all** its limiters allow |
 | `PhysicsWorld` | `RapierPhysicsWorld` | test fakes | Collision/physics engine |
 | `GameMode` | `WaveSurvivalMode` | `RoomClearMode` (Robokill-style) | Spawning, progression and win/lose conditions. Vehicles, combat and AI are unchanged across modes |
 
@@ -162,6 +162,7 @@ classDiagram
 
 - **`Hud`** (`src/ui/Hud.ts`, M3-6): HTML panel bottom-left with the armor bar (pulses at ≤30%, GDD §7), the cannon's reload bar and the MG's heat bar (with its re-arm marker and an "Overheated" state). Updated once per frame from the player's `Vehicle`; never writes sim state.
 - **`hudState(vehicle)`** turns the vehicle into plain numbers (armor fraction, one gauge per weapon: heat if the weapon has a `HeatLimiter`, otherwise reload progress), so the logic is unit-tested without a DOM (`tests/ui/`). New limiter kinds need a gauge here.
+- **`TelegraphSigns`** (`src/ui/`, M4-5b): the enemy fire telegraph. On `ShotTelegraphed` an HTML hazard triangle appears over that gun's muzzle (placed by `Renderer.muzzleScreenPosition`: the sim's muzzle offset on the interpolated tank), fills yellow from the bottom over the windup and blinks for its last 30%; `ShotFired` or `TelegraphCancelled` removes it. Fixed size on screen, so it reads at any distance. The animation is the pure `telegraphSignFrame`, tested in `tests/ui/`.
 - Wave counter, enemies remaining and the breather countdown join in M5-6.
 
 ## 7. Input

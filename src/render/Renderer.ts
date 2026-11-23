@@ -20,7 +20,6 @@ import { AiDebugView } from './debug/AiDebugView';
 import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
 import { ImpactFlashes } from './vfx/ImpactFlashes';
-import { TelegraphGlows } from './vfx/TelegraphGlows';
 
 /** A position on the canvas in CSS pixels from its top-left. */
 export interface ScreenPoint {
@@ -59,7 +58,6 @@ export class Renderer {
   private readonly bridge: RenderBridge;
   private readonly arenaView: ArenaView;
   private readonly impacts: ImpactFlashes;
-  private readonly telegraphs: TelegraphGlows;
   private readonly navView: NavGridView | undefined;
   private readonly aiView: AiDebugView | undefined;
 
@@ -86,7 +84,6 @@ export class Renderer {
 
     this.bridge = new RenderBridge(this.scene, options);
     this.impacts = new ImpactFlashes(this.scene);
-    this.telegraphs = new TelegraphGlows(this.scene);
     this.navView = options.nav ? new NavGridView(this.scene) : undefined;
     this.aiView = options.ai ? new AiDebugView(this.scene) : undefined;
   }
@@ -105,7 +102,6 @@ export class Renderer {
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
     this.impacts.update(frameSeconds);
-    this.telegraphs.update(entities, frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds);
@@ -178,14 +174,24 @@ export class Renderer {
     this.impacts.spawn(point, look);
   }
 
-  /** A weapon started its windup: glow at its muzzle for `seconds` (M4-5). */
-  startTelegraph(shooter: EntityId, hardpoint: string, seconds: number): void {
-    this.telegraphs.start(shooter, hardpoint, seconds);
-  }
-
-  /** The windup ended (shot or cancelled): drop the glow. */
-  endTelegraph(shooter: EntityId, hardpoint: string): void {
-    this.telegraphs.end(shooter, hardpoint);
+  /**
+   * Where `vehicle`'s muzzle on `hardpoint` is on screen this frame, `height` u
+   * up: the sim's muzzle offset applied to the vehicle's drawn (interpolated)
+   * position, so overlays stay glued to the tank between ticks. Undefined if the
+   * vehicle isn't drawn, has no such hardpoint, or is off-screen.
+   */
+  muzzleScreenPosition(
+    vehicle: Vehicle,
+    hardpoint: string,
+    height: number,
+  ): ScreenPoint | undefined {
+    const drawn = this.bridge.drawnTransform(vehicle.id);
+    const mount = vehicle.mounts.find((candidate) => candidate.hardpoint.id === hardpoint);
+    if (drawn === undefined || mount === undefined) {
+      return undefined;
+    }
+    const offset = vehicle.muzzlePosition(mount).sub(vehicle.transform.position);
+    return this.groundToScreen(drawn.position.add(offset), height);
   }
 
   /** Matches the drawing buffer to the canvas after the window changes size. */
@@ -197,7 +203,6 @@ export class Renderer {
   dispose(): void {
     this.bridge.dispose();
     this.impacts.dispose();
-    this.telegraphs.dispose();
     this.navView?.dispose();
     this.aiView?.dispose();
     this.arenaView.dispose();
