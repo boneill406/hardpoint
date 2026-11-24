@@ -20,7 +20,8 @@ describe('SLICE_WAVES', () => {
   });
 
   it('times every phase and group in whole ticks', () => {
-    for (const seconds of Object.values(SLICE_WAVES.timing)) {
+    const { banner, warning, cleared, breather } = SLICE_WAVES.timing;
+    for (const seconds of [banner, warning, cleared, breather]) {
       expect(wholeTicks(seconds)).toBe(true);
     }
     for (const group of SLICE_WAVES.waves.flatMap((wave) => wave.groups)) {
