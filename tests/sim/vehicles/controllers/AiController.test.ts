@@ -132,6 +132,47 @@ describe('AiController: Engage', () => {
     expect(s.decide().firePrimary).toBe(false);
   });
 
+  it('holds fire while an ally is in the line of fire, and fires once it moves out (M4-6)', () => {
+    const s = scene();
+    arriveAndEngage(s);
+    const midway = s.me.transform.position.lerp(s.player.transform.position, 0.5);
+    const ally = s.world.add(fakeVehicle(3, 'insurgent', midway));
+    expect(s.decide().firePrimary).toBe(false);
+    expect(s.ai.debug.allyInLine).toBe(true);
+    ally.transform = { ...ally.transform, position: midway.add(new Vec2(5, 0)) };
+    expect(s.decide().firePrimary).toBe(true);
+    expect(s.ai.debug.allyInLine).toBe(false);
+  });
+
+  it('an ally driving into the line mid-windup makes it release the trigger (cancelling the shot)', () => {
+    const s = scene();
+    arriveAndEngage(s);
+    expect(s.decide().firePrimary).toBe(true);
+    const midway = s.me.transform.position.lerp(s.player.transform.position, 0.5);
+    s.world.add(fakeVehicle(3, 'insurgent', midway));
+    expect(s.decide().firePrimary).toBe(false);
+  });
+
+  it('an ally beyond the player, or a vehicle of another side in between, does not stop it firing', () => {
+    const s = scene();
+    arriveAndEngage(s);
+    const toPlayer = s.player.transform.position.sub(s.me.transform.position);
+    s.world.add(fakeVehicle(3, 'insurgent', s.player.transform.position.add(toPlayer.scale(0.5))));
+    expect(s.decide().firePrimary).toBe(true);
+    s.world.add(fakeVehicle(4, 'player', s.me.transform.position.add(toPlayer.scale(0.5))));
+    expect(s.decide().firePrimary).toBe(true);
+  });
+
+  it('an ally just off the line still counts: the check is as wide as the spread, not a thin ray', () => {
+    const s = scene();
+    arriveAndEngage(s);
+    const midway = s.me.transform.position.lerp(s.player.transform.position, 0.5);
+    const across = Vec2.fromHeading(s.me.turret.heading + Math.PI / 2);
+    // Fake hulls are 1 u discs: 1.2 u off the line misses a thin ray but not the 0.3 u check.
+    s.world.add(fakeVehicle(3, 'insurgent', midway.add(across.scale(1.2))));
+    expect(s.decide().firePrimary).toBe(false);
+  });
+
   it('aims at the player (no lead in the slice)', () => {
     const s = scene();
     arriveAndEngage(s);

@@ -49,7 +49,7 @@ stateDiagram-v2
 | D10 | Leaving Engage | Reposition if line of sight has been lost for 1.5 s (GDD), or the player is in its rear arc (> 135° off the hull's nose) within 8 u: it would rather move than turn its weak rear toward you |
 | D11 | Fire telegraph (M4-5) ✅ approved | A new limiter, **`WindupLimiter`** (0.5 s = 30 ticks; 0.3 s at first, 0.4 s in M4-5b, 0.5 s in play): the trigger must be held that long before the gun fires; releasing cancels. `Weapon` counts the windup only while its other limiters would allow a shot, so it always runs right before the shot, never during the reload (shots every 2.4 + 0.5 s). The AI keeps holding through aim drift up to 3 × its 2° tolerance once a windup runs. The sim emits `ShotTelegraphed` when a windup starts, and the HUD layer shows a **hazard sign** over the barrel for it (M4-5b, Brendan: replaced the first placeholder, an orange muzzle glow that didn't read well). Only the insurgent cannon has it in its def, so it's data, not AI code (and the "charge-up" limiter from architecture.md §4 comes for free). The AI just holds the trigger when it wants to fire. Alternative: a timer inside `AiController` (simpler, but then only the AI could ever have a windup) |
 | D12 | Spread | Already in place: 3° cone from the sim `Rng` (M3) |
-| D13 | Friendly fire check (M4-6) | Before and during the windup, cast along the barrel to the player's distance; if the first vehicle in the way is an ally, release the trigger. Friendly fire stays on (GDD): an ally that drives into the shot after it's fired still gets hit |
+| D13 | Friendly fire check (M4-6) | Before and during the windup, cast along the barrel to the player's distance; if the first vehicle in the way is an ally, release the trigger. Friendly fire stays on (GDD): an ally that drives into the shot after it's fired still gets hit. **Built (M4-6):** `SimQueries.firstVehicleHit` sweeps a 0.3 u circle (`EngageDef.allyCheckRadius`: shell + spread) along the turret heading to the target's distance, checked every tick while on target; `?ai=on` labels it "ally in line" |
 | D14 | Debug scene ✅ approved | Replace the circler and the three dummies (T-49, T-98) with **one hunting insurgent** from the top gate. `?enemies=N` (1–3) adds more from the other gates, for the spread-out and friendly-fire checks. `?dummies=on` brings the M3 dummies back for armor testing |
 | D15 | Debug view | `?ai=on`: draws each enemy's path, chosen firing spot and state label ("Advance"), and `?nav=on` shades blocked grid cells. Render reads a read-only `AiController.debug` snapshot; nothing here affects the sim |
 | D17 | AI tuning is data | `AiDef` in `defs/ai.ts` (rule 8), referenced from the insurgent's spawn: firing ring, tolerances, timings below, and `aimLead`. A harder enemy later is a new `AiDef`, not new code |
@@ -79,7 +79,7 @@ stateDiagram-v2
 | 5 | M4-4b `AiController` states, firing spots, engage; debug scene (D14), `?ai=on`, `?nav=on` | `m4-4b-ai` | ✅ |
 | 6 | M4-5 `WindupLimiter`, `ShotTelegraphed`, placeholder muzzle glow | `m4-5-telegraph` | ✅ (+ barrel hits deal damage) |
 | 6b | M4-5b Hazard-sign telegraph replaces the glow; windup 0.4 s | `m4-5b-hazard-sign` | ✅ |
-| 7 | M4-6 Ally-in-line hold fire | `m4-6-friendly-fire` | ⬜ |
+| 7 | M4-6 Ally-in-line hold fire | `m4-6-friendly-fire` | ✅ |
 
 ## Tests (highlights)
 | Area | Behaviours |

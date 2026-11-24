@@ -47,6 +47,18 @@ export class WorldQueries implements SimQueries {
     return line.target !== undefined && this.bodies.entityOf(hit.body)?.id === line.target;
   }
 
+  firstVehicleHit(
+    from: Vec2,
+    to: Vec2,
+    radius: number,
+    shooter?: EntityId,
+  ): VehicleView | undefined {
+    const ignore = shooter === undefined ? undefined : this.bodies.bodyOf(shooter);
+    const hit = this.physics.castCircle(from, to, radius, ignore);
+    const entity = hit === undefined ? undefined : this.bodies.entityOf(hit.body);
+    return entity instanceof Vehicle ? entity : undefined;
+  }
+
   findPath(from: Vec2, to: Vec2, forVehicle?: EntityId): readonly Vec2[] | undefined {
     const grid = this.navGrid;
     if (grid === undefined) {

@@ -26,6 +26,18 @@ export interface SimQueries {
    */
   lineOfSight(from: Vec2, to: Vec2, line?: SightLine): boolean;
   /**
+   * The vehicle a circle of `radius` swept from `from` to `to` would hit first:
+   * what a shot along that line would strike (M4-6, plan D13). Undefined if a
+   * wall or cover comes first, or nothing is hit. `shooter`'s own hull and
+   * barrels are ignored.
+   */
+  firstVehicleHit(
+    from: Vec2,
+    to: Vec2,
+    radius: number,
+    shooter?: EntityId,
+  ): VehicleView | undefined;
+  /**
    * Waypoints from `from` to `to` (see `Pathfinder.findPath`). With `forVehicle`,
    * cells near every *other* vehicle cost extra, so tanks route around each
    * other (plan D6). Undefined if there is no way.

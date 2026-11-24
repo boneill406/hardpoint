@@ -26,6 +26,11 @@ export interface EngageDef {
    * doesn't cancel the telegraphed shot.
    */
   readonly holdSlack: number;
+  /**
+   * Half-width (u) of the line checked for allies before and during a shot
+   * (M4-6, plan D13): the shell's radius plus a margin for its spread cone.
+   */
+  readonly allyCheckRadius: number;
   /** Reposition after this long without line of sight (s). */
   readonly lostSightTime: number;
   /** The target counts as "behind" beyond this angle off the nose (rad)... */

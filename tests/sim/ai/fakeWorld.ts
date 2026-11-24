@@ -8,6 +8,9 @@ import { INSURGENT_TANK } from '../../../src/sim/defs/vehicles';
 import type { Faction } from '../../../src/sim/vehicles/Faction';
 import type { VehicleView } from '../../../src/sim/vehicles/VehicleView';
 
+/** Fake hulls are discs this wide (u): about a tank's half-width plus a bit. */
+const HULL_RADIUS = 1;
+
 /** A vehicle view the test can move and turn by hand. */
 export interface FakeVehicle extends VehicleView {
   transform: Transform;
@@ -62,6 +65,30 @@ export class FakeWorld implements SimQueries {
 
   lineOfSight(from: Vec2, to: Vec2, line?: SightLine): boolean {
     return this.sight(from, to, line);
+  }
+
+  /**
+   * Vehicles as discs of `HULL_RADIUS`: the one whose disc the swept circle
+   * reaches first along the line. No cover in the fake, so nothing else blocks.
+   */
+  firstVehicleHit(from: Vec2, to: Vec2, radius: number, shooter?: number): VehicleView | undefined {
+    const line = to.sub(from);
+    const length = line.length();
+    const direction = line.scale(1 / length);
+    let first: { vehicle: VehicleView; along: number } | undefined;
+    for (const vehicle of this.list) {
+      const offset = vehicle.transform.position.sub(from);
+      const along = offset.dot(direction);
+      const across = offset.sub(direction.scale(along)).length();
+      const reached = along >= 0 && along <= length + HULL_RADIUS;
+      if (vehicle.id === shooter || !reached || across > radius + HULL_RADIUS) {
+        continue;
+      }
+      if (first === undefined || along < first.along) {
+        first = { vehicle, along };
+      }
+    }
+    return first?.vehicle;
   }
 
   /** Straight to the goal: these tests are about decisions, not routes. */

@@ -39,6 +39,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-6 · Hold fire with an ally in line
+- **`SimQueries.firstVehicleHit(from, to, radius, shooter)`:** the vehicle a swept circle would strike first; undefined if a wall or cover comes first. Fakes updated (`fakeWorld` treats hulls as 1 u discs).
+- **`AiController`:** while on target, casts 0.3 u wide (`EngageDef.allyCheckRadius`: shell 0.07 + spread margin) along the turret heading to the target's distance; if the first vehicle is an ally it releases the trigger. Checked every tick, so an ally driving in mid-windup cancels the shot (the sign disappears). Friendly fire itself stays on. `debug.allyInLine`; `?ai=on` shows "engage · ally in line".
+- **Finding:** in four real-Rapier hunts (2–3 enemies, 40 s, still player) there were **0 friendly hits with or without the check**: the sight rule (an ally in between blocks sight) and firing-spot spacing already prevent most. The check adds margin for spread and for allies just off the thin sight ray.
+- **Tests:** controller (ally between → hold; moves out → fire; ally arrives mid-windup → release; ally beyond the player or a hostile between → fire; ally 1.2 u off the line → hold); real Rapier `firstVehicleHit` (tank between, ignores shooter, pillar first → none, tank just off a thin sight line → hit).
+- Trade-offs: T-118.
+
 ## 2026-11-23 · M4-5c · Telegraph tuning: 0.5 s, smaller sign
 - Brendan tried the 0.4 s hazard sign in play (and confirmed the armor-bar fix in Safari). Changes: windup **0.4 → 0.5 s** (30 ticks; enemy shots every 2.9 s) and the sign **34 → 24 px** wide.
 - **Tests:** windup timings moved to 30 ticks (shots at 30, 204, 378); test windows lengthened to fit the later second shot. T-117 updated.

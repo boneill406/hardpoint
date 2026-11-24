@@ -5,6 +5,7 @@ export const EMPTY_WORLD: SimQueries = {
   vehicles: () => [],
   vehicle: () => undefined,
   lineOfSight: () => true,
+  firstVehicleHit: () => undefined,
   findPath: (_from, to) => [to],
   navGrid: undefined,
 };

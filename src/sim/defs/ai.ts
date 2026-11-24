@@ -45,6 +45,8 @@ export const INSURGENT_AI: AiDef = {
     hullTolerance: degToRad(15),
     turretTolerance: degToRad(2),
     holdSlack: 3,
+    // Shell 0.07 + ~0.25 for the 3° spread cone at 10 u.
+    allyCheckRadius: 0.3,
     lostSightTime: 1.5,
     behindAngle: degToRad(135),
     behindDistance: 8,

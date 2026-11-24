@@ -5,7 +5,7 @@ import { angleDelta } from '../../core/angles';
 import { clamp } from '../../core/scalar';
 import type { SimQueries } from '../../core/SimQueries';
 import { TICK_SECONDS } from '../../core/time';
-import type { Vec2 } from '../../core/Vec2';
+import { Vec2 } from '../../core/Vec2';
 import { IDLE_COMMAND, type VehicleCommand } from '../VehicleCommand';
 import type { VehicleView } from '../VehicleView';
 import type { Controller, ControllerContext } from './Controller';
@@ -18,6 +18,8 @@ export interface AiDebug {
   readonly state: AiState;
   readonly spot: Vec2 | undefined;
   readonly path: readonly Vec2[];
+  /** Engaging and on target, but holding fire because an ally is in the line of fire (M4-6). */
+  readonly allyInLine: boolean;
 }
 
 /**
@@ -37,13 +39,19 @@ export class AiController implements Controller {
   /** Holding the trigger last tick (a windup may be running). */
   private holding = false;
   private needsSpot = true;
+  private allyInLine = false;
 
   constructor(private readonly def: AiDef) {
     this.follower = new PathFollower(def.driving, TICK_SECONDS);
   }
 
   get debug(): AiDebug {
-    return { state: this.mode, spot: this.spot, path: this.follower.remaining };
+    return {
+      state: this.mode,
+      spot: this.spot,
+      path: this.follower.remaining,
+      allyInLine: this.allyInLine,
+    };
   }
 
   decide({ tick, vehicle, world }: ControllerContext): VehicleCommand {
@@ -123,9 +131,25 @@ export class AiController implements Controller {
     const aimError = angleDelta(self.turret.heading, aimPoint.sub(pivot).heading());
     // Once holding (winding up), small aim drift while tracking doesn't cancel the shot.
     const tolerance = engage.turretTolerance * (this.holding ? engage.holdSlack : 1);
-    const fire = seen && Math.abs(aimError) <= tolerance;
+    const onTarget = seen && Math.abs(aimError) <= tolerance;
+    // Checked every tick, so an ally driving into the line mid-windup cancels the shot (D13).
+    this.allyInLine = onTarget && this.allyInLineOfFire(self, target, world);
+    const fire = onTarget && !this.allyInLine;
     this.holding = fire;
     return { ...IDLE_COMMAND, turn, aimPoint, firePrimary: fire };
+  }
+
+  /**
+   * True if the first vehicle a shot along the turret would hit, before reaching
+   * the target's distance, is on our side. Friendly fire stays on: an ally that
+   * moves in after the shot is fired still gets hit (GDD §5).
+   */
+  private allyInLineOfFire(self: VehicleView, target: VehicleView, world: SimQueries): boolean {
+    const pivot = self.turretPivot();
+    const reach = pivot.distanceTo(target.transform.position);
+    const end = pivot.add(Vec2.fromHeading(self.turret.heading).scale(reach));
+    const hit = world.firstVehicleHit(pivot, end, this.def.engage.allyCheckRadius, self.id);
+    return hit !== undefined && hit.id !== target.id && hit.faction === self.faction;
   }
 
   private reposition(
@@ -208,6 +232,7 @@ export class AiController implements Controller {
   private startReposition(): void {
     this.mode = 'reposition';
     this.holding = false;
+    this.allyInLine = false;
   }
 
   /** While moving, the turret looks along the path (T-108). */

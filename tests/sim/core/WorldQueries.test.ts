@@ -136,6 +136,46 @@ describe('SimQueries: line of sight (real Rapier)', () => {
   });
 });
 
+describe('SimQueries: first vehicle a shot would hit (real Rapier, M4-6)', () => {
+  it('returns the tank in the way, ignoring the shooter; the target itself when nothing is between', async () => {
+    const { world, simulation } = await queriesFor({ tanks: [at(0, 0), at(0, 12), at(0, 6)] });
+    const [me, target, between] = world.vehicles();
+    if (me === undefined || target === undefined || between === undefined) throw new Error('setup');
+    const end = target.transform.position;
+    expect(world.firstVehicleHit(me.turretPivot(), end, 0.3, me.id)?.id).toBe(between.id);
+    const side = new Vec2(10, 0);
+    expect(world.firstVehicleHit(side, side.add(new Vec2(0, 12)), 0.3)).toBeUndefined();
+    simulation.dispose();
+  });
+
+  it('a wall or pillar first means no vehicle', async () => {
+    const pillar = { center: new Vec2(0, 4), width: 2, depth: 2 };
+    const { world, simulation } = await queriesFor({
+      arena: room({ pillars: [pillar] }),
+      tanks: [at(0, 0), at(0, 10)],
+    });
+    const [me, target] = world.vehicles();
+    if (me === undefined || target === undefined) throw new Error('setup');
+    const hit = world.firstVehicleHit(me.turretPivot(), target.transform.position, 0.3, me.id);
+    expect(hit).toBeUndefined();
+    simulation.dispose();
+  });
+
+  it('a tank just off a thin sight line is still in a spread-wide line of fire', async () => {
+    // Hull 1.6 wide, centre 1.0 u off the line: its edge is 0.2 u away.
+    const { world, simulation } = await queriesFor({
+      tanks: [at(0, 0), at(0, 12), at(1.0, 6)],
+    });
+    const [me, target, near] = world.vehicles();
+    if (me === undefined || target === undefined || near === undefined) throw new Error('setup');
+    const from = me.turretPivot();
+    const to = new Vec2(from.x, target.transform.position.z);
+    expect(world.lineOfSight(from, to, { viewer: me.id, target: target.id })).toBe(true);
+    expect(world.firstVehicleHit(from, to, 0.3, me.id)?.id).toBe(near.id);
+    simulation.dispose();
+  });
+});
+
 describe('SimQueries: vehicles and paths (real Rapier)', () => {
   it('lists every vehicle in world order, and finds one by id', async () => {
     const { world, simulation } = await queriesFor({ tanks: [at(0, 0), at(5, 5)] });

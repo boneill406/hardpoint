@@ -35,7 +35,8 @@ export class AiStateLabels {
       }
       shown.add(vehicle.id);
       const label = this.labelFor(vehicle.id);
-      label.textContent = vehicle.controller.debug.state;
+      const { state, allyInLine } = vehicle.controller.debug;
+      label.textContent = allyInLine ? `${state} · ally in line` : state;
       label.style.transform = `translate(-50%, -100%) translate(${at.x}px, ${at.y}px)`;
     }
     for (const [id, label] of this.labels) {
