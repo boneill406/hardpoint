@@ -95,7 +95,7 @@ Weaker than the player by design, so numbers carry the threat.
 | Drive speed / turn | 4.0 u/s / 1.4 rad/s; reverse 60%; 0.5 s to top speed, 0.15 s to stop, 0.2 s gear change; same footprint as the player |
 | Mass / track grip | 20 / 50 u/s² (lighter than the player, so it can be shoved; grip 50 means a full-speed ram knocks it ~1 u sideways rather than skating ~6 u) |
 | Turret traverse | 1.8 rad/s |
-| Weapon | Cannon: 12 base damage, 2.4 s reload, 3° aim spread, 0.4 s windup (telegraph) before each shot |
+| Weapon | Cannon: 12 base damage, 2.4 s reload, 3° aim spread, 0.5 s windup (telegraph) before each shot |
 | Visual | Same primitive tank, insurgent colors, distinct silhouette detail |
 
 Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 each), **rear = 1 hit** (62.5). The one-shot rear kill is the deliberate payoff for flanking. Machine gun alone needs ~20 side hits, about two-thirds of a heat bar.
@@ -108,7 +108,7 @@ Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 e
 | **Engage** | Stop; **turn hull to keep front armor toward the player**; track with turret; fire when aligned and line of sight is clear | Reposition if line of sight is lost > 1.5 s, or the player gets behind it |
 | **Reposition** | Pick a new firing spot (prefer behind cover relative to the player) | Advance |
 
-- Telegraph: a **hazard sign** (yellow-and-black warning triangle with "!") over the enemy's barrel **0.4 s** before each shot, filling up as the shot nears (readability pillar). 0.4 s rather than 0.3 because the player has to react *and* get a tank with inertia moving.
+- Telegraph: a **hazard sign** (yellow-and-black warning triangle with "!") over the enemy's barrel **0.5 s** before each shot, filling up as the shot nears (readability pillar). Longer than the first 0.3 s because the player has to react *and* get a tank with inertia moving (0.4 s tried, then 0.5 s picked in play).
 - **Friendly fire is on:** shells damage any vehicle they hit, including other enemies, which rewards baiting enemies into each other's line of fire. To keep the AI from looking foolish, enemies **hold fire when an ally is in their line of fire** (a ray check before each shot), so friendly hits mostly happen when allies move into the path after a shot is fired.
 - Enemies avoid driving through each other; spawn gates stagger arrivals.
 

@@ -28,18 +28,18 @@ function hold(weapon: Weapon, ticks: number, held: (tick: number) => boolean = (
 }
 
 describe('Weapon with a windup', () => {
-  it('the windup comes after the reload, never during it: shots every 2.4 + 0.4 s', () => {
+  it('the windup comes after the reload, never during it: shots every 2.4 + 0.5 s', () => {
     const { shots } = hold(new Weapon(INSURGENT_CANNON), 400);
-    expect(shots).toEqual([24, 24 + 144 + 24, 24 + 2 * (144 + 24)]);
+    expect(shots).toEqual([30, 30 + 144 + 30, 30 + 2 * (144 + 30)]);
   });
 
-  it('a telegraph starts 24 ticks before each shot', () => {
-    const { shots, telegraphs } = hold(new Weapon(INSURGENT_CANNON), 200);
+  it('a telegraph starts 30 ticks before each shot', () => {
+    const { shots, telegraphs } = hold(new Weapon(INSURGENT_CANNON), 220);
     expect(telegraphs).toEqual([
       [0, 'started'],
-      [168, 'started'],
+      [174, 'started'],
     ]);
-    expect(shots).toEqual([24, 192]);
+    expect(shots).toEqual([30, 204]);
   });
 
   it('releasing mid-windup cancels the telegraph and the shot', () => {
@@ -93,10 +93,10 @@ describe('telegraph events (real Rapier)', () => {
     return { log, telegraph };
   }
 
-  it('ShotTelegraphed (with its duration) precedes ShotFired by 0.4 s', async () => {
-    const { log, telegraph } = await run(() => ({ ...IDLE_COMMAND, firePrimary: true }), 30);
-    expect(log).toEqual(['0 telegraph', '24 shot']);
-    expect(telegraph).toMatchObject({ shooter: 1, hardpoint: 'main', seconds: 0.4 });
+  it('ShotTelegraphed (with its duration) precedes ShotFired by 0.5 s', async () => {
+    const { log, telegraph } = await run(() => ({ ...IDLE_COMMAND, firePrimary: true }), 40);
+    expect(log).toEqual(['0 telegraph', '30 shot']);
+    expect(telegraph).toMatchObject({ shooter: 1, hardpoint: 'main', seconds: 0.5 });
   });
 
   it('TelegraphCancelled when the trigger is released, and no shot', async () => {

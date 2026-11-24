@@ -47,7 +47,7 @@ export const INSURGENT_CANNON: WeaponDef = {
   breaksCover: true,
   limiters: [
     { kind: 'reload', seconds: 2.4 },
-    // Fire telegraph (GDD §5): 0.4 s hazard sign over the barrel before each shot (M4 plan D11).
-    { kind: 'windup', seconds: 0.4 },
+    // Fire telegraph (GDD §5): 0.5 s hazard sign over the barrel before each shot (M4 plan D11).
+    { kind: 'windup', seconds: 0.5 },
   ],
 };

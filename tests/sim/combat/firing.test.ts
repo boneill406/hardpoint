@@ -88,8 +88,8 @@ describe('vehicle firing', () => {
 
   it('the insurgent has only a cannon: its secondary trigger fires nothing', () => {
     expect(shotsFrom(INSURGENT_TANK, SECONDARY, 120)).toEqual([]);
-    // Windup 0.4 s, reload 2.4 s, windup 0.4 s: two shots by 3.2 s (192 ticks).
-    expect(shotsFrom(INSURGENT_TANK, PRIMARY, 200).map((shot) => shot.weapon)).toEqual([
+    // Windup 0.5 s, reload 2.4 s, windup 0.5 s: two shots by 3.4 s (204 ticks).
+    expect(shotsFrom(INSURGENT_TANK, PRIMARY, 220).map((shot) => shot.weapon)).toEqual([
       'Insurgent cannon',
       'Insurgent cannon',
     ]);

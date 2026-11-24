@@ -128,7 +128,7 @@ classDiagram
 |---|---|---|---|
 | `Locomotion` | `TrackedLocomotion` | `LeggedLocomotion`, hover | Handling (speed, turn rate, strafing) and control mapping. All drive the same simple collision body |
 | `Controller` | `PlayerController`, `AiController` | `RemoteController` (co-op) | Who drives a vehicle. Player and enemies share `Vehicle` |
-| `FireLimiter` | `ReloadLimiter` (cannon), `HeatLimiter` (MG), `WindupLimiter` (enemy fire telegraph: the trigger must be held 0.4 s once the gun is otherwise ready) | `AmmoLimiter`, burst, charge-up | How a weapon is gated. A weapon fires only if **all** its limiters allow |
+| `FireLimiter` | `ReloadLimiter` (cannon), `HeatLimiter` (MG), `WindupLimiter` (enemy fire telegraph: the trigger must be held 0.5 s once the gun is otherwise ready) | `AmmoLimiter`, burst, charge-up | How a weapon is gated. A weapon fires only if **all** its limiters allow |
 | `PhysicsWorld` | `RapierPhysicsWorld` | test fakes | Collision/physics engine |
 | `GameMode` | `WaveSurvivalMode` | `RoomClearMode` (Robokill-style) | Spawning, progression and win/lose conditions. Vehicles, combat and AI are unchanged across modes |
 

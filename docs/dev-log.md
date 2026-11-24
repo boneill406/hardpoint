@@ -39,6 +39,10 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4-5c · Telegraph tuning: 0.5 s, smaller sign
+- Brendan tried the 0.4 s hazard sign in play (and confirmed the armor-bar fix in Safari). Changes: windup **0.4 → 0.5 s** (30 ticks; enemy shots every 2.9 s) and the sign **34 → 24 px** wide.
+- **Tests:** windup timings moved to 30 ticks (shots at 30, 204, 378); test windows lengthened to fit the later second shot. T-117 updated.
+
 ## 2026-11-23 · M3-6 fix · Armor bar stale green in Safari; one number format
 - **Bug (Brendan, Safari):** below 30% armor the bar showed red at the right width plus a stale green piece out to where it went critical, still there at 0. Cause: the critical pulse animated the whole row's `opacity`, which puts it on its own compositing layer; Safari then didn't repaint the area the fill shrank away from. Chrome repaints, so a headless Chrome check showed nothing. **Fix:** the pulse now animates the fill's `background-color` (red ↔ dark red), so there's no separate layer. Not yet checked in Safari by me (no headless Safari here).
 - **Mismatched numbers:** the HUD showed armor rounded up to whole numbers, the health bar over the tank one decimal. Both now use **`amountLabel`** (`src/ui/amountLabel.ts`, replaces `damageLabel`): one decimal, whole numbers plain, float noise rounded away (84.4, 25, 32.5). The damage numbers use it too.

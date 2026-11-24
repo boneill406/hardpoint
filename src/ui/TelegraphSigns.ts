@@ -8,7 +8,7 @@ export type MuzzleLocator = (
 ) => { x: number; y: number } | undefined;
 
 /** Sign width (px); the triangle is drawn in a 40 × 36 box. */
-const WIDTH = 34;
+const WIDTH = 24;
 /** Gap (px) between the muzzle and the sign's bottom edge. */
 const LIFT = 6;
 
