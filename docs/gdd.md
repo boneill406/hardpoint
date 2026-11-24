@@ -18,24 +18,24 @@ Summary → Restart (instant, same arena) | Title
 
 | Step | Details |
 |---|---|
-| Wave start | Banner "WAVE n / 5". Spawn gates glow ~2 s before tanks emerge |
-| During wave | Enemies spawn staggered ~1.5 s apart across gates |
+| Wave start | Banner "WAVE n / 5" (2 s). Each spawn group's gate glows 1 s before its tanks emerge (M5 plan D4) |
+| During wave | Enemies arrive in timed **spawn groups**: one tank or several at once, from one gate or spread over several; which gate is picked randomly each run, so the order can't be learned (M5 plan D2) |
 | Wave cleared | Last enemy destroyed → "WAVE CLEARED" |
-| Breather | ~5 s countdown. Armor repairs (see §4). Destroyed crates stay destroyed |
+| Breather | 5 s countdown. Armor repairs (see §4; set per wave). Destroyed crates stay destroyed |
 | Victory | Wave 5 cleared → summary |
 | Defeat | Player armor reaches 0 → brief destruction moment → summary |
 
 ### Waves
 
-| Wave | Enemy tanks | Notes |
-|---|---|---|
-| 1 | 1 | Teaches the basics |
-| 2 | 2 | First flanking pressure |
-| 3 | 3 | Cover starts to break |
-| 4 | 4 | Multiple angles at once |
-| 5 | 5 | Final test |
+| Wave | Enemy tanks | Spawn groups (seconds after the banner) | Notes |
+|---|---|---|---|
+| 1 | 1 | 1 at 0 | Teaches the basics |
+| 2 | 2 | 1 at 0 · 1 at 4, other gate | First flanking pressure |
+| 3 | 3 | 2 together from one gate at 0 · 1 at 5, other gate | A pair, then a flank; cover starts to break |
+| 4 | 4 | 3 at 0, one per gate · 1 at 6 | Multiple angles at once |
+| 5 | 5 | 2 together at 0 · 2 together from another gate at 3 · 1 at 7 | Final test |
 
-Escalation is **count only**. All enemies use the same definition.
+Escalation uses **count, timing (staggered or together), clustering (one gate or spread) and repair**, all set per wave in `defs/waves.ts` (M5 plan D2; was count only). All enemies use the same definition.
 
 ## 3. Player tank
 

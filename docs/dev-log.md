@@ -39,6 +39,9 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M5 plan approved
+- Saved [`plans/m5-waves.md`](plans/m5-waves.md). Brendan's changes to the draft: wave difficulty has several levers, not count only (timed spawn groups, together or staggered, one gate or spread; gates picked by the seed each run so the order can't be learned; repair set per wave); gate warning **1 s**, not the GDD's 2 s; crates resetting stays out (post-slice). GDD §2 updated. Off-screen arrows are M5-6b.
+
 ## 2026-11-23 · M4 close
 - All M4 tasks done (M4-1 to M4-6, plus 4-5b/4-5c telegraph changes). Done-when: paths around cover, engages, repositions, never permanently stuck (tests: pathfinding, follower sweep, state transitions, real-Rapier hunts). Brendan: "functional for now".
 - **Deferred to after the slice** (post-slice backlog in `milestones.md`): an AI polish pass, and **difficulty levels** whose first knob is aim lock during the fire warning (easy: lock when the warning starts; middle: lock for its last part; hard: track to the shot, as now). Context: with tracking, a shell at 70 u/s from 8–12 u can't be dodged even at full speed sideways (~1 u travel during flight vs ~1.2 u needed).
