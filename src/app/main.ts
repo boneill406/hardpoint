@@ -22,6 +22,8 @@ import { Hud } from '../ui/Hud';
 import { TelegraphSigns } from '../ui/TelegraphSigns';
 import { readDebugParams } from './debugParams';
 import { populateDebugScene } from './debugScene';
+import { SLICE_WAVES } from '../sim/defs/waves';
+import { WaveSurvivalMode } from '../sim/modes/WaveSurvivalMode';
 
 /**
  * Application entry point. Wires input, simulation and rendering together and
@@ -83,24 +85,29 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
 async function start(): Promise<void> {
   const debug = readDebugParams(window.location.search);
   console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}, enemies ${debug.enemies}${debug.dummies ? ' + dummies' : ''}, ai ${debug.ai ? 'on' : 'off'}, nav ${debug.nav ? 'on' : 'off'}`,
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}, ${debug.mode === 'sandbox' ? `enemies ${debug.enemies}${debug.dummies ? ' + dummies' : ''}, ` : ''}ai ${debug.ai ? 'on' : 'off'}, nav ${debug.nav ? 'on' : 'off'}, mode ${debug.mode}${debug.mode === 'waves' ? ` from wave ${debug.wave}` : ''}`,
   );
 
   for (const warning of debug.warnings) {
     console.warn(warning);
   }
 
+  const waves = new WaveSurvivalMode(SLICE_WAVES, { playerId: PLAYER_ID, startWave: debug.wave });
   // The simulation can't run without physics, so load Rapier's WASM before anything else.
   const simulation = new Simulation({
     seed: SEED,
     physics: await RapierPhysicsWorld.create(),
     arena: SLICE_ARENA,
-    populate: (sim) =>
-      populateDebugScene(sim, {
-        playerId: PLAYER_ID,
-        enemies: debug.enemies,
-        dummies: debug.dummies,
-      }),
+    ...(debug.mode === 'sandbox'
+      ? {
+          populate: (sim: Simulation) =>
+            populateDebugScene(sim, {
+              playerId: PLAYER_ID,
+              enemies: debug.enemies,
+              dummies: debug.dummies,
+            }),
+        }
+      : { mode: waves }),
     ...(debug.armor === undefined ? {} : { armorRule: debug.armor }),
   });
   const canvas = getCanvas();
@@ -124,6 +131,14 @@ async function start(): Promise<void> {
   const playerTank = findPlayerTank(simulation, PLAYER_ID);
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
+  // Until the HUD shows waves (M5-6a), the run is reported in the console.
+  simulation.events.on('WaveStarted', ({ wave, waves: total, enemies }) =>
+    console.info(`Wave ${wave} / ${total}: ${enemies} ${enemies === 1 ? 'enemy' : 'enemies'}`),
+  );
+  simulation.events.on('WaveCleared', ({ wave }) => console.info(`Wave ${wave} cleared`));
+  simulation.events.on('RunEnded', ({ outcome, wave }) =>
+    console.info(`Run ended: ${outcome} (wave ${wave})`),
+  );
   simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
   const telegraphs = new TelegraphSigns(document.body);
   simulation.events.on('ShotTelegraphed', ({ shooter, hardpoint, seconds }) =>

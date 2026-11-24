@@ -93,7 +93,7 @@ Repair after each of waves 1–4: 20 % (GDD). Counts stay 1 → 5; numbers are f
 ## Tasks (build order)
 | Order | Task | Branch | Status |
 |---|---|---|---|
-| 1 | M5-1 `GameMode`, `WaveSurvivalMode` (phases, spawning, clear, win/lose), `defs/waves.ts`; `?mode=sandbox`, `?wave=N`; game starts straight into wave 1 (no menus yet) | `m5-1-waves` | ⬜ |
+| 1 | M5-1 `GameMode`, `WaveSurvivalMode` (phases, spawning, clear, win/lose), `defs/waves.ts`; `?mode=sandbox`, `?wave=N`; game starts straight into wave 1 (no menus yet) | `m5-1-waves` | ✅ |
 | 2 | M5-2 Gate warnings (`GateWarning`, gate pulse), blocked-gate fallback | `m5-2-gates` | ⬜ |
 | 3 | M5-3 Breather: countdown, repair, `PlayerRepaired` | `m5-3-breather` | ⬜ |
 | 4 | M5-6a HUD: wave, enemies left, countdown, banners (so M5-1–3 are playable and visible) | `m5-6a-hud` | ⬜ |

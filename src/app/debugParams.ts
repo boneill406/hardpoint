@@ -24,6 +24,13 @@ export interface DebugParams {
    * default since M3 close (Brendan); `?hp=off` hides them.
    */
   readonly hp: boolean;
+  /**
+   * `waves` (default): the real run, wave survival (M5). `sandbox`: the debug
+   * scene from M4 (player plus `?enemies=` hunters, `?dummies=`), no waves.
+   */
+  readonly mode: GameModeName;
+  /** `?wave=N` starts the run at wave N (1–5), for testing later waves. */
+  readonly wave: number;
   /** Hunting insurgents in the debug scene (`?enemies=0..3`, default 1), from the top, left, right gates. */
   readonly enemies: number;
   /** `?dummies=on` adds the M3 armor dummies. */
@@ -35,6 +42,8 @@ export interface DebugParams {
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
+
+export type GameModeName = 'waves' | 'sandbox';
 
 /** Brendan's pick after trying all three in play (M2 close). */
 const DEFAULT_PAD_SCHEME: PadSchemeName = 'triggers';
@@ -51,7 +60,12 @@ const KNOWN = [
   'dummies',
   'ai',
   'nav',
+  'mode',
+  'wave',
 ];
+const MODES: readonly GameModeName[] = ['waves', 'sandbox'];
+/** Must match the number of waves in `defs/waves.ts` (a test checks). */
+export const MAX_WAVE = 5;
 const DEFAULT_ENEMIES = 1;
 const MAX_ENEMIES = 3;
 const FACE_RULES: readonly FaceRule[] = ['direction', 'struck'];
@@ -108,6 +122,19 @@ export function readDebugParams(search: string): DebugParams {
     warn('enemies', enemiesText, `a whole number 0–${MAX_ENEMIES}`);
   }
 
+  const mode = params.get('mode');
+  const modeValid = mode !== null && isGameModeName(mode);
+  if (mode !== null && !modeValid) {
+    warn('mode', mode, MODES.join(' | '));
+  }
+
+  const waveText = params.get('wave');
+  const wave = Number(waveText);
+  const waveValid = waveText !== null && Number.isInteger(wave) && wave >= 1 && wave <= MAX_WAVE;
+  if (waveText !== null && !waveValid) {
+    warn('wave', waveText, `a whole number 1–${MAX_WAVE}`);
+  }
+
   for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
@@ -123,6 +150,8 @@ export function readDebugParams(search: string): DebugParams {
     cam: camValid ? cam : 'slice',
     armor: armorValid ? armor : undefined,
     hp: params.get('hp') !== 'off',
+    mode: modeValid ? mode : 'waves',
+    wave: waveValid ? wave : 1,
     enemies: enemiesValid ? enemies : DEFAULT_ENEMIES,
     dummies: params.get('dummies') === 'on',
     ai: params.get('ai') === 'on',
@@ -142,4 +171,8 @@ function isCameraPresetName(value: string): value is CameraPresetName {
 
 function isFaceRule(value: string): value is FaceRule {
   return (FACE_RULES as readonly string[]).includes(value);
+}
+
+function isGameModeName(value: string): value is GameModeName {
+  return (MODES as readonly string[]).includes(value);
 }

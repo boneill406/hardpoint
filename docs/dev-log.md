@@ -39,6 +39,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M5-1 · Game mode and waves
+- **`GameMode`** (`sim/modes`): `start` (spawn the starting entities), `update` every tick after removals, `outcome`. `ModeContext` gives the tick, world, arena, events and `Rng`. `Simulation` takes `mode?` beside `populate`. `modes/index.ts` placeholder removed.
+- **`WaveSurvivalMode`:** phases banner (2 s) → fighting → cleared (1.5 s) → breather (5 s) → next wave; victory as soon as the last wave clears; defeat the tick the player's tank is gone, in any phase. Spawn groups emerge `at` seconds after the banner, `one-gate` side by side in the gate's two slots (2.4 u apart, 2.5 u in) or `spread` one per gate; gates shuffled with the sim `Rng`, unused-this-wave first (T-120). Enemies count as destroyed once gone from the world (T-119). `status` (phase, wave, enemies left incl. unspawned, seconds left) for the HUD. Events `WaveStarted`, `WaveCleared`, `RunEnded`; `secondsToTicks` in `core/time`.
+- **Data:** `modes/WaveDef.ts` types; `defs/waves.ts` `SLICE_WAVES` (the plan's five waves, repair 20 % after waves 1–4). The 1 s gate warning is in the timing data but used from M5-2.
+- **App:** the page now runs the waves by default; `?mode=sandbox` brings back the M4 debug scene (`?enemies=`, `?dummies=`), `?wave=N` starts at wave N. Wave events go to the console until the HUD shows them (M5-6a). Restart is still a page reload until M5-4.
+- **Tests:** mode against real Rapier on the slice arena (unkillable player, enemies removed by the test): banner timing to the tick, lone tank centred 2.5 u inside a gate facing in, clear only when all spawned are gone and unspawned count as left, cleared + breather = 6.5 s to the next wave, one-gate pair 2.4 u apart, spread uses all three gates, a later group takes an unused gate (5 seeds), gates vary by seed and repeat with it, defeat in any phase with no spawns after, last wave wins at once, a whole run spawns 1/2/3/4/5 then victory, same seed same run, start wave validated. Wave defs: 1→5 tanks, whole ticks, placeable groups, repair 0–1.
+
 ## 2026-11-23 · M5 plan approved
 - Saved [`plans/m5-waves.md`](plans/m5-waves.md). Brendan's changes to the draft: wave difficulty has several levers, not count only (timed spawn groups, together or staggered, one gate or spread; gates picked by the seed each run so the order can't be learned; repair set per wave); gate warning **1 s**, not the GDD's 2 s; crates resetting stays out (post-slice). GDD §2 updated. Off-screen arrows are M5-6b.
 

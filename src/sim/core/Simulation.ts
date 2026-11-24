@@ -9,6 +9,7 @@ import { capsuleAxis, segmentDistance } from './segments';
 import type { ArenaDef } from '../arena/ArenaDef';
 import { PhysicsBridge } from '../physics/PhysicsBridge';
 import type { PhysicsWorld, Segment } from '../physics/PhysicsWorld';
+import type { GameMode, ModeContext } from '../modes/GameMode';
 import { Vehicle } from '../vehicles/Vehicle';
 import type { PlayerId, VehicleCommand } from '../vehicles/VehicleCommand';
 import type { EntitySnapshot } from './Entity';
@@ -32,6 +33,11 @@ export interface SimulationOptions {
   readonly arena?: ArenaDef;
   /** Adds the starting entities. Runs inside the constructor, so their spawn events are queued. */
   readonly populate?: (simulation: Simulation) => void;
+  /**
+   * The rules of the run (M5): spawns, progression, win and lose. Needs an
+   * arena. Starts after `populate`; updated at the end of every tick.
+   */
+  readonly mode?: GameMode;
   /** Overrides every vehicle's armor face rule (`?armor=`, M3 plan D5); omitted = each def's own. */
   readonly armorRule?: FaceRule;
 }
@@ -61,6 +67,7 @@ export class Simulation {
   /** Set when cover is destroyed; the grid is rebuilt once at the end of the tick. */
   private navStale = false;
   private ticks = 0;
+  private readonly mode: GameMode | undefined;
 
   constructor(options: SimulationOptions) {
     this.rng = new Rng(options.seed);
@@ -76,6 +83,10 @@ export class Simulation {
       this.nav = this.buildNavGrid(this.arena);
     }
     options.populate?.(this);
+    this.mode = options.mode;
+    if (this.mode !== undefined) {
+      this.mode.start(this.modeContext());
+    }
   }
 
   /**
@@ -146,7 +157,21 @@ export class Simulation {
       this.nav = this.buildNavGrid(this.arena);
       this.navStale = false;
     }
+    this.mode?.update(this.modeContext());
     this.ticks++;
+  }
+
+  private modeContext(): ModeContext {
+    if (this.arena === undefined) {
+      throw new Error('A game mode needs an arena');
+    }
+    return {
+      tick: this.ticks,
+      world: this.world,
+      arena: this.arena,
+      events: this.events,
+      rng: this.rng,
+    };
   }
 
   snapshot(): SimSnapshot {

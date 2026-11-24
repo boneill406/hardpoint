@@ -1,5 +1,6 @@
 import type { HitZone } from '../combat/ArmorDef';
 import type { WeaponSlot } from '../vehicles/VehicleDef';
+import type { RunOutcome } from '../modes/GameMode';
 import type { EntityId } from './Entity';
 import type { Vec2 } from './Vec2';
 
@@ -77,4 +78,10 @@ export interface SimEvents {
   };
   /** A windup ended without a shot (trigger released, e.g. sight lost): hide the telegraph. */
   TelegraphCancelled: { readonly shooter: EntityId; readonly hardpoint: string };
+  /** A wave began: its banner shows now (M5). `enemies` is the wave's total. */
+  WaveStarted: { readonly wave: number; readonly waves: number; readonly enemies: number };
+  /** Every enemy of the wave has been destroyed. */
+  WaveCleared: { readonly wave: number };
+  /** The run is over: the player was destroyed, or the last wave was cleared. */
+  RunEnded: { readonly outcome: RunOutcome; readonly wave: number };
 }
