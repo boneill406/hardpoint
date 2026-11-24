@@ -1,6 +1,6 @@
 # M4 Plan — Enemy AI
 
-_Approved by Brendan 2026-11-23. Milestone definition: [`milestones.md`](../milestones.md) § M4. Status: **in progress** (update the task table as work lands)._
+_Approved by Brendan 2026-11-23. Milestone definition: [`milestones.md`](../milestones.md) § M4. Status: **done** 2026-11-23 (Brendan: functional; AI polish and difficulty levels deferred to after the slice, see the post-slice backlog)._
 
 **Goal:** one insurgent tank that hunts you competently.
 **Done when:** an enemy paths around cover, engages, repositions when blocked, and never gets permanently stuck; pathfinding and state transitions are tested.

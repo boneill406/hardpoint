@@ -39,6 +39,10 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M4 close
+- All M4 tasks done (M4-1 to M4-6, plus 4-5b/4-5c telegraph changes). Done-when: paths around cover, engages, repositions, never permanently stuck (tests: pathfinding, follower sweep, state transitions, real-Rapier hunts). Brendan: "functional for now".
+- **Deferred to after the slice** (post-slice backlog in `milestones.md`): an AI polish pass, and **difficulty levels** whose first knob is aim lock during the fire warning (easy: lock when the warning starts; middle: lock for its last part; hard: track to the shot, as now). Context: with tracking, a shell at 70 u/s from 8–12 u can't be dodged even at full speed sideways (~1 u travel during flight vs ~1.2 u needed).
+
 ## 2026-11-23 · M4-6 · Hold fire with an ally in line
 - **`SimQueries.firstVehicleHit(from, to, radius, shooter)`:** the vehicle a swept circle would strike first; undefined if a wall or cover comes first. Fakes updated (`fakeWorld` treats hulls as 1 u discs).
 - **`AiController`:** while on target, casts 0.3 u wide (`EngageDef.allyCheckRadius`: shell 0.07 + spread margin) along the turret heading to the target's distance; if the first vehicle is an ally it releases the trigger. Checked every tick, so an ally driving in mid-windup cancels the shot (the sign disappears). Friendly fire itself stays on. `debug.allyInLine`; `?ai=on` shows "engage · ally in line".
