@@ -40,6 +40,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-23 · M5-3 · Breather and repair
+- **`Health.repair(amount)`:** adds up to max, returns what was actually added; a destroyed vehicle can't be repaired.
+- **`WaveSurvivalMode`:** when "WAVE CLEARED" ends, the breather starts with the player repaired by the cleared wave's `repair` × max armor (20 % for waves 1–4; wave 5 has none, as it ends the run), and emits **`BreatherStarted { wave, seconds, repaired, healthNow }`**. The 5 s countdown is `status.secondsLeft`; nothing spawns until the next banner. Console log until the HUD (M5-6a) shows it with a green flash.
+- **Explained to Brendan:** `GameMode.ts` is only the interface; the per-mode rules (what a death means for the run) live in `WaveSurvivalMode`, inside the sim; the `Simulation` core keeps the rules that are the same in every mode.
+- **Tests:** `Health.repair` (adds, caps, reports, ignores negatives, not when destroyed); breather repairs 20 once (50 → 70), capped at max (95 → 100, reports +5), counts down 5 s with no warnings or spawns, then wave 2's banner.
+- Trade-offs: T-123.
+
 ## 2026-11-23 · M5-2 · Gate warnings and blocked gates
 - **`GateSpawner`** (`sim/modes`, split out of `WaveSurvivalMode`, which now only runs phases): a wave's groups become **spawn units** (a `one-gate` group = one unit of 1–2 tanks; a `spread` group = one unit per tank). Each unit: scheduled → **warned** 1 s before it's due (`GateWarning { gate, count, seconds }`) → spawned; gate picked by the sim `Rng` among *free* gates, unused-this-wave first. If its spots aren't clear when due (any vehicle, the player included, within `slots.clearance` 3 u), it warns at another free gate and comes out 1 s later; with none free it waits and warns as soon as one clears (T-121). Timing unchanged when nothing blocks (wave 1's tank still emerges as the banner ends).
 - **Render:** `ArenaView` gives each gate panel its own material and blinks it orange at 4 Hz for the warning (`Renderer.warnGate`; T-122). Not seen in motion: headless Chrome doesn't advance the game far enough to reach a spawn.

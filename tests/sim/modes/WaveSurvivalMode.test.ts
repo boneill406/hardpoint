@@ -30,6 +30,7 @@ class Run {
   readonly log: string[] = [];
   readonly ended: SimEvents['RunEnded'][] = [];
   readonly warnings: { tick: number; gate: string; count: number }[] = [];
+  readonly breathers: SimEvents['BreatherStarted'][] = [];
   tick = 0;
 
   constructor(
@@ -48,6 +49,7 @@ class Run {
     events.on('GateWarning', ({ gate, count }) =>
       this.warnings.push({ tick: this.tick, gate, count }),
     );
+    events.on('BreatherStarted', (breather) => this.breathers.push(breather));
     events.on('WaveCleared', ({ wave }) => this.log.push(`${this.tick} cleared ${wave}`));
     events.on('RunEnded', (ended) => {
       this.ended.push(ended);
@@ -81,9 +83,11 @@ class Run {
   }
 }
 
-async function startRun(options: { seed?: number; startWave?: number } = {}): Promise<Run> {
+async function startRun(
+  options: { seed?: number; startWave?: number; playerHealth?: number } = {},
+): Promise<Run> {
   const mode = new WaveSurvivalMode(
-    { ...SLICE_WAVES, player: { ...PLAYER_TANK, health: 1e9 } },
+    { ...SLICE_WAVES, player: { ...PLAYER_TANK, health: options.playerHealth ?? 1e9 } },
     { playerId: 1, ...(options.startWave === undefined ? {} : { startWave: options.startWave }) },
   );
   const simulation = new Simulation({
@@ -341,6 +345,56 @@ describe('WaveSurvivalMode: gate warnings and blocked gates (M5-2)', () => {
     expect(run.warnings.map((w) => w.gate)).toEqual(['top']);
     run.step(WARNING);
     expect(run.spawns.map(gateOf)).toEqual(['top']);
+    run.simulation.dispose();
+  });
+});
+
+function playerOf(run: Run): Vehicle {
+  const player = run.simulation.world.ofType(Vehicle).find((v) => v.faction === 'player');
+  if (player === undefined) throw new Error('no player');
+  return player;
+}
+
+/** Clears wave 1 (its one tank removed as it arrives) and runs to the start of the breather. */
+function clearFirstWave(run: Run): void {
+  run.step(BANNER + 1);
+  run.killEnemies();
+  run.step(1 + seconds(SLICE_WAVES.timing.cleared));
+}
+
+describe('WaveSurvivalMode: breather (M5-3)', () => {
+  it("when the breather starts the player gets the wave's repair (20 % of max) once", async () => {
+    const run = await startRun({ playerHealth: 100 });
+    playerOf(run).health.damage(50);
+    clearFirstWave(run);
+    expect(run.mode.status.phase).toBe('breather');
+    expect(playerOf(run).health.current).toBe(70);
+    expect(run.breathers).toEqual([{ wave: 1, seconds: 5, repaired: 20, healthNow: 70 }]);
+    run.step(seconds(3));
+    expect(playerOf(run).health.current).toBe(70);
+    run.simulation.dispose();
+  });
+
+  it('the repair is capped at max armor, and reports what it really added', async () => {
+    const run = await startRun({ playerHealth: 100 });
+    playerOf(run).health.damage(5);
+    clearFirstWave(run);
+    expect(playerOf(run).health.current).toBe(100);
+    expect(run.breathers[0]).toMatchObject({ repaired: 5, healthNow: 100 });
+    run.simulation.dispose();
+  });
+
+  it('counts down 5 s with nothing spawning, then wave 2 begins', async () => {
+    const run = await startRun({ playerHealth: 100 });
+    clearFirstWave(run);
+    const before = run.spawns.length;
+    expect(run.mode.status.secondsLeft).toBe(5);
+    run.step(seconds(2));
+    expect(run.mode.status.secondsLeft).toBe(3);
+    expect(run.warnings.filter((w) => w.tick > run.tick - seconds(2))).toEqual([]);
+    run.step(seconds(3));
+    expect(run.spawns.length).toBe(before);
+    expect(run.mode.status).toMatchObject({ phase: 'banner', wave: 2 });
     run.simulation.dispose();
   });
 });

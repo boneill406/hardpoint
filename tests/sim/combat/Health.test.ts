@@ -24,6 +24,24 @@ describe('Health', () => {
     expect(health.current).toBe(60);
   });
 
+  it('repairs up to max and reports only what was actually added (M5-3)', () => {
+    const health = new Health(100);
+    health.damage(50);
+    expect(health.repair(20)).toBe(20);
+    expect(health.current).toBe(70);
+    expect(health.repair(50)).toBe(30);
+    expect(health.current).toBe(100);
+    expect(health.repair(20)).toBe(0);
+    expect(health.repair(-5)).toBe(0);
+  });
+
+  it('cannot repair a destroyed vehicle', () => {
+    const health = new Health(60);
+    health.damage(60);
+    expect(health.repair(20)).toBe(0);
+    expect(health.depleted).toBe(true);
+  });
+
   it('rejects a non-positive max', () => {
     expect(() => new Health(0)).toThrow(RangeError);
   });

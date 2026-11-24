@@ -85,6 +85,16 @@ export interface SimEvents {
    * Emitted again for another gate if this one is blocked when they're due.
    */
   GateWarning: { readonly gate: string; readonly count: number; readonly seconds: number };
+  /**
+   * The breather began and the player's tank was repaired (M5-3): `amount` is
+   * what was actually added (0 at full armor), `seconds` the countdown.
+   */
+  BreatherStarted: {
+    readonly wave: number;
+    readonly seconds: number;
+    readonly repaired: number;
+    readonly healthNow: number;
+  };
   /** Every enemy of the wave has been destroyed. */
   WaveCleared: { readonly wave: number };
   /** The run is over: the player was destroyed, or the last wave was cleared. */

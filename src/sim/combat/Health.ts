@@ -21,6 +21,20 @@ export class Health {
     return this.value <= 0;
   }
 
+  /**
+   * Adds `amount` back (never above max) and returns how much was actually
+   * gained: the between-wave repair (GDD §4). A destroyed vehicle can't be
+   * repaired; it is already out of the world.
+   */
+  repair(amount: number): number {
+    if (this.depleted) {
+      return 0;
+    }
+    const gained = Math.min(this.max - this.value, Math.max(0, amount));
+    this.value += gained;
+    return gained;
+  }
+
   /** Removes `amount` (never below 0) and returns how much was actually lost. */
   damage(amount: number): number {
     const lost = Math.min(this.value, Math.max(0, amount));

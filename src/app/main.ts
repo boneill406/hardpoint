@@ -137,6 +137,9 @@ async function start(): Promise<void> {
   );
   simulation.events.on('GateWarning', ({ gate, seconds }) => renderer.warnGate(gate, seconds));
   simulation.events.on('WaveCleared', ({ wave }) => console.info(`Wave ${wave} cleared`));
+  simulation.events.on('BreatherStarted', ({ seconds, repaired, healthNow }) =>
+    console.info(`Breather ${seconds} s: repaired +${repaired} (armor ${healthNow})`),
+  );
   simulation.events.on('RunEnded', ({ outcome, wave }) =>
     console.info(`Run ended: ${outcome} (wave ${wave})`),
   );

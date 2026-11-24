@@ -1,6 +1,7 @@
 import type { EntityId } from '../core/Entity';
 import { secondsToTicks, TICK_RATE } from '../core/time';
 import { PlayerController } from '../vehicles/controllers/PlayerController';
+import { Vehicle } from '../vehicles/Vehicle';
 import type { PlayerId } from '../vehicles/VehicleCommand';
 import { createVehicle } from '../vehicles/VehicleFactory';
 import { GateSpawner } from './GateSpawner';
@@ -124,7 +125,7 @@ export class WaveSurvivalMode implements GameMode {
         break;
       case 'cleared':
         if (this.phaseTicks >= this.ticks.cleared) {
-          this.enter('breather');
+          this.startBreather(context);
         }
         break;
       case 'breather':
@@ -179,6 +180,23 @@ export class WaveSurvivalMode implements GameMode {
         this.enter('cleared');
       }
     }
+  }
+
+  /** "WAVE CLEARED" is over: repair the player by the wave's `repair` and start the countdown (M5 plan D6). */
+  private startBreather(context: ModeContext): void {
+    this.enter('breather');
+    const player =
+      this.playerVehicle === undefined ? undefined : context.world.get(this.playerVehicle);
+    if (!(player instanceof Vehicle)) {
+      return;
+    }
+    const repaired = player.health.repair(this.wave.repair * player.health.max);
+    context.events.emit('BreatherStarted', {
+      wave: this.waveIndex + 1,
+      seconds: this.def.timing.breather,
+      repaired,
+      healthNow: player.health.current,
+    });
   }
 
   private enter(phase: WavePhase): void {
