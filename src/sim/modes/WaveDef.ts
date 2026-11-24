@@ -41,6 +41,8 @@ export interface SpawnSlotsDef {
   readonly inset: number;
   /** Centre-to-centre distance between a gate's two side-by-side slots. */
   readonly spacing: number;
+  /** A gate is blocked while anything (a tank, the player included) is within this of a spot it needs. */
+  readonly clearance: number;
 }
 
 /** Everything a wave-survival run is made of (rule 8: content is data). */

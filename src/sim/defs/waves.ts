@@ -11,7 +11,8 @@ export const SLICE_WAVES: WaveSurvivalDef = {
   enemy: { vehicle: INSURGENT_TANK, ai: INSURGENT_AI },
   timing: { banner: 2, warning: 1, cleared: 1.5, breather: 5 },
   // Slots 2.4 u apart: two 1.6 u-wide hulls with 0.8 u between them.
-  slots: { inset: 2.5, spacing: 2.4 },
+  // A gate is skipped while any tank is within 3 u of a spot (M5 plan D3).
+  slots: { inset: 2.5, spacing: 2.4, clearance: 3 },
   waves: [
     {
       // Basics.

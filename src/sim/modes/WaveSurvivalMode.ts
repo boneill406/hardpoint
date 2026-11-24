@@ -1,14 +1,11 @@
-import type { GateDef } from '../arena/ArenaDef';
 import type { EntityId } from '../core/Entity';
 import { secondsToTicks, TICK_RATE } from '../core/time';
-import type { Transform } from '../core/Transform';
-import { Vec2 } from '../core/Vec2';
-import { AiController } from '../vehicles/controllers/AiController';
 import { PlayerController } from '../vehicles/controllers/PlayerController';
 import type { PlayerId } from '../vehicles/VehicleCommand';
 import { createVehicle } from '../vehicles/VehicleFactory';
+import { GateSpawner } from './GateSpawner';
 import type { GameMode, ModeContext, RunOutcome } from './GameMode';
-import type { SpawnGroupDef, WaveDef, WaveSurvivalDef } from './WaveDef';
+import type { WaveDef, WaveSurvivalDef } from './WaveDef';
 
 /**
  * Where a run is (M5 plan): the banner before a wave, fighting it, the
@@ -35,12 +32,6 @@ export interface WaveSurvivalOptions {
   readonly startWave?: number;
 }
 
-interface PendingGroup {
-  readonly def: SpawnGroupDef;
-  /** Ticks after the wave started at which its tanks emerge. */
-  readonly dueTick: number;
-}
-
 /**
  * The slice's game mode (GDD §2): survive five waves of insurgents. Each wave
  * is a list of timed spawn groups (M5 plan D2); the wave is cleared when every
@@ -55,11 +46,9 @@ export class WaveSurvivalMode implements GameMode {
   private waveIndex: number;
   /** Ticks since the current phase began (wave phases count from the wave's start). */
   private phaseTicks = 0;
-  private pending: PendingGroup[] = [];
   /** Enemies spawned this wave; dead ones are dropped as they leave the world. */
   private readonly enemies = new Set<EntityId>();
-  /** Gates used so far this wave, so later groups prefer the others. */
-  private readonly usedGates = new Set<string>();
+  private readonly spawner: GateSpawner;
   private playerVehicle: EntityId | undefined;
   private ended: RunOutcome | undefined;
   private readonly ticks: {
@@ -80,6 +69,7 @@ export class WaveSurvivalMode implements GameMode {
       throw new RangeError(`startWave must be 1–${def.waves.length}, got ${start}`);
     }
     this.waveIndex = start - 1;
+    this.spawner = new GateSpawner(def);
     this.ticks = {
       banner: secondsToTicks(def.timing.banner),
       cleared: secondsToTicks(def.timing.cleared),
@@ -160,11 +150,7 @@ export class WaveSurvivalMode implements GameMode {
   private beginWave(context: ModeContext): void {
     this.enter('banner');
     this.enemies.clear();
-    this.usedGates.clear();
-    this.pending = this.wave.groups.map((group) => ({
-      def: group,
-      dueTick: this.ticks.banner + secondsToTicks(group.at),
-    }));
+    this.spawner.beginWave(this.wave.groups, this.ticks.banner);
     context.events.emit('WaveStarted', {
       wave: this.waveIndex + 1,
       waves: this.def.waves.length,
@@ -177,17 +163,15 @@ export class WaveSurvivalMode implements GameMode {
     if (this.phase === 'banner' && this.phaseTicks >= this.ticks.banner) {
       this.phase = 'fighting';
     }
-    const due = this.pending.filter((group) => group.dueTick <= this.phaseTicks);
-    this.pending = this.pending.filter((group) => group.dueTick > this.phaseTicks);
-    for (const group of due) {
-      this.spawnGroup(context, group.def);
+    for (const id of this.spawner.update(context, this.phaseTicks)) {
+      this.enemies.add(id);
     }
     for (const id of [...this.enemies]) {
       if (context.world.get(id) === undefined) {
         this.enemies.delete(id);
       }
     }
-    if (this.phase === 'fighting' && this.pending.length === 0 && this.enemies.size === 0) {
+    if (this.phase === 'fighting' && this.spawner.remaining === 0 && this.enemies.size === 0) {
       context.events.emit('WaveCleared', { wave: this.waveIndex + 1 });
       if (this.waveIndex === this.def.waves.length - 1) {
         this.end(context, 'victory');
@@ -195,66 +179,6 @@ export class WaveSurvivalMode implements GameMode {
         this.enter('cleared');
       }
     }
-  }
-
-  private spawnGroup(context: ModeContext, group: SpawnGroupDef): void {
-    const spots =
-      group.from === 'spread'
-        ? this.pickGates(context, group.count).map((gate) => this.slot(gate, 0))
-        : this.groupAtOneGate(context, group);
-    for (const transform of spots) {
-      const enemy = context.world.add(
-        createVehicle(this.def.enemy.vehicle, {
-          transform,
-          faction: 'insurgent',
-          controller: new AiController(this.def.enemy.ai),
-        }),
-      );
-      this.enemies.add(enemy.id);
-    }
-  }
-
-  /** Side by side in the gate's slots: the first in slot 0, the second in slot 1. */
-  private groupAtOneGate(context: ModeContext, group: SpawnGroupDef): Transform[] {
-    const named = context.arena.def.gates.find((gate) => gate.name === group.gate);
-    const gate = named ?? this.pickGates(context, 1)[0];
-    if (gate === undefined) {
-      return [];
-    }
-    if (group.count === 1) {
-      return [this.slot(gate, undefined)];
-    }
-    return Array.from({ length: group.count }, (_, i) => this.slot(gate, i));
-  }
-
-  /**
-   * `count` different gates, picked at random, gates not yet used this wave
-   * first (so "a second group" means "another gate" whenever one is left).
-   */
-  private pickGates(context: ModeContext, count: number): GateDef[] {
-    const gates = context.arena.def.gates;
-    const fresh = gates.filter((gate) => !this.usedGates.has(gate.name));
-    const used = gates.filter((gate) => this.usedGates.has(gate.name));
-    const picked = [...shuffle(fresh, context), ...shuffle(used, context)].slice(0, count);
-    for (const gate of picked) {
-      this.usedGates.add(gate.name);
-    }
-    return picked;
-  }
-
-  /**
-   * Where a tank appears at `gate`, facing in: `inset` inside it, in slot 0 or
-   * 1 (side by side, `spacing` apart), or centred when `slot` is undefined.
-   */
-  private slot(gate: GateDef, slot: number | undefined): Transform {
-    const { inset, spacing } = this.def.slots;
-    const inward = Vec2.fromHeading(gate.heading);
-    const across = Vec2.fromHeading(gate.heading + Math.PI / 2);
-    const offset = slot === undefined ? 0 : (slot === 0 ? -0.5 : 0.5) * spacing;
-    return {
-      position: gate.position.add(inward.scale(inset)).add(across.scale(offset)),
-      heading: gate.heading,
-    };
   }
 
   private enter(phase: WavePhase): void {
@@ -265,7 +189,7 @@ export class WaveSurvivalMode implements GameMode {
   private end(context: ModeContext, outcome: RunOutcome): void {
     this.ended = outcome;
     this.enter(outcome);
-    this.pending = [];
+    this.spawner.cancel();
     context.events.emit('RunEnded', { outcome, wave: this.waveIndex + 1 });
   }
 
@@ -273,8 +197,7 @@ export class WaveSurvivalMode implements GameMode {
     if (this.phase !== 'banner' && this.phase !== 'fighting') {
       return 0;
     }
-    const unspawned = this.pending.reduce((sum, group) => sum + group.def.count, 0);
-    return unspawned + this.enemies.size;
+    return this.spawner.remaining + this.enemies.size;
   }
 
   private secondsLeft(): number {
@@ -288,19 +211,4 @@ export class WaveSurvivalMode implements GameMode {
             : 0;
     return Math.max(0, length - this.phaseTicks) / TICK_RATE;
   }
-}
-
-/** Fisher–Yates with the sim's `Rng`: a deterministic shuffle (copy). */
-function shuffle<T>(items: readonly T[], context: ModeContext): T[] {
-  const result = [...items];
-  for (let i = result.length - 1; i > 0; i--) {
-    const j = context.rng.int(0, i);
-    const a = result[i];
-    const b = result[j];
-    if (a !== undefined && b !== undefined) {
-      result[i] = b;
-      result[j] = a;
-    }
-  }
-  return result;
 }

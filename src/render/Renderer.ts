@@ -102,6 +102,7 @@ export class Renderer {
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
     this.impacts.update(frameSeconds);
+    this.arenaView.update(frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds);
@@ -192,6 +193,11 @@ export class Renderer {
     }
     const offset = vehicle.muzzlePosition(mount).sub(vehicle.transform.position);
     return this.groundToScreen(drawn.position.add(offset), height);
+  }
+
+  /** A spawn group is due out of `gate` (`GateWarning`, M5-2): blink that gate for `seconds`. */
+  warnGate(gate: string, seconds: number): void {
+    this.arenaView.warnGate(gate, seconds);
   }
 
   /** Matches the drawing buffer to the canvas after the window changes size. */

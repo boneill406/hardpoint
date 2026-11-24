@@ -30,6 +30,7 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 | Dev server in the sandbox fails with `listen EPERM` | Fixed: `sandbox.network.allowLocalBinding: true` in `.claude/settings.local.json` (gitignored) |
 | Headless Chrome (used for screenshot/console checks) can't start in the sandbox | Run just that command outside the sandbox. Use `--use-angle=swiftshader --enable-unsafe-swiftshader` (software WebGL); `--disable-gpu` makes Babylon fail with "WebGL not supported" |
 | A dev/preview server started in the background can't be stopped from inside the sandbox (`kill`: operation not permitted) | Stop it by PID outside the sandbox. `$TMPDIR` differs inside and outside the sandbox, so don't rely on a PID file across the two |
+| In Claude Code's shell, `set -e` did not stop a `;` chain of checks (a lint failure was committed in M5-1) | Chain gating commands with `&&`; pipe test output to a file and grep it after, so the test exit code counts |
 | `gh` can't read the macOS keychain from the sandbox | Run `gh` commands outside the sandbox. `gh auth status` works in a normal terminal |
 | Git commands that write `.git/config` (`push -u`, `branch -D`) warn "could not lock config file" in the sandbox | The main action still succeeds. Run `git branch --set-upstream-to=origin/<branch>` in a normal terminal if tracking is needed |
 | npm 11 skips `fsevents`'s install script (asks for approval) | Harmless: the prebuilt binary works. Optional: `npm install-scripts approve fsevents`. Review any newly flagged package before approving |
@@ -38,6 +39,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-23 · M5-2 · Gate warnings and blocked gates
+- **`GateSpawner`** (`sim/modes`, split out of `WaveSurvivalMode`, which now only runs phases): a wave's groups become **spawn units** (a `one-gate` group = one unit of 1–2 tanks; a `spread` group = one unit per tank). Each unit: scheduled → **warned** 1 s before it's due (`GateWarning { gate, count, seconds }`) → spawned; gate picked by the sim `Rng` among *free* gates, unused-this-wave first. If its spots aren't clear when due (any vehicle, the player included, within `slots.clearance` 3 u), it warns at another free gate and comes out 1 s later; with none free it waits and warns as soon as one clears (T-121). Timing unchanged when nothing blocks (wave 1's tank still emerges as the banner ends).
+- **Render:** `ArenaView` gives each gate panel its own material and blinks it orange at 4 Hz for the warning (`Renderer.warnGate`; T-122). Not seen in motion: headless Chrome doesn't advance the game far enough to reach a spawn.
+- **Answered:** gate doors opening as tanks come out → post-slice backlog (could fold into M6).
+- **Tests:** warning 1 s before the spawn at the same gate; spread group warns all three gates at once, a pair warns with count 2; gate blocked when due → re-warn elsewhere, spawn 1 s later there; all gates blocked → no warning or spawn, enemies left still 1, then warn and spawn once one clears. M5-1 tests unchanged and passing.
+- Known environment issue added: `set -e` didn't stop a `;` chain; gate with `&&`.
+- Trade-offs: T-121, T-122.
 
 ## 2026-11-23 · M5-1 · Game mode and waves
 - **`GameMode`** (`sim/modes`): `start` (spawn the starting entities), `update` every tick after removals, `outcome`. `ModeContext` gives the tick, world, arena, events and `Rng`. `Simulation` takes `mode?` beside `populate`. `modes/index.ts` placeholder removed.

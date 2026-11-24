@@ -149,4 +149,5 @@ _Hardpoint (working title). Created 2026-11-18._
 - Crate rebuild between waves (revisit after playtests)
 - Realistic armor: angle of impact, ricochets, armor thickness per face (builds on the `struck` face rule if it isn't the slice default)
 - **AI difficulty levels** as `AiDef` variants (data, no new code paths where possible). First knob: **aim lock during the fire warning**: easiest locks the turret when the warning starts (dodgeable by moving), middle locks for the last part of it, hardest keeps tracking (today's behaviour). Also `aimLead` (plan D9). (Brendan, M4-6: at 70 u/s and 8–12 u a tracked shot can't be dodged; fine for hard, not for easy)
+- Gate doors that open as tanks come out (render-only, driven by `GateWarning`; Brendan, M5-2: non-essential, aesthetic). Could fold into M6 if there's time
 - **AI polish and refinement pass** after the slice is complete (Brendan, M4 close: "functional for now"; specific adjustments to collect from play)

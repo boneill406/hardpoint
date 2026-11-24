@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { Simulation } from '../../../src/sim/core/Simulation';
 import type { SimEvents } from '../../../src/sim/core/SimEvents';
-import type { Vec2 } from '../../../src/sim/core/Vec2';
+import { Vec2 } from '../../../src/sim/core/Vec2';
+import { ScriptedController } from '../../../src/sim/debug/ScriptedController';
+import { IDLE_COMMAND } from '../../../src/sim/vehicles/VehicleCommand';
+import { createVehicle } from '../../../src/sim/vehicles/VehicleFactory';
 import { SLICE_ARENA } from '../../../src/sim/defs/arenas';
 import { PLAYER_TANK } from '../../../src/sim/defs/vehicles';
 import { SLICE_WAVES } from '../../../src/sim/defs/waves';
@@ -26,6 +29,7 @@ class Run {
   readonly spawns: Spawn[] = [];
   readonly log: string[] = [];
   readonly ended: SimEvents['RunEnded'][] = [];
+  readonly warnings: { tick: number; gate: string; count: number }[] = [];
   tick = 0;
 
   constructor(
@@ -41,6 +45,9 @@ class Run {
       }
     });
     events.on('WaveStarted', ({ wave }) => this.log.push(`${this.tick} start ${wave}`));
+    events.on('GateWarning', ({ gate, count }) =>
+      this.warnings.push({ tick: this.tick, gate, count }),
+    );
     events.on('WaveCleared', ({ wave }) => this.log.push(`${this.tick} cleared ${wave}`));
     events.on('RunEnded', (ended) => {
       this.ended.push(ended);
@@ -257,5 +264,83 @@ describe('WaveSurvivalMode: the end of a run', () => {
   it('rejects a start wave outside 1–5', () => {
     expect(() => new WaveSurvivalMode(SLICE_WAVES, { playerId: 1, startWave: 0 })).toThrow();
     expect(() => new WaveSurvivalMode(SLICE_WAVES, { playerId: 1, startWave: 6 })).toThrow();
+  });
+});
+
+/** Where a lone tank comes out of `name`: 2.5 u inside, centred. */
+function gateSpot(name: string): Vec2 {
+  const gate = SLICE_ARENA.gates.find((g) => g.name === name);
+  if (gate === undefined) throw new Error(`no gate ${name}`);
+  return gate.position.add(Vec2.fromHeading(gate.heading).scale(SLICE_WAVES.slots.inset));
+}
+
+/** Parks an idle player-side tank on a gate's spawn spot (the player counts as a blocker too). */
+function block(run: Run, name: string): number {
+  return run.simulation.world.add(
+    createVehicle(PLAYER_TANK, {
+      transform: { position: gateSpot(name), heading: 0 },
+      faction: 'player',
+      controller: new ScriptedController(() => IDLE_COMMAND),
+    }),
+  ).id;
+}
+
+const WARNING = seconds(SLICE_WAVES.timing.warning);
+
+describe('WaveSurvivalMode: gate warnings and blocked gates (M5-2)', () => {
+  it("a group's gate glows 1 s before its tanks come out of that gate", async () => {
+    const run = await startRun();
+    run.step(BANNER);
+    const [warning] = run.warnings;
+    const [spawn] = run.spawns;
+    if (warning === undefined || spawn === undefined) throw new Error('no warning or spawn');
+    expect(warning).toMatchObject({ tick: BANNER - WARNING, count: 1 });
+    expect(spawn.tick).toBe(BANNER);
+    expect(gateOf(spawn)).toBe(warning.gate);
+    run.simulation.dispose();
+  });
+
+  it('a spread group warns all three gates together; a pair warns its one gate with count 2', async () => {
+    const spread = await startRun({ startWave: 4 });
+    spread.step(BANNER);
+    const first = spread.warnings.filter((w) => w.tick === BANNER - WARNING);
+    expect(new Set(first.map((w) => w.gate))).toEqual(new Set(['left', 'right', 'top']));
+    spread.simulation.dispose();
+    const pair = await startRun({ startWave: 3 });
+    pair.step(BANNER);
+    expect(pair.warnings[0]).toMatchObject({ count: 2 });
+    pair.simulation.dispose();
+  });
+
+  it('a gate blocked when its tanks are due: they warn at another free gate and come out 1 s later', async () => {
+    const run = await startRun();
+    run.step(BANNER - WARNING + 1);
+    const warned = run.warnings[0]?.gate ?? 'none';
+    block(run, warned);
+    run.step(WARNING);
+    expect(run.spawns).toEqual([]);
+    const rerouted = run.warnings[1];
+    expect(rerouted?.gate).not.toBe(warned);
+    run.step(WARNING);
+    const [spawn] = run.spawns;
+    expect(spawn === undefined ? 'none' : gateOf(spawn)).toBe(rerouted?.gate);
+    run.simulation.dispose();
+  });
+
+  it('with every gate blocked it waits; once one clears it warns there and spawns after 1 s', async () => {
+    const run = await startRun();
+    const blockers = ['left', 'right', 'top'].map((name) => block(run, name));
+    run.step(BANNER + seconds(3));
+    expect(run.spawns).toEqual([]);
+    expect(run.warnings).toEqual([]);
+    expect(run.mode.status.enemiesLeft).toBe(1);
+    const top = blockers[2];
+    if (top === undefined) throw new Error('setup');
+    run.simulation.world.remove(top);
+    run.step(2);
+    expect(run.warnings.map((w) => w.gate)).toEqual(['top']);
+    run.step(WARNING);
+    expect(run.spawns.map(gateOf)).toEqual(['top']);
+    run.simulation.dispose();
   });
 });

@@ -9,8 +9,17 @@ const GRID_STEP = 2;
 /** Ground beyond the walls (u per side): far larger than any view, so the camera never shows void. */
 const TERRAIN_SIZE = 300;
 
-/** Gate marker size (u): a coloured panel on the wall's inner face. Glow and spawn warnings come in M5. */
+/** Gate marker size (u): a coloured panel on the wall's inner face. */
 const GATE = { width: 4, height: 1.6, depth: 0.1 };
+const GATE_COLOUR = new Color3(0.75, 0.6, 0.2);
+/** Spawn warning (M5-2): the panel blinks hot orange this many times a second. */
+const WARNING = { colour: new Color3(1, 0.42, 0.1), blinksPerSecond: 4 };
+
+interface GatePanel {
+  readonly material: StandardMaterial;
+  /** Seconds of warning left; 0 when idle. */
+  warning: number;
+}
 
 /**
  * The arena's static geometry, built once from the sim's `Arena`: floor,
@@ -19,6 +28,7 @@ const GATE = { width: 4, height: 1.6, depth: 0.1 };
  */
 export class ArenaView {
   private readonly meshes: Mesh[] = [];
+  private readonly gates = new Map<string, GatePanel>();
 
   constructor(scene: Scene, arena: Arena, showGrid: boolean) {
     this.createTerrain(scene);
@@ -27,6 +37,28 @@ export class ArenaView {
     this.createGates(scene, arena);
     if (showGrid) {
       this.createGrid(scene, arena);
+    }
+  }
+
+  /** A spawn group is coming out of `gate` in `seconds` (`GateWarning`): blink its panel until then. */
+  warnGate(gate: string, seconds: number): void {
+    const panel = this.gates.get(gate);
+    if (panel !== undefined) {
+      panel.warning = seconds;
+    }
+  }
+
+  /** Once per frame: animates gate warnings. */
+  update(frameSeconds: number): void {
+    for (const panel of this.gates.values()) {
+      if (panel.warning <= 0) {
+        continue;
+      }
+      panel.warning = Math.max(0, panel.warning - frameSeconds);
+      const lit =
+        panel.warning > 0 && Math.floor(panel.warning * WARNING.blinksPerSecond * 2) % 2 === 0;
+      panel.material.emissiveColor = lit ? WARNING.colour : Color3.Black();
+      panel.material.diffuseColor = lit ? WARNING.colour : GATE_COLOUR;
     }
   }
 
@@ -66,8 +98,10 @@ export class ArenaView {
   }
 
   private createGates(scene: Scene, arena: Arena): void {
-    const material = flatMaterial(scene, 'arena-gate-mat', new Color3(0.75, 0.6, 0.2));
     for (const gate of arena.def.gates) {
+      // One material per gate, so each can blink on its own.
+      const material = flatMaterial(scene, `arena-gate-mat-${gate.name}`, GATE_COLOUR);
+      this.gates.set(gate.name, { material, warning: 0 });
       const marker = MeshBuilder.CreateBox(`arena-gate-${gate.name}`, GATE, scene);
       // Sit the panel against the wall, facing into the arena (its local −z faces the wall).
       marker.position = toBabylonPosition(gate.position, GATE.height / 2);

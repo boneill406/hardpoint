@@ -80,6 +80,11 @@ export interface SimEvents {
   TelegraphCancelled: { readonly shooter: EntityId; readonly hardpoint: string };
   /** A wave began: its banner shows now (M5). `enemies` is the wave's total. */
   WaveStarted: { readonly wave: number; readonly waves: number; readonly enemies: number };
+  /**
+   * `count` tanks will come out of `gate` in `seconds` (M5-2): the gate glows.
+   * Emitted again for another gate if this one is blocked when they're due.
+   */
+  GateWarning: { readonly gate: string; readonly count: number; readonly seconds: number };
   /** Every enemy of the wave has been destroyed. */
   WaveCleared: { readonly wave: number };
   /** The run is over: the player was destroyed, or the last wave was cleared. */
