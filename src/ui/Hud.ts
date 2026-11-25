@@ -1,6 +1,8 @@
+import type { WaveStatus } from '../sim/modes/WaveSurvivalMode';
 import type { Vehicle } from '../sim/vehicles/Vehicle';
 import { amountLabel } from './amountLabel';
 import { hudState, type WeaponGauge } from './hudState';
+import { waveHudState } from './waveHud';
 
 /** Styles live with the component: the HUD is the only HTML in the game so far. */
 const CSS = `
@@ -25,6 +27,18 @@ const CSS = `
   background: linear-gradient(90deg, #c2cc4b 0%, #e3d04a 40%, #e8913a 70%, #e0533d 100%); }
 .hud-heat.overheated .hud-value { color: #ff6a50; animation: hud-pulse 0.35s ease-in-out infinite alternate; }
 @keyframes hud-pulse { from { opacity: 1; } to { opacity: 0.45; } }
+.hud-run { display: flex; justify-content: space-between; margin-bottom: 8px; padding-bottom: 7px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12); text-transform: uppercase; }
+.hud-run[hidden] { display: none; }
+.hud-wave { color: #f2e6b8; }
+.hud-countdown { color: #9fd98a; }
+/* Repair flash (M5-6a): a green glow on the bar and the amount gained, both fading out.
+   Box-shadow and colour, not opacity on the row (see the Safari note above). */
+.hud-armor.repaired .hud-bar { animation: hud-repair 0.9s ease-out; }
+@keyframes hud-repair { from { box-shadow: 0 0 0 2px #9fef7a, 0 0 10px #9fef7a; } to { box-shadow: none; } }
+.hud-gain { margin-right: 8px; color: #9fef7a; }
+.hud-armor.repaired .hud-gain { animation: hud-gain 1.6s ease-out forwards; }
+@keyframes hud-gain { 0%, 60% { color: #9fef7a; } 100% { color: transparent; } }
 `;
 
 interface Row {
@@ -37,14 +51,17 @@ interface Row {
 /**
  * The player's HUD (M3-6, M3 plan D10, GDD §7): armor, cannon reload and MG
  * heat bars. HTML over the canvas; reads the player's vehicle once per frame
- * and never writes simulation state. Wave counter, enemies left and the
- * countdown join it in M5.
+ * and never writes simulation state. Since M5-6a a line on top shows the
+ * wave, enemies left and the breather countdown, and the armor bar flashes
+ * green on a repair.
  */
 export class Hud {
   private readonly root: HTMLDivElement;
   private readonly style: HTMLStyleElement;
   private readonly armor: Row;
   private readonly weapons: Row[] = [];
+  private readonly run: { root: HTMLDivElement; wave: HTMLSpanElement; right: HTMLSpanElement };
+  private readonly gain: HTMLSpanElement;
 
   constructor(parent: HTMLElement) {
     this.style = document.createElement('style');
@@ -52,12 +69,24 @@ export class Hud {
     document.head.append(this.style);
     this.root = document.createElement('div');
     this.root.className = 'hud';
+    this.run = this.addRunLine();
     this.armor = this.addRow('Armor', 'hud-armor');
+    this.gain = document.createElement('span');
+    this.gain.className = 'hud-gain';
+    // Keep the armor number right-aligned: the gain sits just before it, in one right-hand group.
+    const right = document.createElement('span');
+    this.armor.value.replaceWith(right);
+    right.append(this.gain, this.armor.value);
     parent.append(this.root);
   }
 
-  /** Once per frame. The player's tank object stays readable after it is destroyed (health 0). */
-  update(player: Vehicle): void {
+  /**
+   * Once per frame. The player's tank object stays readable after it is
+   * destroyed (health 0). `run` is the wave mode's status; omitted in the
+   * sandbox, which hides the wave line.
+   */
+  update(player: Vehicle, run?: WaveStatus): void {
+    this.showRun(run);
     const state = hudState(player);
     const { armor } = state;
     this.armor.fill.style.width = percent(armor.fraction);
@@ -70,9 +99,44 @@ export class Hud {
     });
   }
 
+  /** The breather repaired the player (`BreatherStarted`): flash the armor bar and show what was gained. */
+  flashRepair(amount: number): void {
+    if (amount <= 0) {
+      return;
+    }
+    this.gain.textContent = `+${amountLabel(amount)}`;
+    // Restart the animation even if the last flash is still running.
+    this.armor.root.classList.remove('repaired');
+    void this.armor.root.offsetWidth;
+    this.armor.root.classList.add('repaired');
+  }
+
   dispose(): void {
     this.root.remove();
     this.style.remove();
+  }
+
+  private showRun(run: WaveStatus | undefined): void {
+    this.run.root.hidden = run === undefined;
+    if (run === undefined) {
+      return;
+    }
+    const state = waveHudState(run);
+    this.run.wave.textContent = state.wave;
+    this.run.right.textContent =
+      state.countdown ?? (state.enemies === undefined ? '' : `Enemies ${state.enemies}`);
+    this.run.right.className = state.countdown === undefined ? '' : 'hud-countdown';
+  }
+
+  private addRunLine(): { root: HTMLDivElement; wave: HTMLSpanElement; right: HTMLSpanElement } {
+    const root = document.createElement('div');
+    root.className = 'hud-run';
+    const wave = document.createElement('span');
+    wave.className = 'hud-wave';
+    const right = document.createElement('span');
+    root.append(wave, right);
+    this.root.append(root);
+    return { root, wave, right };
   }
 
   private addWeaponRow(gauge: WeaponGauge): Row {

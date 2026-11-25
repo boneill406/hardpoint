@@ -38,7 +38,7 @@ src/
   render/        Renderer, RenderBridge, coords.ts, vfx/ (ImpactFlashes), views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
-  ui/            Hud + hudState (M3-6), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), menus
+  ui/            Hud + hudState (M3-6), Banner + waveHud (run line and centre banners, M5-6a), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), menus
   app/           main.ts — wiring and the main loop
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
                  tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
@@ -163,7 +163,7 @@ classDiagram
 - **`Hud`** (`src/ui/Hud.ts`, M3-6): HTML panel bottom-left with the armor bar (pulses at ≤30%, GDD §7), the cannon's reload bar and the MG's heat bar (with its re-arm marker and an "Overheated" state). Updated once per frame from the player's `Vehicle`; never writes sim state.
 - **`hudState(vehicle)`** turns the vehicle into plain numbers (armor fraction, one gauge per weapon: heat if the weapon has a `HeatLimiter`, otherwise reload progress), so the logic is unit-tested without a DOM (`tests/ui/`). New limiter kinds need a gauge here.
 - **`TelegraphSigns`** (`src/ui/`, M4-5b): the enemy fire telegraph. On `ShotTelegraphed` an HTML hazard triangle appears over that gun's muzzle (placed by `Renderer.muzzleScreenPosition`: the sim's muzzle offset on the interpolated tank), fills yellow from the bottom over the windup and blinks for its last 30%; `ShotFired` or `TelegraphCancelled` removes it. Fixed size on screen, so it reads at any distance. The animation is the pure `telegraphSignFrame`, tested in `tests/ui/`.
-- Wave counter, enemies remaining and the breather countdown join in M5-6.
+- **Run line and banner** (M5-6a): the HUD's top line shows "Wave n / 5" and enemies left (alive + unspawned), or "Next wave in n" in the breather; hidden in the sandbox. `Banner` shows the big centre text ("WAVE n / 5", "WAVE CLEARED", "VICTORY", "DESTROYED") while the mode's phase calls for it, so there are no UI timers. The pure `waveHudState(status)` decides both (tested in `tests/ui/`). On `BreatherStarted` the armor bar glows green and shows the amount gained (`Hud.flashRepair`).
 
 ## 7. Input
 

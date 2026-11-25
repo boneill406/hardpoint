@@ -18,12 +18,14 @@ import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { PlayerId } from '../sim/vehicles/VehicleCommand';
 import { HealthOverlay } from '../ui/HealthOverlay';
 import { AiStateLabels } from '../ui/AiStateLabels';
+import { Banner } from '../ui/Banner';
 import { Hud } from '../ui/Hud';
+import { waveHudState } from '../ui/waveHud';
 import { TelegraphSigns } from '../ui/TelegraphSigns';
 import { readDebugParams } from './debugParams';
 import { populateDebugScene } from './debugScene';
 import { SLICE_WAVES } from '../sim/defs/waves';
-import { WaveSurvivalMode } from '../sim/modes/WaveSurvivalMode';
+import { WaveSurvivalMode, type WaveStatus } from '../sim/modes/WaveSurvivalMode';
 
 /**
  * Application entry point. Wires input, simulation and rendering together and
@@ -131,15 +133,7 @@ async function start(): Promise<void> {
   const playerTank = findPlayerTank(simulation, PLAYER_ID);
 
   // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
-  // Until the HUD shows waves (M5-6a), the run is reported in the console.
-  simulation.events.on('WaveStarted', ({ wave, waves: total, enemies }) =>
-    console.info(`Wave ${wave} / ${total}: ${enemies} ${enemies === 1 ? 'enemy' : 'enemies'}`),
-  );
   simulation.events.on('GateWarning', ({ gate, seconds }) => renderer.warnGate(gate, seconds));
-  simulation.events.on('WaveCleared', ({ wave }) => console.info(`Wave ${wave} cleared`));
-  simulation.events.on('BreatherStarted', ({ seconds, repaired, healthNow }) =>
-    console.info(`Breather ${seconds} s: repaired +${repaired} (armor ${healthNow})`),
-  );
   simulation.events.on('RunEnded', ({ outcome, wave }) =>
     console.info(`Run ended: ${outcome} (wave ${wave})`),
   );
@@ -157,6 +151,11 @@ async function start(): Promise<void> {
     : undefined;
   simulation.events.on('Hit', ({ point, damage }) => overlay?.recordHit(point, damage));
   const hud = new Hud(document.body);
+  simulation.events.on('BreatherStarted', ({ repaired }) => hud.flashRepair(repaired));
+  const banner = new Banner(document.body);
+  /** The wave run's status for the HUD; none in the sandbox. */
+  const runStatus = (): WaveStatus | undefined =>
+    debug.mode === 'waves' ? waves.status : undefined;
   const aiLabels = debug.ai ? new AiStateLabels(document.body) : undefined;
   const overlayProjector = {
     vehicle: (id: EntityId) => renderer.screenPositionOf(id, 1.6),
@@ -191,7 +190,9 @@ async function start(): Promise<void> {
     const vehicles = simulation.world.ofType(Vehicle);
     renderer.updateDebug({ navGrid: simulation.navGrid, vehicles });
     renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
-    hud.update(playerTank);
+    const run = runStatus();
+    hud.update(playerTank, run);
+    banner.update(run === undefined ? undefined : waveHudState(run).banner);
     overlay?.update(vehicles, overlayProjector, elapsedSeconds);
     aiLabels?.update(vehicles, overlayProjector.vehicle);
     telegraphs.update((shooter, hardpoint) => {

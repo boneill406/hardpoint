@@ -40,6 +40,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M5-6a · Run HUD: wave line, banners, repair flash
+- **`waveHudState(status)`** (`src/ui/waveHud.ts`, pure): "Wave n / 5"; enemies left while a wave is on; "Next wave in n" in the breather (whole seconds, never 0); the banner for the phase: "WAVE n / 5" (banner), "WAVE CLEARED", "VICTORY", "DESTROYED".
+- **`Hud`:** a top line with the wave and enemies or countdown (hidden in `?mode=sandbox`); `flashRepair(amount)` on `BreatherStarted`: green glow on the armor bar and "+20" beside the number, fading out (box-shadow and colour animations, not row opacity, per the M3-6 Safari fix).
+- **`Banner`** (`src/ui/Banner.ts`): big centre text that pops in when it changes; shown purely from the mode's phase, so it can't drift from the sim.
+- Console wave logs removed (the run end is still logged until the summary screen, M5-5).
+- Checked in a static page (Chrome): wave line, countdown, banner, repair flash. First layout put the "+20" mid-row; grouped it with the armor number.
+- **Tests:** `waveHudState` (fighting line, wave banner, cleared, countdown rounding, victory/defeat).
+
 ## 2026-11-23 · M5-3 · Breather and repair
 - **`Health.repair(amount)`:** adds up to max, returns what was actually added; a destroyed vehicle can't be repaired.
 - **`WaveSurvivalMode`:** when "WAVE CLEARED" ends, the breather starts with the player repaired by the cleared wave's `repair` × max armor (20 % for waves 1–4; wave 5 has none, as it ends the run), and emits **`BreatherStarted { wave, seconds, repaired, healthNow }`**. The 5 s countdown is `status.secondsLeft`; nothing spawns until the next banner. Console log until the HUD (M5-6a) shows it with a green flash.
