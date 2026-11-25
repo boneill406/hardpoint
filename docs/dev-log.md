@@ -41,6 +41,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-1c · Particles ran at 6 % speed
+- **Bug (Brendan):** sparks floated "like lightning bugs", effects lingered "like slow-mo".
+- **Cause:** Babylon times particles (and its own animations) from the engine's frame clock, measured in `engine.beginFrame()`, which `runRenderLoop` calls. Our app drives rendering from its own loop (sim ticks first) and only called `scene.render()`, so Babylon's delta time stayed 0 and it assumed its 1 ms minimum: an animation ratio of **0.06**. Particles moved at 6 % speed and lived ~16× longer. My M6-1a test page used `runRenderLoop`, so it looked right there.
+- **Fix:** `Renderer.render` calls `engine.beginFrame()` / `endFrame()` around `scene.render()`. Measured in a page driven like ours: ratio 0.060 before, 0.954 after. Nothing else used Babylon's clock (tank motion, camera, gate blink and HUD use our frame time).
+- Also learned: headless Chrome barely fires `requestAnimationFrame`, which is why headless game runs never reached a spawn; timer-driven test pages work.
+- The M6-1a effect sizes and lifetimes were judged under the bug in play; Brendan to re-judge now.
+
 ## 2026-11-24 · M6-1a · Effect system and impacts
 - **`Vfx`** (`render/vfx`): builds 6 pooled Babylon `ParticleSystem`s per effect def at startup and reuses them round-robin for bursts (`burst(effect, point, height, normal)`); `clear()` on a new run. Lifetimes and speeds in seconds (`updateSpeed` 1/60, scaled by Babylon's animation ratio, so frame-rate independent). Babylon size gradients are absolute sizes, so each def's size range is scaled by its `growth` at end of life.
 - **Effects as data** (`effects.ts`): flash, sparks, sparksSmall, dust, dustSmall, chips, woodDust, splinters; `impactEffects(surface, look)` picks them. **`sprayCone`** turns the impact normal into Babylon's direction1 / direction2, so sparks and dust leave the surface. **`particleTextures.ts`** draws a soft dot, a lumpy smoke puff and a spark glow on canvases (T-126: Kenney's site returned 403 to the download).

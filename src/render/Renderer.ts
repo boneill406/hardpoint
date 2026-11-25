@@ -108,7 +108,12 @@ export class Renderer {
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds);
     }
+    // Our own frame loop drives rendering (the sim's fixed ticks come first), so do what
+    // Babylon's runRenderLoop would: beginFrame measures the frame time. Without it Babylon
+    // assumes 1 ms frames and runs particles and animations at ~6% speed (M6-1c).
+    this.engine.beginFrame();
     this.scene.render();
+    this.engine.endFrame();
   }
 
   /**
