@@ -40,6 +40,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M5-6b · Off-screen arrows
+- **`edgeArrow(target, width, height, margin)`** (`src/ui`, pure): none while the target is inside the view less a margin; otherwise the point where the centre→target line meets the inset border, and its angle.
+- **`EdgeIndicators`** (per `GameSession`): enemy chevrons (orange-red, 26 px) for every enemy outside the view; gate chevrons (yellow, 32 px, blinking at the panel's 4 Hz) for gates in their 1 s `GateWarning` outside it. Enemies are measured at their drawn (interpolated) position, 0.8 u up. Colours set per frame in script, not by CSS animation (Safari stale paint, M3-6 / M4-5d). Checked in a static page; first size read small, enlarged.
+- **Tests:** `edgeArrow` (on screen → none; right, top, corner; margin band).
+
 ## 2026-11-24 · M5-5 · Run stats and summary
 - **`RunStats`** (`src/app`, pure): fed by the session's `ShotFired`, `Hit`, `WaveCleared` handlers; `setTicks(simulation.tickCount)` at `RunEnded`. Waves cleared, time (sim ticks, so pauses don't count), kills (player hits with `destroyed`), per-weapon fired / hit for the player's loadout in order (a weapon never fired shows "no shots"), damage taken (every hit on the player). The player is the only tank on its side, so any vehicle it hits is an enemy: no faction lookup needed. `formatRunTime` (m:ss), `formatAccuracy` ("12 / 20 hits (60%)").
 - **Summary screen:** `MenuContent.table` (label–value grid): waves cleared, time, kills, cannon and machine gun accuracy, damage taken; seed underneath. Checked in a static page.

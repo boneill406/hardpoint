@@ -12,6 +12,7 @@ import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { PlayerId } from '../sim/vehicles/VehicleCommand';
 import { AiStateLabels } from '../ui/AiStateLabels';
+import { EdgeIndicators, type EdgeTarget } from '../ui/EdgeIndicators';
 import { HealthOverlay } from '../ui/HealthOverlay';
 import type { Hud } from '../ui/Hud';
 import { TelegraphSigns } from '../ui/TelegraphSigns';
@@ -21,6 +22,8 @@ import { populateDebugScene } from './debugScene';
 
 /** Height (u) of the point the fire-telegraph sign sits on: just above the barrel tip. */
 const MUZZLE_SIGN_HEIGHT = 1.0;
+/** Height (u) measured for edge arrows: about a hull's middle. */
+const EDGE_HEIGHT = 0.8;
 
 /** What a run needs from the app that outlives it. */
 export interface SessionDeps {
@@ -48,6 +51,7 @@ export class GameSession {
   private readonly telegraphs: TelegraphSigns;
   private readonly overlay: HealthOverlay | undefined;
   private readonly aiLabels: AiStateLabels | undefined;
+  private readonly edges: EdgeIndicators;
 
   /** Physics (Rapier's WASM) loads asynchronously, so sessions are built with this. */
   static async create(seed: number, deps: SessionDeps): Promise<GameSession> {
@@ -90,6 +94,7 @@ export class GameSession {
       ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
       : undefined;
     this.aiLabels = debug.ai ? new AiStateLabels(document.body) : undefined;
+    this.edges = new EdgeIndicators(document.body);
     this.subscribe();
   }
 
@@ -112,6 +117,33 @@ export class GameSession {
       const vehicle = vehicles.find((candidate) => candidate.id === shooter);
       return vehicle && renderer.muzzleScreenPosition(vehicle, hardpoint, MUZZLE_SIGN_HEIGHT);
     }, frameSeconds);
+    this.edges.update(
+      this.edgeTargets(vehicles),
+      window.innerWidth,
+      window.innerHeight,
+      frameSeconds,
+    );
+  }
+
+  /** Enemies, and gates in their spawn warning, for the off-screen arrows (M5-6b). */
+  private edgeTargets(vehicles: readonly Vehicle[]): EdgeTarget[] {
+    const { renderer } = this.deps;
+    const enemies = vehicles
+      .filter((vehicle) => vehicle.faction !== this.playerTank.faction)
+      .map((vehicle): EdgeTarget => ({
+        key: `enemy-${vehicle.id}`,
+        kind: 'enemy',
+        at: renderer.screenPositionOf(vehicle.id, EDGE_HEIGHT),
+      }));
+    const gates = this.edges.warnedGates.map((name): EdgeTarget => {
+      const gate = SLICE_ARENA.gates.find((candidate) => candidate.name === name);
+      return {
+        key: `gate-${name}`,
+        kind: 'gate',
+        at: gate && renderer.groundToScreen(gate.position, EDGE_HEIGHT),
+      };
+    });
+    return [...gates, ...enemies];
   }
 
   dispose(): void {
@@ -119,6 +151,7 @@ export class GameSession {
     this.telegraphs.dispose();
     this.overlay?.dispose();
     this.aiLabels?.dispose();
+    this.edges.dispose();
   }
 
   /** Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick. */
@@ -126,7 +159,10 @@ export class GameSession {
     const { events } = this.simulation;
     const { renderer, hud, onRunEnded } = this.deps;
     events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
-    events.on('GateWarning', ({ gate, seconds }) => renderer.warnGate(gate, seconds));
+    events.on('GateWarning', ({ gate, seconds }) => {
+      renderer.warnGate(gate, seconds);
+      this.edges.warnGate(gate, seconds);
+    });
     events.on('ShotTelegraphed', ({ shooter, hardpoint, seconds }) =>
       this.telegraphs.start(shooter, hardpoint, seconds),
     );
