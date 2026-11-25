@@ -1,6 +1,7 @@
 import { FireLatch } from '../input/FireLatch';
 import { GamepadDevice } from '../input/GamepadDevice';
 import { PAD_SCHEMES } from '../input/bindings';
+import { InputGate } from '../input/InputGate';
 import { InputManager } from '../input/InputManager';
 import { intentToCommand } from '../input/intentToCommand';
 import { KeyboardMouseDevice } from '../input/KeyboardMouseDevice';
@@ -139,6 +140,7 @@ async function start(): Promise<void> {
   // Physics loads asynchronously; the first session must exist before the first frame.
   let session = await GameSession.create(seedFor(debug), deps);
   let clock = new FixedClock();
+  const gate = new InputGate();
   /** True while a new session is being built: input is ignored, nothing ticks. */
   let switching = false;
 
@@ -150,6 +152,7 @@ async function start(): Promise<void> {
     session = await GameSession.create(seedFor(debug), deps);
     clock = new FixedClock();
     flow.newRun(next);
+    gate.block(); // the Enter / A / click that chose Restart may still be held
     switching = false;
   };
   const restart = (): void => void newRun('playing');
@@ -230,7 +233,10 @@ async function start(): Promise<void> {
     }
     // Input is sampled once per frame; every tick this frame runs on the same command (T-56).
     // Outside steady play the tank idles, so the key that started or resumed the run doesn't fire.
-    const intent = input.read(nowMs);
+    if (before !== 'playing' && flow.state === 'playing') {
+      gate.block(); // just started or resumed: wait for the starting key to be let go
+    }
+    const intent = gate.filter(input.read(nowMs));
     const steadyPlay = before === 'playing' && flow.state === 'playing';
     const command = steadyPlay
       ? fireLatch.apply(intentToCommand(intent, session.playerTank.transform))

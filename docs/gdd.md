@@ -63,7 +63,7 @@ Escalation uses **count, timing (staggered or together), clustering (one gate or
 | Aim turret | Mouse (ground point) | Right stick |
 | Fire cannon (primary) | LMB / Space | RB |
 | Fire machine gun (secondary) | RMB / F (hold) | LB (hold) |
-| Pause | Esc | Start |
+| Pause | P or Esc (in fullscreen the browser also exits fullscreen on Esc) | Start |
 
 _Xbox: the `triggers` scheme, chosen by Brendan in play over `tank` (left stick Y throttle, X turn; fire on the triggers) and `direct` (left stick points where to go). The others stay available as `?pad=tank` / `?pad=direct`._
 

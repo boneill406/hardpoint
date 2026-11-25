@@ -63,7 +63,11 @@ export const STICK_DEADZONE = 0.15;
 /** A trigger counts as pressed (for firing) beyond this value. */
 export const TRIGGER_THRESHOLD = 0.5;
 
-/** Menu keys (M5-4): `KeyboardEvent.code` values. Esc is also pause/resume during play. */
+/**
+ * Menu keys (M5-4): `KeyboardEvent.code` values. `back` also pauses and resumes
+ * during play. P is there because browsers reserve Esc to leave fullscreen
+ * (Safari can't be stopped), so Esc pauses *and* exits fullscreen (M5-4b).
+ */
 export interface MenuKeyBindings {
   readonly up: readonly string[];
   readonly down: readonly string[];
@@ -75,7 +79,7 @@ export const MENU_KEYS: MenuKeyBindings = {
   up: ['ArrowUp', 'KeyW'],
   down: ['ArrowDown', 'KeyS'],
   confirm: ['Enter', 'Space'],
-  back: ['Escape'],
+  back: ['Escape', 'KeyP'],
 };
 
 /** The left stick moves the menu highlight once it passes this (then must return first). */

@@ -40,6 +40,10 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M5-4b · Title keys reaching the tank; P to pause
+- **Bug (Brendan):** on the title, F / Space fired and WASD drove as the menu went away. The key that started the run was still held when play began, and driving and firing are hold-to-act. My M5-4 fix only dropped the starting frame. **Fix:** `InputGate` (`src/input`, tested): after start, resume or restart, drive and fire stay idle until a frame with nothing held; aim passes.
+- **Esc exits fullscreen (Brendan):** browsers reserve Esc for leaving fullscreen and Safari offers no way to capture it (Chrome's Keyboard Lock API isn't in Safari). Added **P** as a pause key (`MENU_KEYS.back`); Esc still pauses, and the pad's Start is unaffected. GDD §3 controls updated.
+
 ## 2026-11-24 · M5-4 · Title, pause, summary, restart
 - **`GameFlow`** (`src/app`, pure): title → playing ⇄ paused; `RunEnded` → ending (sim keeps ticking for 1.5 s defeat / 2 s victory, T-125) → summary. Pausing = not ticking.
 - **`GameSession`** (`src/app`): one run's sim (seed new each run, `?seed=N` pins it), mode or sandbox scene, fire-warning signs, health overlay, AI labels, and its event wiring. Restart / Title dispose it and build a new one (T-124); `Renderer.resetWorld()` (new `RenderBridge.clear`, `ImpactFlashes.clear`, `ArenaView.clearWarnings`, `SliceCamera.reset`) forgets the old run's views. `main.ts` now owns only the app-lifetime pieces and the frame loop; it skips drawing while a session is being built, and the renderer gets its arena from `SLICE_ARENA` rather than a sim.

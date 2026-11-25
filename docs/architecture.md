@@ -169,7 +169,7 @@ classDiagram
 
 - **`GameFlow`** (pure, `tests/app/`): `title → playing ⇄ paused`, `playing → ending` on `RunEnded`, then `summary` after a real-time hold (1.5 s defeat, 2 s victory). `ticking` is true only while playing or ending: **pausing is the app not calling `tick()`**, so the sim never knows.
 - **`GameSession`**: one run's `Simulation` (fresh seed, or `?seed=N`), its `WaveSurvivalMode` (or the sandbox scene), and the overlays that follow its entities. **Restart and "Title" dispose the session and build a new one**; `Renderer.resetWorld()` drops every view (a new sim numbers entities from 1 again) and snaps the camera. Renderer, input, HUD, banner and menus outlive sessions. While a new session is built (physics loads asynchronously) no frame is drawn.
-- **Menus**: `MenuScreen` (HTML; mouse hover/click) for title, pause (Resume / Restart / Title) and summary (Restart / Title); keyboard and pad go through `MenuInput` (arrows/WS, Enter/Space, Esc; D-pad/stick, A, B, Start; edge-detected, `menuMapping.ts`, tested). Esc / Start pause and resume; the window losing focus pauses. The key that starts or resumes a run is not passed to the tank.
+- **Menus**: `MenuScreen` (HTML; mouse hover/click) for title, pause (Resume / Restart / Title) and summary (Restart / Title); keyboard and pad go through `MenuInput` (arrows/WS, Enter/Space, Esc; D-pad/stick, A, B, Start; edge-detected, `menuMapping.ts`, tested). P, Esc or Start pause and resume (P because browsers reserve Esc to leave fullscreen); the window losing focus pauses. `InputGate` holds back driving and firing after starting, resuming or restarting until every key and button is released, so the key that chose it doesn't reach the tank (aim passes).
 
 ## 7. Input
 

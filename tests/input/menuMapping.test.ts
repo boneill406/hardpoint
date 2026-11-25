@@ -13,6 +13,7 @@ describe('keyMenuActions', () => {
     expect(keyMenuActions('KeyS')).toEqual(['any', 'down']);
     expect(keyMenuActions('Enter')).toEqual(['any', 'confirm']);
     expect(keyMenuActions('Escape')).toEqual(['any', 'back']);
+    expect(keyMenuActions('KeyP')).toEqual(['any', 'back']);
     expect(keyMenuActions('KeyQ')).toEqual(['any']);
   });
 });
