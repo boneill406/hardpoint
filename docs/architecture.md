@@ -37,9 +37,9 @@ src/
     defs/        vehicles.ts, weapons.ts, armor.ts, arenas.ts, ai.ts
   render/        Renderer, RenderBridge, coords.ts, vfx/ (ImpactFlashes), views/ (EntityView, TankView, PropView, ArenaView; tank/: TankModel, PrimitiveTankModel, tankMotion), vfx/, camera/, audio/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
-                 keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts
-  ui/            Hud + hudState (M3-6), Banner + waveHud (run line and centre banners, M5-6a), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), menus
-  app/           main.ts — wiring and the main loop
+                 keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts, MenuInput + menuMapping.ts (menu and pause input, M5-4)
+  ui/            Hud + hudState (M3-6), Banner + waveHud (run line and centre banners, M5-6a), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), MenuScreen + MenuNavigator (title, pause, summary, M5-4)
+  app/           main.ts — wiring and the main loop; GameFlow (title → playing ⇄ paused → ending → summary, pure), GameSession (one run: its Simulation, mode and per-run overlays), debugParams, debugScene
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
                  tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
 docs/            this folder
@@ -164,6 +164,12 @@ classDiagram
 - **`hudState(vehicle)`** turns the vehicle into plain numbers (armor fraction, one gauge per weapon: heat if the weapon has a `HeatLimiter`, otherwise reload progress), so the logic is unit-tested without a DOM (`tests/ui/`). New limiter kinds need a gauge here.
 - **`TelegraphSigns`** (`src/ui/`, M4-5b): the enemy fire telegraph. On `ShotTelegraphed` an HTML hazard triangle appears over that gun's muzzle (placed by `Renderer.muzzleScreenPosition`: the sim's muzzle offset on the interpolated tank), fills yellow from the bottom over the windup and blinks for its last 30%; `ShotFired` or `TelegraphCancelled` removes it. Fixed size on screen, so it reads at any distance. The animation is the pure `telegraphSignFrame`, tested in `tests/ui/`.
 - **Run line and banner** (M5-6a): the HUD's top line shows "Wave n / 5" and enemies left (alive + unspawned), or "Next wave in n" in the breather; hidden in the sandbox. `Banner` shows the big centre text ("WAVE n / 5", "WAVE CLEARED", "VICTORY", "DESTROYED") while the mode's phase calls for it, so there are no UI timers. The pure `waveHudState(status)` decides both (tested in `tests/ui/`). On `BreatherStarted` the armor bar glows green and shows the amount gained (`Hud.flashRepair`).
+
+## 6c. App flow (M5-4)
+
+- **`GameFlow`** (pure, `tests/app/`): `title → playing ⇄ paused`, `playing → ending` on `RunEnded`, then `summary` after a real-time hold (1.5 s defeat, 2 s victory). `ticking` is true only while playing or ending: **pausing is the app not calling `tick()`**, so the sim never knows.
+- **`GameSession`**: one run's `Simulation` (fresh seed, or `?seed=N`), its `WaveSurvivalMode` (or the sandbox scene), and the overlays that follow its entities. **Restart and "Title" dispose the session and build a new one**; `Renderer.resetWorld()` drops every view (a new sim numbers entities from 1 again) and snaps the camera. Renderer, input, HUD, banner and menus outlive sessions. While a new session is built (physics loads asynchronously) no frame is drawn.
+- **Menus**: `MenuScreen` (HTML; mouse hover/click) for title, pause (Resume / Restart / Title) and summary (Restart / Title); keyboard and pad go through `MenuInput` (arrows/WS, Enter/Space, Esc; D-pad/stick, A, B, Start; edge-detected, `menuMapping.ts`, tested). Esc / Start pause and resume; the window losing focus pauses. The key that starts or resumes a run is not passed to the tank.
 
 ## 7. Input
 

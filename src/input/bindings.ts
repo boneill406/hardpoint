@@ -31,7 +31,7 @@ export const KEYBOARD_BINDINGS: KeyboardBindings = {
  */
 export const PAD = {
   axes: { leftX: 0, leftY: 1, rightX: 2, rightY: 3 },
-  buttons: { lb: 4, rb: 5, lt: 6, rt: 7, start: 9 },
+  buttons: { a: 0, b: 1, lb: 4, rb: 5, lt: 6, rt: 7, start: 9, dpadUp: 12, dpadDown: 13 },
 } as const;
 
 export type PadSchemeName = 'tank' | 'direct' | 'triggers';
@@ -62,3 +62,21 @@ export const PAD_SCHEMES: Readonly<Record<PadSchemeName, PadScheme>> = {
 export const STICK_DEADZONE = 0.15;
 /** A trigger counts as pressed (for firing) beyond this value. */
 export const TRIGGER_THRESHOLD = 0.5;
+
+/** Menu keys (M5-4): `KeyboardEvent.code` values. Esc is also pause/resume during play. */
+export interface MenuKeyBindings {
+  readonly up: readonly string[];
+  readonly down: readonly string[];
+  readonly confirm: readonly string[];
+  readonly back: readonly string[];
+}
+
+export const MENU_KEYS: MenuKeyBindings = {
+  up: ['ArrowUp', 'KeyW'],
+  down: ['ArrowDown', 'KeyS'],
+  confirm: ['Enter', 'Space'],
+  back: ['Escape'],
+};
+
+/** The left stick moves the menu highlight once it passes this (then must return first). */
+export const MENU_STICK_THRESHOLD = 0.5;

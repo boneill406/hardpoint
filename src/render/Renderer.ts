@@ -110,6 +110,19 @@ export class Renderer {
     this.scene.render();
   }
 
+  /**
+   * Forgets the last run (M5-4): every entity view, impact flash and gate
+   * warning goes, and the camera snaps to the next followed tank. A new
+   * `Simulation` numbers its entities from 1 again, so old views must not
+   * be matched to new entities by id.
+   */
+  resetWorld(): void {
+    this.bridge.clear();
+    this.impacts.clear();
+    this.arenaView.clearWarnings();
+    this.sliceCamera.reset();
+  }
+
   /** Updates the debug views (`?nav=on`, `?ai=on`) before `render()`. Cheap when they are off. */
   updateDebug(state: DebugState): void {
     this.navView?.show(state.navGrid);

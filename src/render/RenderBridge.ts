@@ -59,12 +59,17 @@ export class RenderBridge {
     return this.drawn.get(id);
   }
 
-  dispose(): void {
+  /** Drops every view (a new run starts); the bridge keeps working with the next world. */
+  clear(): void {
     for (const view of this.views.values()) {
       view.dispose();
     }
     this.views.clear();
     this.drawn.clear();
+  }
+
+  dispose(): void {
+    this.clear();
   }
 
   private viewFor(entity: Entity): EntityView {

@@ -97,7 +97,7 @@ Repair after each of waves 1–4: 20 % (GDD). Counts stay 1 → 5; numbers are f
 | 2 | M5-2 Gate warnings (`GateWarning`, gate pulse), blocked-gate fallback | `m5-2-gates` | ✅ |
 | 3 | M5-3 Breather: countdown, repair, `PlayerRepaired` | `m5-3-breather` | ✅ |
 | 4 | M5-6a HUD: wave, enemies left, countdown, banners (so M5-1–3 are playable and visible) | `m5-6a-hud` | ✅ |
-| 5 | M5-4 `GameFlow`: title, pause (incl. blur), summary shell, restart, `MenuNavigator`, new seed per run | `m5-4-flow` | ⬜ |
+| 5 | M5-4 `GameFlow`: title, pause (incl. blur), summary shell, restart, `MenuNavigator`, new seed per run | `m5-4-flow` | ✅ |
 | 6 | M5-5 `RunStats` and the summary screen | `m5-5-stats` | ⬜ |
 | 7 | M5-6b Off-screen enemy and gate arrows | `m5-6b-indicators` | ⬜ |
 | 8 | Done-when check: a full win and a full loss with keyboard and with the pad | — | ⬜ |

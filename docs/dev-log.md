@@ -40,6 +40,15 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M5-4 · Title, pause, summary, restart
+- **`GameFlow`** (`src/app`, pure): title → playing ⇄ paused; `RunEnded` → ending (sim keeps ticking for 1.5 s defeat / 2 s victory, T-125) → summary. Pausing = not ticking.
+- **`GameSession`** (`src/app`): one run's sim (seed new each run, `?seed=N` pins it), mode or sandbox scene, fire-warning signs, health overlay, AI labels, and its event wiring. Restart / Title dispose it and build a new one (T-124); `Renderer.resetWorld()` (new `RenderBridge.clear`, `ImpactFlashes.clear`, `ArenaView.clearWarnings`, `SliceCamera.reset`) forgets the old run's views. `main.ts` now owns only the app-lifetime pieces and the frame loop; it skips drawing while a session is being built, and the renderer gets its arena from `SLICE_ARENA` rather than a sim.
+- **Menus:** `MenuScreen` (title "HARDPOINT / press any key / A", pause Resume / Restart / Title, summary VICTORY or DEFEAT with waves cleared and the seed, Restart / Title), `MenuNavigator` (wrapping highlight), `MenuInput` + `menuMapping` (keys from `MENU_KEYS`, pad A / B / Start / D-pad / stick, new presses only). Esc / Start pause and resume; window blur or a hidden tab pauses. HUD hidden on the title; banners only in play. The key that starts or resumes doesn't reach the tank.
+- The sandbox (`?mode=sandbox`) starts in play (no title), can pause, never ends.
+- Checked headless: title renders over the idle arena, no console errors. Pause, restart and summary not exercised headless (no key input there): Brendan to check in play.
+- **Tests:** `GameFlow` (start, pause/resume rules, defeat 1.5 s and victory 2 s holds, no pause while ending, new run), `MenuNavigator` (wrap, hover, reset, empty), `menuMapping` (keys, pad buttons, held button once, stick once per push, first poll), `?seed=`.
+- Trade-offs: T-124, T-125.
+
 ## 2026-11-24 · M4-5d · Reddish artifact near the fire warning
 - **Report (Brendan):** sometimes a reddish artifact under an enemy's barrel and the hazard sign just before it fires.
 - **Likely cause:** in its last 30 % the sign switched to a CSS `filter: drop-shadow(...)` orange glow while moving every frame to follow the tank. Safari leaves stale paint behind filtered elements that move (same family as the M3-6 armor-bar bug). Not reproduced here (no Safari headless); matches when and where it appears.

@@ -4,40 +4,37 @@ import { PAD_SCHEMES } from '../input/bindings';
 import { InputManager } from '../input/InputManager';
 import { intentToCommand } from '../input/intentToCommand';
 import { KeyboardMouseDevice } from '../input/KeyboardMouseDevice';
+import { MenuInput } from '../input/MenuInput';
+import type { MenuAction } from '../input/menuMapping';
 import { CAMERA_PRESETS } from '../render/camera/SliceCamera';
 import { Renderer } from '../render/Renderer';
-import type { EntityId } from '../sim/core/Entity';
+import { Arena } from '../sim/arena/Arena';
 import { FixedClock } from '../sim/core/FixedClock';
-import { Simulation } from '../sim/core/Simulation';
-import type { Vec2 } from '../sim/core/Vec2';
-import { TANK_ARMOR } from '../sim/defs/armor';
 import { SLICE_ARENA } from '../sim/defs/arenas';
-import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
-import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
+import { SLICE_WAVES } from '../sim/defs/waves';
 import { Vehicle } from '../sim/vehicles/Vehicle';
-import type { PlayerId } from '../sim/vehicles/VehicleCommand';
-import { HealthOverlay } from '../ui/HealthOverlay';
-import { AiStateLabels } from '../ui/AiStateLabels';
+import { IDLE_COMMAND, type PlayerId } from '../sim/vehicles/VehicleCommand';
 import { Banner } from '../ui/Banner';
 import { Hud } from '../ui/Hud';
+import { MenuScreen, type MenuContent } from '../ui/MenuScreen';
 import { waveHudState } from '../ui/waveHud';
-import { TelegraphSigns } from '../ui/TelegraphSigns';
-import { readDebugParams } from './debugParams';
-import { populateDebugScene } from './debugScene';
-import { SLICE_WAVES } from '../sim/defs/waves';
-import { WaveSurvivalMode, type WaveStatus } from '../sim/modes/WaveSurvivalMode';
+import { readDebugParams, type DebugParams } from './debugParams';
+import { GameFlow, type FlowState } from './GameFlow';
+import { GameSession } from './GameSession';
 
 /**
  * Application entry point. Wires input, simulation and rendering together and
- * owns the frame loop: each animation frame runs 0..n fixed ticks, delivers
- * their events, then renders between the last two ticks.
+ * owns the frame loop: each animation frame runs 0..n fixed ticks (only while
+ * the `GameFlow` says the game is running), delivers their events, then
+ * renders between the last two ticks. Menus, pause and restart (M5-4) live
+ * here; each run's simulation lives in a `GameSession`.
  */
 
-const SEED = 1;
 /** The one local player in the slice. */
 const PLAYER_ID: PlayerId = 1;
-/** Height (u) of the point the fire-telegraph sign sits on: just above the barrel tip. */
-const MUZZLE_SIGN_HEIGHT = 1.0;
+
+const PAUSE_ITEMS = ['Resume', 'Restart', 'Title'] as const;
+const SUMMARY_ITEMS = ['Restart', 'Title'] as const;
 
 function getCanvas(): HTMLCanvasElement {
   const canvas = document.getElementById('game');
@@ -45,20 +42,6 @@ function getCanvas(): HTMLCanvasElement {
     throw new Error('Missing <canvas id="game"> in index.html');
   }
   return canvas;
-}
-
-/** The vehicle driven by `playerId`; input needs its transform to resolve stick aim and `direct` driving. */
-function findPlayerTank(simulation: Simulation, playerId: PlayerId): Vehicle {
-  const tank = simulation.world
-    .ofType(Vehicle)
-    .find(
-      (vehicle) =>
-        vehicle.controller instanceof PlayerController && vehicle.controller.playerId === playerId,
-    );
-  if (tank === undefined) {
-    throw new Error(`No vehicle for player ${playerId}`);
-  }
-  return tank;
 }
 
 /**
@@ -84,41 +67,51 @@ function createFrameGate(fps: number | undefined): (nowMs: number) => boolean {
   };
 }
 
-async function start(): Promise<void> {
-  const debug = readDebugParams(window.location.search);
-  console.info(
-    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}, ${debug.mode === 'sandbox' ? `enemies ${debug.enemies}${debug.dummies ? ' + dummies' : ''}, ` : ''}ai ${debug.ai ? 'on' : 'off'}, nav ${debug.nav ? 'on' : 'off'}, mode ${debug.mode}${debug.mode === 'waves' ? ` from wave ${debug.wave}` : ''}`,
-  );
+/** Each run gets a fresh seed unless `?seed=` pins one (M5 plan D9). Randomness is fine here: this is the app, not the sim. */
+function seedFor(debug: DebugParams): number {
+  return debug.seed ?? Math.floor(Math.random() * 2 ** 31);
+}
 
+function logDebug(debug: DebugParams): void {
+  console.info(
+    `Debug: fps cap ${debug.fps ?? 'off'}, interpolation ${debug.interpolate ? 'on' : 'off'}, pad scheme ${debug.pad}, grid ${debug.grid ? 'on' : 'off'}, camera ${debug.cam}, armor ${debug.armor ?? 'per def'}, hp ${debug.hp ? 'on' : 'off'}, ${debug.mode === 'sandbox' ? `enemies ${debug.enemies}${debug.dummies ? ' + dummies' : ''}, ` : ''}ai ${debug.ai ? 'on' : 'off'}, nav ${debug.nav ? 'on' : 'off'}, mode ${debug.mode}${debug.mode === 'waves' ? ` from wave ${debug.wave}` : ''}, seed ${debug.seed ?? 'new each run'}`,
+  );
   for (const warning of debug.warnings) {
     console.warn(warning);
   }
+}
 
-  const waves = new WaveSurvivalMode(SLICE_WAVES, { playerId: PLAYER_ID, startWave: debug.wave });
-  // The simulation can't run without physics, so load Rapier's WASM before anything else.
-  const simulation = new Simulation({
-    seed: SEED,
-    physics: await RapierPhysicsWorld.create(),
-    arena: SLICE_ARENA,
-    ...(debug.mode === 'sandbox'
-      ? {
-          populate: (sim: Simulation) =>
-            populateDebugScene(sim, {
-              playerId: PLAYER_ID,
-              enemies: debug.enemies,
-              dummies: debug.dummies,
-            }),
-        }
-      : { mode: waves }),
-    ...(debug.armor === undefined ? {} : { armorRule: debug.armor }),
-  });
-  const canvas = getCanvas();
-  if (simulation.arena === undefined) {
-    throw new Error('Simulation was created without an arena');
+/** What the menu shows on each screen; undefined = no menu. */
+function menuFor(state: FlowState, session: GameSession, flow: GameFlow): MenuContent | undefined {
+  switch (state) {
+    case 'title':
+      return { title: 'HARDPOINT', lines: ['Press any key / A to start'], items: [] };
+    case 'paused':
+      return { title: 'PAUSED', items: PAUSE_ITEMS };
+    case 'summary':
+      return {
+        title: flow.outcome === 'victory' ? 'VICTORY' : 'DEFEAT',
+        tone: flow.outcome === 'victory' ? 'good' : 'bad',
+        lines: [
+          `Waves cleared ${session.wavesCleared} / ${SLICE_WAVES.waves.length}`,
+          `Seed ${session.seed}`,
+        ],
+        items: SUMMARY_ITEMS,
+      };
+    case 'playing':
+    case 'ending':
+      return undefined;
   }
+}
+
+async function start(): Promise<void> {
+  const debug = readDebugParams(window.location.search);
+  logDebug(debug);
+
+  const canvas = getCanvas();
   const renderer = new Renderer(canvas, {
     interpolate: debug.interpolate,
-    arena: simulation.arena,
+    arena: new Arena(SLICE_ARENA),
     grid: debug.grid,
     camera: CAMERA_PRESETS[debug.cam],
     nav: debug.nav,
@@ -130,42 +123,92 @@ async function start(): Promise<void> {
     new KeyboardMouseDevice(canvas, (x, y) => renderer.screenToGround(x, y)),
     new GamepadDevice(PAD_SCHEMES[debug.pad]),
   ]);
-  const playerTank = findPlayerTank(simulation, PLAYER_ID);
-
-  // Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick (D2).
-  simulation.events.on('GateWarning', ({ gate, seconds }) => renderer.warnGate(gate, seconds));
-  simulation.events.on('RunEnded', ({ outcome, wave }) =>
-    console.info(`Run ended: ${outcome} (wave ${wave})`),
-  );
-  simulation.events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
-  const telegraphs = new TelegraphSigns(document.body);
-  simulation.events.on('ShotTelegraphed', ({ shooter, hardpoint, seconds }) =>
-    telegraphs.start(shooter, hardpoint, seconds),
-  );
-  simulation.events.on('TelegraphCancelled', ({ shooter, hardpoint }) =>
-    telegraphs.end(shooter, hardpoint),
-  );
-  simulation.events.on('ShotFired', ({ shooter, hardpoint }) => telegraphs.end(shooter, hardpoint));
-  const overlay = debug.hp
-    ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
-    : undefined;
-  simulation.events.on('Hit', ({ point, damage }) => overlay?.recordHit(point, damage));
+  const menuInput = new MenuInput();
   const hud = new Hud(document.body);
-  simulation.events.on('BreatherStarted', ({ repaired }) => hud.flashRepair(repaired));
   const banner = new Banner(document.body);
-  /** The wave run's status for the HUD; none in the sandbox. */
-  const runStatus = (): WaveStatus | undefined =>
-    debug.mode === 'waves' ? waves.status : undefined;
-  const aiLabels = debug.ai ? new AiStateLabels(document.body) : undefined;
-  const overlayProjector = {
-    vehicle: (id: EntityId) => renderer.screenPositionOf(id, 1.6),
-    point: (point: Vec2, height: number) => renderer.groundToScreen(point, height),
+  // The sandbox has no run to start or end: straight into play.
+  const flow = new GameFlow(debug.mode === 'waves' ? 'title' : 'playing');
+
+  const deps = {
+    debug,
+    renderer,
+    hud,
+    playerId: PLAYER_ID,
+    onRunEnded: (outcome: 'victory' | 'defeat') => flow.runEnded(outcome),
+  };
+  // Physics loads asynchronously; the first session must exist before the first frame.
+  let session = await GameSession.create(seedFor(debug), deps);
+  let clock = new FixedClock();
+  /** True while a new session is being built: input is ignored, nothing ticks. */
+  let switching = false;
+
+  const newRun = async (next: 'title' | 'playing'): Promise<void> => {
+    switching = true;
+    menu.hide();
+    session.dispose();
+    renderer.resetWorld();
+    session = await GameSession.create(seedFor(debug), deps);
+    clock = new FixedClock();
+    flow.newRun(next);
+    switching = false;
+  };
+  const restart = (): void => void newRun('playing');
+  const toTitle = (): void => void newRun('title');
+
+  const menu = new MenuScreen(document.body, (index) => {
+    if (flow.state === 'paused') {
+      [() => flow.resume(), restart, toTitle][index]?.();
+    } else if (flow.state === 'summary') {
+      [restart, toTitle][index]?.();
+    }
+  });
+
+  // Leaving the window pauses (plan D8), so the run doesn't carry on unseen.
+  const pauseOnLeave = (): void => {
+    flow.pause();
+  };
+  window.addEventListener('blur', pauseOnLeave);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      pauseOnLeave();
+    }
+  });
+
+  const handleMenu = (actions: readonly MenuAction[]): void => {
+    if (switching) {
+      return;
+    }
+    const has = (action: MenuAction): boolean => actions.includes(action);
+    switch (flow.state) {
+      case 'title':
+        if (has('any')) flow.start();
+        break;
+      case 'playing':
+        if (has('back') || has('pause')) flow.pause();
+        break;
+      case 'paused':
+        if (has('back') || has('pause')) {
+          flow.resume();
+          break;
+        }
+        if (has('up')) menu.move(-1);
+        if (has('down')) menu.move(1);
+        if (has('confirm')) menu.confirm();
+        break;
+      case 'summary':
+        if (has('up')) menu.move(-1);
+        if (has('down')) menu.move(1);
+        if (has('confirm')) menu.confirm();
+        break;
+      case 'ending':
+        break;
+    }
   };
 
-  const clock = new FixedClock();
   const fireLatch = new FireLatch();
   const frameGate = createFrameGate(debug.fps);
   let lastFrameMs: number | undefined;
+  let shownState: FlowState | undefined;
 
   const frame = (nowMs: number): void => {
     requestAnimationFrame(frame);
@@ -175,30 +218,59 @@ async function start(): Promise<void> {
     const elapsedSeconds = lastFrameMs === undefined ? 0 : (nowMs - lastFrameMs) / 1000;
     lastFrameMs = nowMs;
 
-    // Input is sampled once per frame; every tick this frame runs on the same command (T-56).
-    const command = fireLatch.apply(intentToCommand(input.read(nowMs), playerTank.transform));
-    const commands = new Map([[PLAYER_ID, command]]);
-
-    const steps = clock.advance(elapsedSeconds);
-    for (let i = 0; i < steps; i++) {
-      simulation.tick(commands);
+    // While a new run is being built nothing is drawn: the old run is disposed, and its
+    // views must not be matched to the new run's entities (ids restart at 1).
+    if (switching) {
+      return;
     }
-    if (steps > 0) {
+    const before = flow.state;
+    handleMenu(menuInput.read());
+    if (switching) {
+      return; // a menu choice just started a restart
+    }
+    // Input is sampled once per frame; every tick this frame runs on the same command (T-56).
+    // Outside steady play the tank idles, so the key that started or resumed the run doesn't fire.
+    const intent = input.read(nowMs);
+    const steadyPlay = before === 'playing' && flow.state === 'playing';
+    const command = steadyPlay
+      ? fireLatch.apply(intentToCommand(intent, session.playerTank.transform))
+      : IDLE_COMMAND;
+    const { simulation } = session;
+    if (flow.ticking) {
+      const steps = clock.advance(elapsedSeconds);
+      for (let i = 0; i < steps; i++) {
+        simulation.tick(new Map([[PLAYER_ID, command]]));
+      }
+      if (steps > 0) {
+        fireLatch.consumed();
+      }
+    } else {
       fireLatch.consumed();
     }
     simulation.events.flush();
-    const vehicles = simulation.world.ofType(Vehicle);
-    renderer.updateDebug({ navGrid: simulation.navGrid, vehicles });
-    renderer.render(simulation.world.all(), clock.alpha, playerTank.id, elapsedSeconds);
-    const run = runStatus();
-    hud.update(playerTank, run);
-    banner.update(run === undefined ? undefined : waveHudState(run).banner);
-    overlay?.update(vehicles, overlayProjector, elapsedSeconds);
-    aiLabels?.update(vehicles, overlayProjector.vehicle);
-    telegraphs.update((shooter, hardpoint) => {
-      const vehicle = vehicles.find((candidate) => candidate.id === shooter);
-      return vehicle && renderer.muzzleScreenPosition(vehicle, hardpoint, MUZZLE_SIGN_HEIGHT);
-    }, elapsedSeconds);
+    flow.update(elapsedSeconds);
+
+    if (flow.state !== shownState) {
+      shownState = flow.state;
+      const content = menuFor(flow.state, session, flow);
+      if (content === undefined) {
+        menu.hide();
+      } else {
+        menu.show(content);
+      }
+    }
+
+    renderer.updateDebug({
+      navGrid: simulation.navGrid,
+      vehicles: simulation.world.ofType(Vehicle),
+    });
+    renderer.render(simulation.world.all(), clock.alpha, session.playerTank.id, elapsedSeconds);
+    const run = session.status;
+    hud.setVisible(flow.state !== 'title');
+    hud.update(session.playerTank, run);
+    const inPlay = flow.state === 'playing' || flow.state === 'ending';
+    banner.update(run === undefined || !inPlay ? undefined : waveHudState(run).banner);
+    session.updateOverlays(elapsedSeconds);
   };
   requestAnimationFrame(frame);
 }

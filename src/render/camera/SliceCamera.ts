@@ -105,6 +105,11 @@ export class SliceCamera {
     }
   }
 
+  /** The next `follow` snaps instead of easing (a new run: don't pan across the arena). */
+  reset(): void {
+    this.focus = undefined;
+  }
+
   /**
    * Eases the focus toward `target` (the followed tank's drawn position) and
    * places the camera. The first call snaps, so the game doesn't open with a pan.

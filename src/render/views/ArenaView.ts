@@ -48,6 +48,15 @@ export class ArenaView {
     }
   }
 
+  /** Stops every gate warning (a new run starts). */
+  clearWarnings(): void {
+    for (const panel of this.gates.values()) {
+      panel.warning = 0;
+      panel.material.emissiveColor = Color3.Black();
+      panel.material.diffuseColor = GATE_COLOUR;
+    }
+  }
+
   /** Once per frame: animates gate warnings. */
   update(frameSeconds: number): void {
     for (const panel of this.gates.values()) {

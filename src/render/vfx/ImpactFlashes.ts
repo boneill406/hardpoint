@@ -60,11 +60,16 @@ export class ImpactFlashes {
     }
   }
 
-  dispose(): void {
+  /** Removes every flash (a new run starts). */
+  clear(): void {
     for (const flash of this.flashes) {
       flash.mesh.dispose();
     }
     this.flashes.length = 0;
+  }
+
+  dispose(): void {
+    this.clear();
     this.material.dispose();
   }
 }

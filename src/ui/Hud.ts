@@ -99,6 +99,11 @@ export class Hud {
     });
   }
 
+  /** Hidden on the title screen (M5-4). */
+  setVisible(visible: boolean): void {
+    this.root.hidden = !visible;
+  }
+
   /** The breather repaired the player (`BreatherStarted`): flash the armor bar and show what was gained. */
   flashRepair(amount: number): void {
     if (amount <= 0) {

@@ -31,6 +31,11 @@ export interface DebugParams {
   readonly mode: GameModeName;
   /** `?wave=N` starts the run at wave N (1–5), for testing later waves. */
   readonly wave: number;
+  /**
+   * `?seed=N` pins every run's seed, to replay one (M5 plan D9); without it
+   * each run gets a new random seed (shown on the summary).
+   */
+  readonly seed: number | undefined;
   /** Hunting insurgents in the debug scene (`?enemies=0..3`, default 1), from the top, left, right gates. */
   readonly enemies: number;
   /** `?dummies=on` adds the M3 armor dummies. */
@@ -62,6 +67,7 @@ const KNOWN = [
   'nav',
   'mode',
   'wave',
+  'seed',
 ];
 const MODES: readonly GameModeName[] = ['waves', 'sandbox'];
 /** Must match the number of waves in `defs/waves.ts` (a test checks). */
@@ -135,6 +141,13 @@ export function readDebugParams(search: string): DebugParams {
     warn('wave', waveText, `a whole number 1–${MAX_WAVE}`);
   }
 
+  const seedText = params.get('seed');
+  const seed = Number(seedText);
+  const seedValid = seedText !== null && Number.isInteger(seed) && seed >= 0;
+  if (seedText !== null && !seedValid) {
+    warn('seed', seedText, 'a whole number ≥ 0');
+  }
+
   for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
@@ -152,6 +165,7 @@ export function readDebugParams(search: string): DebugParams {
     hp: params.get('hp') !== 'off',
     mode: modeValid ? mode : 'waves',
     wave: waveValid ? wave : 1,
+    seed: seedValid ? seed : undefined,
     enemies: enemiesValid ? enemies : DEFAULT_ENEMIES,
     dummies: params.get('dummies') === 'on',
     ai: params.get('ai') === 'on',
