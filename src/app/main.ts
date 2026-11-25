@@ -15,6 +15,7 @@ import { SLICE_ARENA } from '../sim/defs/arenas';
 import { SLICE_WAVES } from '../sim/defs/waves';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import { IDLE_COMMAND, type PlayerId } from '../sim/vehicles/VehicleCommand';
+import { amountLabel } from '../ui/amountLabel';
 import { Banner } from '../ui/Banner';
 import { Hud } from '../ui/Hud';
 import { MenuScreen, type MenuContent } from '../ui/MenuScreen';
@@ -22,6 +23,7 @@ import { waveHudState } from '../ui/waveHud';
 import { readDebugParams, type DebugParams } from './debugParams';
 import { GameFlow, type FlowState } from './GameFlow';
 import { GameSession } from './GameSession';
+import { formatAccuracy, formatRunTime, type RunStatsSummary } from './RunStats';
 
 /**
  * Application entry point. Wires input, simulation and rendering together and
@@ -82,6 +84,17 @@ function logDebug(debug: DebugParams): void {
   }
 }
 
+/** The summary's stats as label–value rows (GDD §9). */
+function summaryRows(stats: RunStatsSummary): [string, string][] {
+  return [
+    ['Waves cleared', `${stats.wavesCleared} / ${SLICE_WAVES.waves.length}`],
+    ['Time', formatRunTime(stats.seconds)],
+    ['Kills', String(stats.kills)],
+    ...stats.weapons.map((weapon): [string, string] => [weapon.weapon, formatAccuracy(weapon)]),
+    ['Damage taken', amountLabel(stats.damageTaken)],
+  ];
+}
+
 /** What the menu shows on each screen; undefined = no menu. */
 function menuFor(state: FlowState, session: GameSession, flow: GameFlow): MenuContent | undefined {
   switch (state) {
@@ -93,10 +106,8 @@ function menuFor(state: FlowState, session: GameSession, flow: GameFlow): MenuCo
       return {
         title: flow.outcome === 'victory' ? 'VICTORY' : 'DEFEAT',
         tone: flow.outcome === 'victory' ? 'good' : 'bad',
-        lines: [
-          `Waves cleared ${session.wavesCleared} / ${SLICE_WAVES.waves.length}`,
-          `Seed ${session.seed}`,
-        ],
+        table: summaryRows(session.stats.summary()),
+        lines: [`Seed ${session.seed}`],
         items: SUMMARY_ITEMS,
       };
     case 'playing':

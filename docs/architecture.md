@@ -39,7 +39,7 @@ src/
   input/         InputManager, InputDevice, KeyboardMouseDevice, GamepadDevice, PlayerIntent, bindings.ts,
                  keyboardMapping.ts, gamepadMapping.ts, intentToCommand.ts, MenuInput + menuMapping.ts (menu and pause input, M5-4)
   ui/            Hud + hudState (M3-6), Banner + waveHud (run line and centre banners, M5-6a), TelegraphSigns + telegraphSign (enemy fire warning, M4-5b), HealthOverlay (debug, `?hp=on`), MenuScreen + MenuNavigator (title, pause, summary, M5-4)
-  app/           main.ts — wiring and the main loop; GameFlow (title → playing ⇄ paused → ending → summary, pure), GameSession (one run: its Simulation, mode and per-run overlays), debugParams, debugScene
+  app/           main.ts — wiring and the main loop; GameFlow (title → playing ⇄ paused → ending → summary, pure), GameSession (one run: its Simulation, mode, per-run overlays and RunStats), RunStats (summary numbers from sim events, M5-5), debugParams, debugScene
 tests/           mirrors src/sim/; tests/tooling/ guards build/lint config (e.g., boundary rules);
                  tests/input/, tests/app/ and tests/render/ cover pure mapping, parsing and view-maths functions
 docs/            this folder
@@ -169,7 +169,8 @@ classDiagram
 
 - **`GameFlow`** (pure, `tests/app/`): `title → playing ⇄ paused`, `playing → ending` on `RunEnded`, then `summary` after a real-time hold (1.5 s defeat, 2 s victory). `ticking` is true only while playing or ending: **pausing is the app not calling `tick()`**, so the sim never knows.
 - **`GameSession`**: one run's `Simulation` (fresh seed, or `?seed=N`), its `WaveSurvivalMode` (or the sandbox scene), and the overlays that follow its entities. **Restart and "Title" dispose the session and build a new one**; `Renderer.resetWorld()` drops every view (a new sim numbers entities from 1 again) and snaps the camera. Renderer, input, HUD, banner and menus outlive sessions. While a new session is built (physics loads asynchronously) no frame is drawn.
-- **Menus**: `MenuScreen` (HTML; mouse hover/click) for title, pause (Resume / Restart / Title) and summary (Restart / Title); keyboard and pad go through `MenuInput` (arrows/WS, Enter/Space, Esc; D-pad/stick, A, B, Start; edge-detected, `menuMapping.ts`, tested). P, Esc or Start pause and resume (P because browsers reserve Esc to leave fullscreen); the window losing focus pauses. `InputGate` holds back driving and firing after starting, resuming or restarting until every key and button is released, so the key that chose it doesn't reach the tank (aim passes).
+- **Run stats** (M5-5): `RunStats` (pure, `tests/app/`) counts from sim events only: waves cleared, time (sim ticks at `RunEnded`, so pauses don't count), kills (player hits that destroyed), shots / hits / accuracy per weapon of the player's loadout (a hit = a player shot that damaged an enemy tank, barrel included; crates and walls don't count), damage taken. The summary shows them as a table, with the seed.
+- **Menus**: `MenuScreen` (HTML; mouse hover/click) for title, pause (Resume / Restart / Title) and summary (stats table, Restart / Title); keyboard and pad go through `MenuInput` (arrows/WS, Enter/Space, Esc; D-pad/stick, A, B, Start; edge-detected, `menuMapping.ts`, tested). P, Esc or Start pause and resume (P because browsers reserve Esc to leave fullscreen); the window losing focus pauses. `InputGate` holds back driving and firing after starting, resuming or restarting until every key and button is released, so the key that chose it doesn't reach the tank (aim passes).
 
 ## 7. Input
 

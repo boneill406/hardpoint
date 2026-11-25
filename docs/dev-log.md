@@ -40,6 +40,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M5-5 · Run stats and summary
+- **`RunStats`** (`src/app`, pure): fed by the session's `ShotFired`, `Hit`, `WaveCleared` handlers; `setTicks(simulation.tickCount)` at `RunEnded`. Waves cleared, time (sim ticks, so pauses don't count), kills (player hits with `destroyed`), per-weapon fired / hit for the player's loadout in order (a weapon never fired shows "no shots"), damage taken (every hit on the player). The player is the only tank on its side, so any vehicle it hits is an enemy: no faction lookup needed. `formatRunTime` (m:ss), `formatAccuracy` ("12 / 20 hits (60%)").
+- **Summary screen:** `MenuContent.table` (label–value grid): waves cleared, time, kills, cannon and machine gun accuracy, damage taken; seed underneath. Checked in a static page.
+- **Tests:** shots and hits per weapon (enemy shots ignored), loadout listed when unfired, kills (not friendly-fire kills), damage taken from anyone, waves and time; formatting.
+
 ## 2026-11-24 · M5-4b · Title keys reaching the tank; P to pause
 - **Bug (Brendan):** on the title, F / Space fired and WASD drove as the menu went away. The key that started the run was still held when play began, and driving and firing are hold-to-act. My M5-4 fix only dropped the starting frame. **Fix:** `InputGate` (`src/input`, tested): after start, resume or restart, drive and fire stay idle until a frame with nothing held; aim passes.
 - **Esc exits fullscreen (Brendan):** browsers reserve Esc for leaving fullscreen and Safari offers no way to capture it (Chrome's Keyboard Lock API isn't in Safari). Added **P** as a pause key (`MENU_KEYS.back`); Esc still pauses, and the pad's Start is unaffected. GDD §3 controls updated.

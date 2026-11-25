@@ -16,6 +16,7 @@ import { HealthOverlay } from '../ui/HealthOverlay';
 import type { Hud } from '../ui/Hud';
 import { TelegraphSigns } from '../ui/TelegraphSigns';
 import type { DebugParams } from './debugParams';
+import { RunStats } from './RunStats';
 import { populateDebugScene } from './debugScene';
 
 /** Height (u) of the point the fire-telegraph sign sits on: just above the barrel tip. */
@@ -41,8 +42,8 @@ export interface SessionDeps {
 export class GameSession {
   readonly simulation: Simulation;
   readonly playerTank: Vehicle;
-  /** Waves cleared so far, for the summary. */
-  wavesCleared = 0;
+  /** The run's numbers for the summary (M5-5), counted from events. */
+  readonly stats: RunStats;
   private readonly waves: WaveSurvivalMode | undefined;
   private readonly telegraphs: TelegraphSigns;
   private readonly overlay: HealthOverlay | undefined;
@@ -80,6 +81,10 @@ export class GameSession {
       ...(debug.armor === undefined ? {} : { armorRule: debug.armor }),
     });
     this.playerTank = findPlayerTank(this.simulation, playerId);
+    this.stats = new RunStats(
+      this.playerTank.id,
+      this.playerTank.mounts.map((mount) => mount.weapon.def.name),
+    );
     this.telegraphs = new TelegraphSigns(document.body);
     this.overlay = debug.hp
       ? new HealthOverlay(document.body, debug.armor ?? `per def (${TANK_ARMOR.faceRule})`)
@@ -128,13 +133,20 @@ export class GameSession {
     events.on('TelegraphCancelled', ({ shooter, hardpoint }) =>
       this.telegraphs.end(shooter, hardpoint),
     );
-    events.on('ShotFired', ({ shooter, hardpoint }) => this.telegraphs.end(shooter, hardpoint));
-    events.on('Hit', ({ point, damage }) => this.overlay?.recordHit(point, damage));
-    events.on('BreatherStarted', ({ repaired }) => hud.flashRepair(repaired));
-    events.on('WaveCleared', () => {
-      this.wavesCleared++;
+    events.on('ShotFired', (shot) => {
+      this.telegraphs.end(shot.shooter, shot.hardpoint);
+      this.stats.onShotFired(shot);
     });
-    events.on('RunEnded', ({ outcome }) => onRunEnded(outcome));
+    events.on('Hit', (hit) => {
+      this.overlay?.recordHit(hit.point, hit.damage);
+      this.stats.onHit(hit);
+    });
+    events.on('BreatherStarted', ({ repaired }) => hud.flashRepair(repaired));
+    events.on('WaveCleared', () => this.stats.onWaveCleared());
+    events.on('RunEnded', ({ outcome }) => {
+      this.stats.setTicks(this.simulation.tickCount);
+      onRunEnded(outcome);
+    });
   }
 }
 

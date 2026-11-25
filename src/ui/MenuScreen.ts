@@ -5,6 +5,8 @@ export interface MenuContent {
   readonly title: string;
   readonly tone?: 'info' | 'good' | 'bad';
   readonly lines?: readonly string[];
+  /** Label–value rows (the run summary's stats), shown under the title, above the lines. */
+  readonly table?: readonly (readonly [string, string])[];
   /** Buttons, top to bottom; the first is the default. Empty for "press any key". */
   readonly items: readonly string[];
 }
@@ -19,6 +21,10 @@ const CSS = `
 .menu-title.good { color: #9fef7a; }
 .menu-title.bad { color: #ff6a50; }
 .menu-line { opacity: 0.85; text-transform: uppercase; }
+.menu-table { display: grid; grid-template-columns: auto auto; gap: 6px 28px; margin-top: 6px;
+  padding: 12px 18px; background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.1); }
+.menu-label { text-transform: uppercase; opacity: 0.75; }
+.menu-value { text-align: right; color: #f2e6b8; }
 .menu-items { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; min-width: 200px; }
 .menu-item { font: inherit; letter-spacing: inherit; text-transform: uppercase; color: inherit;
   background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.16);
@@ -60,6 +66,20 @@ export class MenuScreen {
     title.className = `menu-title ${content.tone ?? 'info'}`;
     title.textContent = content.title;
     this.root.append(title);
+    if (content.table !== undefined && content.table.length > 0) {
+      const table = document.createElement('div');
+      table.className = 'menu-table';
+      for (const [label, value] of content.table) {
+        const name = document.createElement('div');
+        name.className = 'menu-label';
+        name.textContent = label;
+        const amount = document.createElement('div');
+        amount.className = 'menu-value';
+        amount.textContent = value;
+        table.append(name, amount);
+      }
+      this.root.append(table);
+    }
     for (const text of content.lines ?? []) {
       const line = document.createElement('div');
       line.className = 'menu-line';
