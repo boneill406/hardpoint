@@ -26,6 +26,8 @@ interface Sign {
   readonly root: HTMLDivElement;
   /** The clip rectangle that reveals the bright fill from the bottom up. */
   readonly reveal: SVGRectElement;
+  /** Orange outline behind the sign: a soft glow, brighter while blinking. */
+  readonly glow: SVGPathElement;
   readonly shooter: EntityId;
   readonly hardpoint: string;
   readonly seconds: number;
@@ -54,9 +56,17 @@ export class TelegraphSigns {
 
   start(shooter: EntityId, hardpoint: string, seconds: number): void {
     this.end(shooter, hardpoint);
-    const { root, reveal } = buildSign();
+    const { root, reveal, glow } = buildSign();
     this.layer.append(root);
-    this.signs.set(key(shooter, hardpoint), { root, reveal, shooter, hardpoint, seconds, age: 0 });
+    this.signs.set(key(shooter, hardpoint), {
+      root,
+      reveal,
+      glow,
+      shooter,
+      hardpoint,
+      seconds,
+      age: 0,
+    });
   }
 
   end(shooter: EntityId, hardpoint: string): void {
@@ -79,9 +89,10 @@ export class TelegraphSigns {
       sign.reveal.setAttribute('y', String(36 - filled));
       sign.reveal.setAttribute('height', String(filled));
       const blink = frame.urgent && Math.floor(sign.age / 0.05) % 2 === 0;
-      sign.root.style.filter = blink
-        ? 'drop-shadow(0 0 6px #ff5a1a) brightness(1.25)'
-        : 'drop-shadow(0 0 3px #ff5a1a88) drop-shadow(0 1px 1px #000)';
+      // The glow is a shape inside the SVG, not a CSS filter: Safari leaves stale paint
+      // behind filtered elements that move every frame (reddish smears, M4-5d).
+      sign.glow.setAttribute('opacity', blink ? '0.95' : '0.35');
+      sign.glow.setAttribute('stroke-width', blink ? '9' : '6');
       sign.root.style.transform = `translate(${at.x}px, ${at.y - LIFT}px) translate(-50%, -100%) scale(${frame.scale})`;
     }
   }
@@ -97,7 +108,7 @@ function key(shooter: EntityId, hardpoint: string): string {
 }
 
 /** The triangle: dark amber base, a yellow copy revealed by a growing clip rect, black edge and "!". */
-function buildSign(): { root: HTMLDivElement; reveal: SVGRectElement } {
+function buildSign(): { root: HTMLDivElement; reveal: SVGRectElement; glow: SVGPathElement } {
   const clipId = `telegraph-fill-${nextClipId++}`;
   const root = document.createElement('div');
   Object.assign(root.style, {
@@ -110,6 +121,8 @@ function buildSign(): { root: HTMLDivElement; reveal: SVGRectElement } {
   root.innerHTML = `
     <svg viewBox="0 0 40 36" width="${WIDTH}" style="display:block;overflow:visible">
       <defs><clipPath id="${clipId}"><rect x="0" y="36" width="40" height="0"/></clipPath></defs>
+      <path d="${TRIANGLE}" fill="#000" opacity="0.45" transform="translate(0 1.5)"/>
+      <path class="glow" d="${TRIANGLE}" fill="none" stroke="#ff5a1a" stroke-width="6" stroke-linejoin="round" opacity="0.35"/>
       <path d="${TRIANGLE}" fill="${COLOURS.dim}"/>
       <path d="${TRIANGLE}" fill="${COLOURS.bright}" clip-path="url(#${clipId})"/>
       <path d="${TRIANGLE}" fill="none" stroke="${COLOURS.edge}" stroke-width="3.5" stroke-linejoin="round"/>
@@ -117,8 +130,9 @@ function buildSign(): { root: HTMLDivElement; reveal: SVGRectElement } {
       <circle cx="20" cy="28.5" r="2.2" fill="${COLOURS.edge}"/>
     </svg>`;
   const reveal = root.querySelector(`#${clipId} rect`);
-  if (!(reveal instanceof SVGRectElement)) {
-    throw new Error('Telegraph sign is missing its fill clip');
+  const glow = root.querySelector('.glow');
+  if (!(reveal instanceof SVGRectElement) || !(glow instanceof SVGPathElement)) {
+    throw new Error('Telegraph sign is missing its fill clip or glow');
   }
-  return { root, reveal };
+  return { root, reveal, glow };
 }

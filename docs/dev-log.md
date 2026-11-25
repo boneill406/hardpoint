@@ -40,6 +40,12 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M4-5d · Reddish artifact near the fire warning
+- **Report (Brendan):** sometimes a reddish artifact under an enemy's barrel and the hazard sign just before it fires.
+- **Likely cause:** in its last 30 % the sign switched to a CSS `filter: drop-shadow(...)` orange glow while moving every frame to follow the tank. Safari leaves stale paint behind filtered elements that move (same family as the M3-6 armor-bar bug). Not reproduced here (no Safari headless); matches when and where it appears.
+- **Fix:** no CSS filters on the sign. The glow is an orange outline drawn inside the SVG (brighter and wider while blinking), the drop shadow a dark offset copy of the triangle. No other CSS filters in `src/ui` or `src/render`.
+- Brendan to confirm in Safari; if it persists, the next suspect is the sign's per-frame `transform` on a layer over the WebGL canvas.
+
 ## 2026-11-24 · M5-6a · Run HUD: wave line, banners, repair flash
 - **`waveHudState(status)`** (`src/ui/waveHud.ts`, pure): "Wave n / 5"; enemies left while a wave is on; "Next wave in n" in the breather (whole seconds, never 0); the banner for the phase: "WAVE n / 5" (banner), "WAVE CLEARED", "VICTORY", "DESTROYED".
 - **`Hud`:** a top line with the wave and enemies or countdown (hidden in `?mode=sandbox`); `flashRepair(amount)` on `BreatherStarted`: green glow on the armor bar and "+20" beside the number, fading out (box-shadow and colour animations, not row opacity, per the M3-6 Safari fix).
