@@ -19,6 +19,7 @@ Debt taken on deliberately, each with the condition that clears it.
 | Idea, undecided: barrel bob (elevation only, render-only) when the turret starts and stops traversing; maybe a tiny yaw settle | — | Brendan decides, at the latest in M6 | M3-1 |
 | Point-blank shots are on screen for at most one frame (flight shorter than a tick); reassess once M6 adds muzzle flash and recoil, and if still odd add a render-only minimum visible flight (~3 frames, impact flash delayed to match) | — | M6 | M3-7 |
 | Playtest: drive with keyboard and Xbox pad; pick a `?pad=` scheme; judge reverse steering (T-53) and handling values | T-53 | Brendan's feedback; values go to `defs/vehicles.ts` and GDD §3 | M2-2 |
+| Gamepad run-through of the full loop: start from the title with A, pause / resume with Start, menus with D-pad / stick, A and B, one win and one loss (GDD §11: both input methods play the full run) | — | Brendan plays it; required before slice sign-off (M7) | M5 |
 | No `CHANGELOG.md` | T-28 | First shareable build (slice sign-off, M7) | M0 |
 
 ## Known environment issues
@@ -39,6 +40,9 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 ---
 
 ## Entries
+
+## 2026-11-24 · M5 close
+- All M5 tasks done (M5-1 to M5-6b, plus 5-4b input fixes). Brendan played a win, a loss and pausing with keyboard and mouse. The gamepad run-through is deferred to an open follow-up, required before slice sign-off.
 
 ## 2026-11-24 · M5-6b · Off-screen arrows
 - **`edgeArrow(target, width, height, margin)`** (`src/ui`, pure): none while the target is inside the view less a margin; otherwise the point where the centre→target line meets the inset border, and its angle.
