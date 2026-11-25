@@ -56,7 +56,7 @@ Everything in M6 is **render, audio or app side**. The simulation doesn't change
 | Order | Task | Branch | Status |
 |---|---|---|---|
 | 1 | M6-1a `Vfx` pool + effect defs, particle textures, `CREDITS.md`; impact sparks and dust (D1–D3, D13) | `m6-1a-vfx` | ✅ |
-| 2 | M6-2a Muzzle flash light and sprite, cannon recoil, **cannon smoke trail** (D9, D10) | `m6-2a-muzzle` | ⬜ |
+| 2 | M6-2a Muzzle flash light and sprite, cannon recoil, **cannon smoke trail** (D9, D10) | `m6-2a-muzzle` | ✅ |
 | 3 | M6-1b Screen shake, hit-stop, hit flash (D6–D8) | `m6-1b-impact-feel` | ⬜ |
 | 4 | M6-3 Explosions, smoke column, scorch (D12) | `m6-3-explosions` | ⬜ |
 | 5 | M6-2b Shell casings (D11) | `m6-2b-casings` | ⬜ |

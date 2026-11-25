@@ -41,6 +41,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-2a · Muzzle flash, recoil, cannon smoke trail
+- **Recoil:** `TankView.recoil(hardpoint)` on `ShotFired`; `recoilOffset(age, kick, returnTime)` (pure): snap back by the kick, ease home (quadratic). Cannon 0.3 u over 0.28 s, MG 0.04 u over 0.06 s (`RECOIL` by barrel look). Moves the model's gun node; the sim's barrel is unchanged.
+- **Muzzle flash:** `muzzleCannon` (fire thrown forward), `muzzleSmoke` and `muzzleMg` bursts along the shot's heading; for the cannon, a pooled warm `PointLight` (2 in the pool, 2.2 intensity, 7 u range, 0.08 s; `flashIntensity`). Lights stay enabled at zero brightness to avoid shader recompiles.
+- **Smoke trail (Brendan):** `ShellTrails`, one 3000-particle system for all cannon shells (yours and enemies'). Each frame `pointsAlong` lays puffs every 0.3 u along the stretch each shell's drawn position moved (carry keeps spacing even across frames), placed via Babylon's `startPositionFunction`. Puffs drift, rise, swell ×2.4 and fade over 0.9–1.4 s; the trail stops when the shell does. MG tracers have none.
+- **Look fixes while checking:** first trail read as a dotted line: the generated smoke texture was faint in the middle of its quad, and fading from birth made grown puffs invisible. Fuller puff texture, bigger start size, and a `fadeFrom` hold (trail 35 %, dust and muzzle smoke 30 %).
+- Checked in a test page driven like the game (beginFrame/endFrame, game camera distance): flash pop and light visible, trail continuous and gone by ~1 s. Not yet seen in a fight.
+- **Tests:** `recoilOffset`, `flashIntensity`, `pointsAlong` (even spacing, carry across frames, short and zero steps).
+
 ## 2026-11-25 · M6-1c · Particles ran at 6 % speed
 - **Bug (Brendan):** sparks floated "like lightning bugs", effects lingered "like slow-mo".
 - **Cause:** Babylon times particles (and its own animations) from the engine's frame clock, measured in `engine.beginFrame()`, which `runRenderLoop` calls. Our app drives rendering from its own loop (sim ticks first) and only called `scene.render()`, so Babylon's delta time stayed 0 and it assumed its 1 ms minimum: an animation ratio of **0.06**. Particles moved at 6 % speed and lived ~16× longer. My M6-1a test page used `runRenderLoop`, so it looked right there.

@@ -54,6 +54,11 @@ export class RenderBridge {
     }
   }
 
+  /** The view drawing entity `id`, if it has one (for event-driven animation such as recoil). */
+  viewOf(id: EntityId): EntityView | undefined {
+    return this.views.get(id);
+  }
+
   /** The (interpolated) transform an entity was drawn at in the last `sync`, if it exists. */
   drawnTransform(id: EntityId): Transform | undefined {
     return this.drawn.get(id);

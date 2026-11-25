@@ -11,7 +11,7 @@ import {
 import type { NavGrid } from '../sim/ai/NavGrid';
 import type { Arena } from '../sim/arena/Arena';
 import type { Entity, EntityId } from '../sim/core/Entity';
-import type { Vec2 } from '../sim/core/Vec2';
+import { Vec2 } from '../sim/core/Vec2';
 import type { Vehicle } from '../sim/vehicles/Vehicle';
 import { SliceCamera, type CameraPreset } from './camera/SliceCamera';
 import { fromBabylonPosition, toBabylonPosition } from './coords';
@@ -20,7 +20,10 @@ import { AiDebugView } from './debug/AiDebugView';
 import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
 import { impactEffects, type ImpactLook, type ImpactSurface } from './vfx/effects';
+import type { TrailedShell } from './vfx/ShellTrails';
 import { Vfx } from './vfx/Vfx';
+import { TankView } from './views/TankView';
+import { Projectile } from '../sim/combat/Projectile';
 import { FLIGHT_HEIGHT } from './views/ProjectileView';
 
 /** A position on the canvas in CSS pixels from its top-left. */
@@ -85,7 +88,7 @@ export class Renderer {
     this.measureCameraView();
 
     this.bridge = new RenderBridge(this.scene, options);
-    this.vfx = new Vfx(this.scene);
+    this.vfx = new Vfx(this.scene, FLIGHT_HEIGHT.shell);
     this.navView = options.nav ? new NavGridView(this.scene) : undefined;
     this.aiView = options.ai ? new AiDebugView(this.scene) : undefined;
   }
@@ -104,6 +107,7 @@ export class Renderer {
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
     this.arenaView.update(frameSeconds);
+    this.vfx.update(this.drawnShells(entities), frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds);
@@ -114,6 +118,21 @@ export class Renderer {
     this.engine.beginFrame();
     this.scene.render();
     this.engine.endFrame();
+  }
+
+  /** Cannon shells as drawn this frame (interpolated), for their smoke trails. */
+  private drawnShells(entities: readonly Entity[]): TrailedShell[] {
+    const shells: TrailedShell[] = [];
+    for (const entity of entities) {
+      if (!(entity instanceof Projectile) || entity.weapon.projectile.look !== 'shell') {
+        continue;
+      }
+      const drawn = this.bridge.drawnTransform(entity.id);
+      if (drawn !== undefined) {
+        shells.push({ id: entity.id, position: drawn.position });
+      }
+    }
+    return shells;
   }
 
   /**
@@ -187,6 +206,33 @@ export class Renderer {
       x: (projected.x / width) * canvas.clientWidth,
       y: (projected.y / heightPx) * canvas.clientHeight,
     };
+  }
+
+  /**
+   * A gun fired (`ShotFired`, M6-2a): its barrel recoils, fire and (for the
+   * cannon) smoke leave the muzzle along the shot, and a cannon lights its
+   * surroundings for a moment.
+   */
+  shotFired(
+    shooter: EntityId,
+    hardpoint: string,
+    origin: Vec2,
+    heading: number,
+    look: ImpactLook,
+  ): void {
+    const view = this.bridge.viewOf(shooter);
+    if (view instanceof TankView) {
+      view.recoil(hardpoint);
+    }
+    const height = FLIGHT_HEIGHT[look];
+    const forward = Vec2.fromHeading(heading);
+    if (look === 'shell') {
+      this.vfx.burst('muzzleCannon', origin, height, forward);
+      this.vfx.burst('muzzleSmoke', origin, height, forward);
+      this.vfx.flashLight(origin, height);
+    } else {
+      this.vfx.burst('muzzleMg', origin, height, forward);
+    }
   }
 
   /**

@@ -8,6 +8,16 @@ import { toBabylonPosition, toBabylonRotationY } from '../coords';
 import type { EntityView, FrameTiming } from './EntityView';
 import { PrimitiveTankModel } from './tank/PrimitiveTankModel';
 import type { TankModel } from './tank/TankModel';
+import { RECOIL } from '../vfx/effects';
+import { recoilOffset } from '../vfx/firingMotion';
+import type { TransformNode } from '@babylonjs/core';
+
+interface GunRecoil {
+  readonly node: TransformNode;
+  readonly rest: number;
+  readonly recoil: { readonly kick: number; readonly returnTime: number };
+  age: number;
+}
 import {
   pitchTarget,
   stepPitchSpring,
@@ -28,6 +38,8 @@ export class TankView implements EntityView {
   private leftDistance = 0;
   private rightDistance = 0;
   private pitch: SpringState = { angle: 0, velocity: 0 };
+  /** Per gun: its resting position along the barrel, its recoil, and seconds since it last fired. */
+  private readonly guns = new Map<string, GunRecoil>();
 
   constructor(
     scene: Scene,
@@ -35,6 +47,25 @@ export class TankView implements EntityView {
     private readonly vehicle: Vehicle,
   ) {
     this.model = new PrimitiveTankModel(scene, name, vehicle.def, vehicle.faction);
+    for (const mount of vehicle.mounts) {
+      const node = this.model.guns[mount.hardpoint.id];
+      if (node !== undefined) {
+        this.guns.set(mount.hardpoint.id, {
+          node,
+          rest: node.position.z,
+          recoil: RECOIL[mount.weapon.def.barrel.look],
+          age: Number.POSITIVE_INFINITY,
+        });
+      }
+    }
+  }
+
+  /** The gun on `hardpoint` just fired (`ShotFired`, M6-2a): kick it back. */
+  recoil(hardpoint: string): void {
+    const gun = this.guns.get(hardpoint);
+    if (gun !== undefined) {
+      gun.age = 0;
+    }
   }
 
   update(transform: Transform, frame: FrameTiming): void {
@@ -43,6 +74,16 @@ export class TankView implements EntityView {
     this.aimTurret(transform.heading, frame.alpha);
     this.animateTreads(frame.seconds);
     this.animatePitch(frame.seconds);
+    this.animateRecoil(frame.seconds);
+  }
+
+  /** Each gun slides back along its barrel after a shot and eases home (render-only; barrels stay rigid in the sim). */
+  private animateRecoil(frameSeconds: number): void {
+    for (const gun of this.guns.values()) {
+      gun.age += frameSeconds;
+      gun.node.position.z =
+        gun.rest + recoilOffset(gun.age, gun.recoil.kick, gun.recoil.returnTime);
+    }
   }
 
   dispose(): void {

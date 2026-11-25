@@ -30,6 +30,12 @@ export interface BurstEffectDef {
   readonly gravity: number;
   /** Colour at birth and at death (alpha 0 at death fades it out). */
   readonly colour: { readonly start: Rgba; readonly end: Rgba };
+  /**
+   * Fraction of its life a particle keeps its start colour before fading
+   * (default 0: fades from birth). Smoke needs it: fading from birth, a puff
+   * is invisible by the time it has grown, and reads as a dot.
+   */
+  readonly fadeFrom?: number;
   /** `add` glows (sparks, flashes); `alpha` is ordinary see-through (dust, smoke). */
   readonly blend: 'add' | 'alpha';
   /** Sparks stretch along their motion; everything else is a round billboard. */
@@ -37,9 +43,65 @@ export interface BurstEffectDef {
 }
 
 export type EffectName =
-  'flash' | 'sparks' | 'sparksSmall' | 'dust' | 'dustSmall' | 'chips' | 'woodDust' | 'splinters';
+  | 'muzzleCannon'
+  | 'muzzleMg'
+  | 'muzzleSmoke'
+  | 'flash'
+  | 'sparks'
+  | 'sparksSmall'
+  | 'dust'
+  | 'dustSmall'
+  | 'chips'
+  | 'woodDust'
+  | 'splinters';
 
 export const EFFECTS: Readonly<Record<EffectName, BurstEffectDef>> = {
+  // Cannon muzzle flash (M6-2a): a short, hot tongue of fire thrown forward out of the brake.
+  muzzleCannon: {
+    texture: 'soft',
+    count: 7,
+    lifetime: [0.05, 0.09],
+    size: [0.45, 0.8],
+    growth: 1.5,
+    speed: [3, 8],
+    lift: 0.05,
+    spread: 0.3,
+    gravity: 0,
+    colour: { start: [1, 0.85, 0.5, 1], end: [1, 0.4, 0.1, 0] },
+    blend: 'add',
+    stretched: false,
+  },
+  // MG muzzle flash: a small, quick spark of fire per round.
+  muzzleMg: {
+    texture: 'soft',
+    count: 2,
+    lifetime: [0.03, 0.05],
+    size: [0.22, 0.32],
+    growth: 1.3,
+    speed: [2, 5],
+    lift: 0.05,
+    spread: 0.25,
+    gravity: 0,
+    colour: { start: [1, 0.85, 0.55, 1], end: [1, 0.5, 0.15, 0] },
+    blend: 'add',
+    stretched: false,
+  },
+  // The cannon's breath of smoke after the flash, drifting forward and up.
+  muzzleSmoke: {
+    texture: 'smoke',
+    count: 5,
+    lifetime: [0.4, 0.7],
+    size: [0.3, 0.5],
+    growth: 2,
+    speed: [0.8, 2.2],
+    lift: 0.25,
+    spread: 0.5,
+    gravity: 0.4,
+    colour: { start: [0.75, 0.74, 0.7, 0.45], end: [0.6, 0.6, 0.58, 0] },
+    fadeFrom: 0.3,
+    blend: 'alpha',
+    stretched: false,
+  },
   // A hot white-yellow pop where a shell lands: the core of every shell impact.
   flash: {
     texture: 'soft',
@@ -97,6 +159,7 @@ export const EFFECTS: Readonly<Record<EffectName, BurstEffectDef>> = {
     spread: 1,
     gravity: 0.3,
     colour: { start: [0.58, 0.56, 0.5, 0.55], end: [0.5, 0.48, 0.44, 0] },
+    fadeFrom: 0.3,
     blend: 'alpha',
     stretched: false,
   },
@@ -112,6 +175,7 @@ export const EFFECTS: Readonly<Record<EffectName, BurstEffectDef>> = {
     spread: 1,
     gravity: 0.2,
     colour: { start: [0.58, 0.56, 0.5, 0.5], end: [0.5, 0.48, 0.44, 0] },
+    fadeFrom: 0.3,
     blend: 'alpha',
     stretched: false,
   },
@@ -142,6 +206,7 @@ export const EFFECTS: Readonly<Record<EffectName, BurstEffectDef>> = {
     spread: 1,
     gravity: 0.2,
     colour: { start: [0.55, 0.42, 0.26, 0.55], end: [0.5, 0.4, 0.28, 0] },
+    fadeFrom: 0.3,
     blend: 'alpha',
     stretched: false,
   },
@@ -180,3 +245,49 @@ const IMPACTS: Readonly<
 export function impactEffects(surface: ImpactSurface, look: ImpactLook): readonly EffectName[] {
   return IMPACTS[surface][look];
 }
+
+/**
+ * A cannon shell's smoke trail (M6-2a, Brendan: "like Halo and the
+ * prototype"): puffs left every `spacing` u along the shell's path that stay
+ * where they were left, swell and fade, so the trail dissipates behind it.
+ */
+export interface TrailDef {
+  readonly spacing: number;
+  readonly lifetime: readonly [number, number];
+  readonly size: readonly [number, number];
+  readonly growth: number;
+  /** Slow drift of each puff, u/s. */
+  readonly drift: readonly [number, number];
+  /** Upward pull, u/s² (smoke rises). */
+  readonly rise: number;
+  readonly colour: { readonly start: Rgba; readonly end: Rgba };
+  /** Fraction of its life a puff stays at full colour before fading (see `BurstEffectDef.fadeFrom`). */
+  readonly fadeFrom: number;
+}
+
+export const SHELL_TRAIL: TrailDef = {
+  spacing: 0.3,
+  lifetime: [0.9, 1.4],
+  size: [0.5, 0.65],
+  growth: 2.4,
+  drift: [0.05, 0.3],
+  rise: 0.25,
+  colour: { start: [0.88, 0.87, 0.84, 0.5], end: [0.74, 0.74, 0.72, 0] },
+  fadeFrom: 0.35,
+};
+
+/** How far back (u) each barrel look kicks when it fires, and how long it takes to return (s). */
+export const RECOIL: Readonly<
+  Record<'tube-brake' | 'thin-tube', { readonly kick: number; readonly returnTime: number }>
+> = {
+  'tube-brake': { kick: 0.3, returnTime: 0.28 },
+  'thin-tube': { kick: 0.04, returnTime: 0.06 },
+};
+
+/** The cannon's muzzle-flash light: warm, brief, lighting the ground and nearby tanks. */
+export const MUZZLE_LIGHT = {
+  colour: [1, 0.7, 0.35],
+  intensity: 2.2,
+  range: 7,
+  duration: 0.08,
+} as const;

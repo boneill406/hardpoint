@@ -1,5 +1,5 @@
 import type { Renderer } from '../render/Renderer';
-import type { ImpactSurface } from '../render/vfx/effects';
+import type { ImpactLook, ImpactSurface } from '../render/vfx/effects';
 import { Prop } from '../sim/arena/Prop';
 import type { EntityId } from '../sim/core/Entity';
 import { Simulation } from '../sim/core/Simulation';
@@ -172,6 +172,16 @@ export class GameSession {
     }
   }
 
+  /** Whether a shot is a cannon shell or an MG tracer, from the shooter's weapon on that hardpoint. */
+  private lookOf(shot: { shooter: EntityId; hardpoint: string }): ImpactLook {
+    const shooter = this.simulation.world.get(shot.shooter);
+    const mount =
+      shooter instanceof Vehicle
+        ? shooter.mounts.find((candidate) => candidate.hardpoint.id === shot.hardpoint)
+        : undefined;
+    return mount?.weapon.def.projectile.look ?? 'tracer';
+  }
+
   /** Walls (no target) are stone. */
   private surfaceOf(target: EntityId | undefined): ImpactSurface {
     return (target === undefined ? undefined : this.surfaces.get(target)) ?? 'stone';
@@ -196,6 +206,13 @@ export class GameSession {
       this.telegraphs.end(shooter, hardpoint),
     );
     events.on('ShotFired', (shot) => {
+      renderer.shotFired(
+        shot.shooter,
+        shot.hardpoint,
+        shot.origin,
+        shot.heading,
+        this.lookOf(shot),
+      );
       this.telegraphs.end(shot.shooter, shot.hardpoint);
       this.stats.onShotFired(shot);
     });

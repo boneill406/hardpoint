@@ -2,7 +2,16 @@ import { Color4, ParticleSystem, Vector3 } from '@babylonjs/core';
 import type { Scene, Texture } from '@babylonjs/core';
 import type { Vec2 } from '../../sim/core/Vec2';
 import { toBabylonPosition } from '../coords';
-import { EFFECTS, type BurstEffectDef, type EffectName, type ParticleTexture } from './effects';
+import {
+  EFFECTS,
+  SHELL_TRAIL,
+  type BurstEffectDef,
+  type EffectName,
+  type ParticleTexture,
+  type Rgba,
+} from './effects';
+import { MuzzleLights } from './MuzzleLights';
+import { ShellTrails, type TrailedShell } from './ShellTrails';
 import { createParticleTextures } from './particleTextures';
 import { sprayCone } from './sprayCone';
 
@@ -27,9 +36,14 @@ interface Pool {
 export class Vfx {
   private readonly textures: Record<ParticleTexture, Texture>;
   private readonly pools = new Map<EffectName, Pool>();
+  private readonly trails: ShellTrails;
+  private readonly lights: MuzzleLights;
 
-  constructor(scene: Scene) {
+  /** `trailHeight`: the height (u) cannon shells fly at, where their smoke is laid. */
+  constructor(scene: Scene, trailHeight: number) {
     this.textures = createParticleTextures(scene);
+    this.trails = new ShellTrails(scene, this.textures.smoke, SHELL_TRAIL, trailHeight);
+    this.lights = new MuzzleLights(scene);
     for (const [name, def] of Object.entries(EFFECTS) as [EffectName, BurstEffectDef][]) {
       const systems = Array.from({ length: POOL_SIZE }, (_, i) =>
         this.createSystem(scene, `${name}-${i}`, def),
@@ -57,8 +71,21 @@ export class Vfx {
     system.manualEmitCount = def.count;
   }
 
+  /** A cannon fired: light the area around its muzzle for a moment. */
+  flashLight(point: Vec2, height: number): void {
+    this.lights.flash(point, height);
+  }
+
+  /** Once per frame: shell trails along this frame's movement, and fading muzzle lights. */
+  update(shells: readonly TrailedShell[], frameSeconds: number): void {
+    this.trails.update(shells);
+    this.lights.update(frameSeconds);
+  }
+
   /** Removes every particle in flight (a new run starts). */
   clear(): void {
+    this.trails.clear();
+    this.lights.clear();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.reset();
@@ -67,6 +94,8 @@ export class Vfx {
   }
 
   dispose(): void {
+    this.trails.dispose();
+    this.lights.dispose();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.dispose(false);
@@ -96,8 +125,7 @@ export class Vfx {
     const [small, large] = def.size;
     system.addSizeGradient(0, small, large);
     system.addSizeGradient(1, small * def.growth, large * def.growth);
-    system.addColorGradient(0, new Color4(...def.colour.start));
-    system.addColorGradient(1, new Color4(...def.colour.end));
+    addFade(system, def.colour.start, def.colour.end, def.fadeFrom ?? 0);
     system.blendMode =
       def.blend === 'add' ? ParticleSystem.BLENDMODE_ADD : ParticleSystem.BLENDMODE_STANDARD;
     if (def.stretched) {
@@ -106,4 +134,13 @@ export class Vfx {
     system.start();
     return system;
   }
+}
+
+/** Start colour, held until `fadeFrom` of the particle's life, then a blend to the end colour. */
+export function addFade(system: ParticleSystem, start: Rgba, end: Rgba, fadeFrom: number): void {
+  system.addColorGradient(0, new Color4(...start));
+  if (fadeFrom > 0) {
+    system.addColorGradient(fadeFrom, new Color4(...start));
+  }
+  system.addColorGradient(1, new Color4(...end));
 }

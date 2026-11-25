@@ -50,12 +50,20 @@ function drawSmoke(context: CanvasRenderingContext2D): void {
     seed = (seed * 16807) % 2147483647;
     return seed / 2147483647;
   };
-  for (let i = 0; i < 14; i++) {
+  // A soft, nearly full base so the puff fills its quad (a faint centre reads as a dot)...
+  const base = radial(context, SIZE / 2, SIZE / 2, SIZE / 2);
+  base.addColorStop(0, 'rgba(255,255,255,0.75)');
+  base.addColorStop(0.6, 'rgba(255,255,255,0.4)');
+  base.addColorStop(1, 'rgba(255,255,255,0)');
+  context.fillStyle = base;
+  context.fillRect(0, 0, SIZE, SIZE);
+  // ...with lumps on top for texture.
+  for (let i = 0; i < 10; i++) {
     const angle = random() * Math.PI * 2;
-    const distance = random() * SIZE * 0.2;
+    const distance = random() * SIZE * 0.22;
     const x = SIZE / 2 + Math.cos(angle) * distance;
     const y = SIZE / 2 + Math.sin(angle) * distance;
-    const radius = SIZE * (0.16 + random() * 0.14);
+    const radius = SIZE * (0.18 + random() * 0.14);
     const gradient = radial(context, x, y, radius);
     gradient.addColorStop(0, 'rgba(255,255,255,0.35)');
     gradient.addColorStop(1, 'rgba(255,255,255,0)');
