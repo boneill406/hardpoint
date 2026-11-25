@@ -41,6 +41,9 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M6 plan approved
+- Saved [`plans/m6-juice.md`](plans/m6-juice.md). Brendan's calls: particles **written in TypeScript as effect defs** (A) for now, after comparing built-in presets (B) and the Node Particle Editor (C; the industry-standard visual-editor style, kept as an option for one hero effect); **hit-stop only on the player's kills** (b) with `?hitstop=off`; **cannon smoke trails** added (Brendan); no wrecks (post-slice backlog); silhouette style decided at the end of the slice. Bloom explained. Sounds: Kenney CC0 packs, Sonniss GDC bundles if heavier sounds are needed. GDD §8 and milestones updated.
+
 ## 2026-11-24 · M5 close
 - All M5 tasks done (M5-1 to M5-6b, plus 5-4b input fixes). Brendan played a win, a loss and pausing with keyboard and mouse. The gamepad run-through is deferred to an open follow-up, required before slice sign-off.
 

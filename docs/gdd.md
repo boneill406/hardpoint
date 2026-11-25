@@ -130,8 +130,9 @@ Kills to expect with the cannon: front = 2 hits (32.5 each), side = 2 hits (50 e
 
 ## 8. Feel ("juice") in scope
 - Screen shake: cannon fire (small), player hit (medium), nearby kill (medium).
-- Hit-stop: ~60 ms on kills.
+- Hit-stop: ~60 ms when the player destroys a tank (not on enemy-on-enemy kills; M6 plan D7).
 - Muzzle-flash light, recoil kick on the cannon.
+- Cannon shells leave a smoke trail that lingers and dissipates over ~1.2 s (Brendan; like Halo and the prototype). MG tracers have none.
 - Spent shell casings: a stream of small brass casings from the MG, a big case popped from the cannon (render-only, pooled particles).
 - Explosion and smoke via Babylon particle presets; crate break-apart into a few chunks.
 - Tread marks and MG heat glow (from prototype).
