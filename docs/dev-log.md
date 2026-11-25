@@ -41,6 +41,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-24 · M6-1a · Effect system and impacts
+- **`Vfx`** (`render/vfx`): builds 6 pooled Babylon `ParticleSystem`s per effect def at startup and reuses them round-robin for bursts (`burst(effect, point, height, normal)`); `clear()` on a new run. Lifetimes and speeds in seconds (`updateSpeed` 1/60, scaled by Babylon's animation ratio, so frame-rate independent). Babylon size gradients are absolute sizes, so each def's size range is scaled by its `growth` at end of life.
+- **Effects as data** (`effects.ts`): flash, sparks, sparksSmall, dust, dustSmall, chips, woodDust, splinters; `impactEffects(surface, look)` picks them. **`sprayCone`** turns the impact normal into Babylon's direction1 / direction2, so sparks and dust leave the surface. **`particleTextures.ts`** draws a soft dot, a lumpy smoke puff and a spark glow on canvases (T-126: Kenney's site returned 403 to the download).
+- **Impacts:** `ProjectileImpact` → `Renderer.impact` with the surface: tank = metal, crate = wood, pillar or wall = stone, remembered by `GameSession` from `EntitySpawned`. The M3 placeholder `ImpactFlashes` is deleted.
+- **Sizing:** first sizes were ~2–3 px at the game camera (34 u); scaled up (sparks 0.14–0.22 u, shell dust 0.45–0.75 u growing ×2.2). Checked in a Babylon test page at the game's camera distance and angle; real look to judge in play.
+- **Tests:** impact effect choice per surface and look; every def sane (ranges, fades to 0 alpha, lives ≤ 1.5 s); `sprayCone` (along the normal, lift, sideways spread, no normal).
+- Trade-offs: T-126.
+
 ## 2026-11-24 · M6 plan approved
 - Saved [`plans/m6-juice.md`](plans/m6-juice.md). Brendan's calls: particles **written in TypeScript as effect defs** (A) for now, after comparing built-in presets (B) and the Node Particle Editor (C; the industry-standard visual-editor style, kept as an option for one hero effect); **hit-stop only on the player's kills** (b) with `?hitstop=off`; **cannon smoke trails** added (Brendan); no wrecks (post-slice backlog); silhouette style decided at the end of the slice. Bloom explained. Sounds: Kenney CC0 packs, Sonniss GDC bundles if heavier sounds are needed. GDD §8 and milestones updated.
 

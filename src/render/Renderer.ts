@@ -19,7 +19,9 @@ import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { AiDebugView } from './debug/AiDebugView';
 import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
-import { ImpactFlashes } from './vfx/ImpactFlashes';
+import { impactEffects, type ImpactLook, type ImpactSurface } from './vfx/effects';
+import { Vfx } from './vfx/Vfx';
+import { FLIGHT_HEIGHT } from './views/ProjectileView';
 
 /** A position on the canvas in CSS pixels from its top-left. */
 export interface ScreenPoint {
@@ -57,7 +59,7 @@ export class Renderer {
   private readonly sliceCamera: SliceCamera;
   private readonly bridge: RenderBridge;
   private readonly arenaView: ArenaView;
-  private readonly impacts: ImpactFlashes;
+  private readonly vfx: Vfx;
   private readonly navView: NavGridView | undefined;
   private readonly aiView: AiDebugView | undefined;
 
@@ -83,7 +85,7 @@ export class Renderer {
     this.measureCameraView();
 
     this.bridge = new RenderBridge(this.scene, options);
-    this.impacts = new ImpactFlashes(this.scene);
+    this.vfx = new Vfx(this.scene);
     this.navView = options.nav ? new NavGridView(this.scene) : undefined;
     this.aiView = options.ai ? new AiDebugView(this.scene) : undefined;
   }
@@ -101,7 +103,6 @@ export class Renderer {
     frameSeconds: number,
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
-    this.impacts.update(frameSeconds);
     this.arenaView.update(frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
@@ -118,7 +119,7 @@ export class Renderer {
    */
   resetWorld(): void {
     this.bridge.clear();
-    this.impacts.clear();
+    this.vfx.clear();
     this.arenaView.clearWarnings();
     this.sliceCamera.reset();
   }
@@ -183,9 +184,15 @@ export class Renderer {
     };
   }
 
-  /** A shot hit something: show the placeholder impact flash there (M6 replaces it). */
-  flashImpact(point: Vec2, look: 'shell' | 'tracer'): void {
-    this.impacts.spawn(point, look);
+  /**
+   * A shot hit something (`ProjectileImpact`, M6-1a): sparks off a tank, dust
+   * and grit off stone, dust and splinters off a crate, at the height the shot
+   * flew, sprayed out of the surface along its normal.
+   */
+  impact(point: Vec2, look: ImpactLook, surface: ImpactSurface, normal: Vec2): void {
+    for (const effect of impactEffects(surface, look)) {
+      this.vfx.burst(effect, point, FLIGHT_HEIGHT[look], normal);
+    }
   }
 
   /**
@@ -221,7 +228,7 @@ export class Renderer {
 
   dispose(): void {
     this.bridge.dispose();
-    this.impacts.dispose();
+    this.vfx.dispose();
     this.navView?.dispose();
     this.aiView?.dispose();
     this.arenaView.dispose();

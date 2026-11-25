@@ -1,4 +1,6 @@
 import type { Renderer } from '../render/Renderer';
+import type { ImpactSurface } from '../render/vfx/effects';
+import { Prop } from '../sim/arena/Prop';
 import type { EntityId } from '../sim/core/Entity';
 import { Simulation } from '../sim/core/Simulation';
 import type { Vec2 } from '../sim/core/Vec2';
@@ -52,6 +54,8 @@ export class GameSession {
   private readonly overlay: HealthOverlay | undefined;
   private readonly aiLabels: AiStateLabels | undefined;
   private readonly edges: EdgeIndicators;
+  /** What each tank and prop is made of, for impact effects. */
+  private readonly surfaces = new Map<EntityId, ImpactSurface>();
 
   /** Physics (Rapier's WASM) loads asynchronously, so sessions are built with this. */
   static async create(seed: number, deps: SessionDeps): Promise<GameSession> {
@@ -154,11 +158,33 @@ export class GameSession {
     this.edges.dispose();
   }
 
+  /**
+   * Remembers what each tank and prop is made of when it appears, because a
+   * tank destroyed by a shot is already gone from the world when that shot's
+   * `ProjectileImpact` is delivered (end of the tick).
+   */
+  private noteSurface(id: EntityId): void {
+    const entity = this.simulation.world.get(id);
+    if (entity instanceof Vehicle) {
+      this.surfaces.set(id, 'metal');
+    } else if (entity instanceof Prop) {
+      this.surfaces.set(id, entity.destructible ? 'wood' : 'stone');
+    }
+  }
+
+  /** Walls (no target) are stone. */
+  private surfaceOf(target: EntityId | undefined): ImpactSurface {
+    return (target === undefined ? undefined : this.surfaces.get(target)) ?? 'stone';
+  }
+
   /** Sim events → effects. Delivered by `flush()` after the frame's ticks, never mid-tick. */
   private subscribe(): void {
     const { events } = this.simulation;
     const { renderer, hud, onRunEnded } = this.deps;
-    events.on('ProjectileImpact', ({ point, look }) => renderer.flashImpact(point, look));
+    events.on('EntitySpawned', ({ id }) => this.noteSurface(id));
+    events.on('ProjectileImpact', ({ point, look, target, normal }) =>
+      renderer.impact(point, look, this.surfaceOf(target), normal),
+    );
     events.on('GateWarning', ({ gate, seconds }) => {
       renderer.warnGate(gate, seconds);
       this.edges.warnGate(gate, seconds);
