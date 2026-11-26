@@ -67,6 +67,9 @@ const SUN = {
   darkness: 0.28,
 };
 
+/** How far behind the cannon's breech (u) its spent case comes out: the turret's back. */
+const CANNON_CASE_BEHIND_BREECH = 0.9;
+
 /** What the debug views need each frame; ignored when they are off. */
 export interface DebugState {
   readonly navGrid: NavGrid | undefined;
@@ -269,6 +272,7 @@ export class Renderer {
     origin: Vec2,
     heading: number,
     look: ImpactLook,
+    breech: Vec2,
   ): void {
     const view = this.bridge.viewOf(shooter);
     if (view instanceof TankView) {
@@ -280,8 +284,16 @@ export class Renderer {
       this.vfx.burst('muzzleCannon', origin, height, forward);
       this.vfx.burst('muzzleSmoke', origin, height, forward);
       this.vfx.flashLight(origin, height);
+      // The cannon's case leaves out of the back of the turret, behind the breech.
+      this.vfx.eject(
+        'cannon',
+        breech.sub(forward.scale(CANNON_CASE_BEHIND_BREECH)),
+        height,
+        heading,
+      );
     } else {
       this.vfx.burst('muzzleMg', origin, height, forward);
+      this.vfx.eject('mg', breech, height, heading);
     }
   }
 

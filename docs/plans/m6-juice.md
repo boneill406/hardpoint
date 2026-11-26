@@ -60,7 +60,7 @@ Everything in M6 is **render, audio or app side**. The simulation doesn't change
 | 3 | M6-1b Screen shake, hit-stop, hit flash (D6–D8) | `m6-1b-impact-feel` | ✅ |
 | 4 | M6-7a Shadows (D16) (moved up by Brendan, 2026-11-25) | `m6-7a-shadows` | ✅ |
 | 5 | M6-3 Explosions, smoke column, scorch (D12) | `m6-3-explosions` | ✅ |
-| 6 | M6-2b Shell casings (D11) | `m6-2b-casings` | ⬜ |
+| 6 | M6-2b Shell casings (D11) | `m6-2b-casings` | ✅ |
 | 7 | M6-4 Crate chunks, tread marks, MG heat glow (D14) | `m6-4-details` | ⬜ |
 | 8 | M6-6 Sounds (D4, D5) | `m6-6-sound` | ⬜ |
 | 9 | M6-5 Bloom (D15) | `m6-5-bloom` | ⬜ |

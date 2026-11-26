@@ -4,7 +4,7 @@ import type { SimEvents } from '../sim/core/SimEvents';
 import { Prop } from '../sim/arena/Prop';
 import type { EntityId } from '../sim/core/Entity';
 import { Simulation } from '../sim/core/Simulation';
-import type { Vec2 } from '../sim/core/Vec2';
+import { Vec2 } from '../sim/core/Vec2';
 import { TANK_ARMOR } from '../sim/defs/armor';
 import { SLICE_ARENA } from '../sim/defs/arenas';
 import { SLICE_WAVES } from '../sim/defs/waves';
@@ -12,6 +12,7 @@ import type { RunOutcome } from '../sim/modes/GameMode';
 import { WaveSurvivalMode, type WaveStatus } from '../sim/modes/WaveSurvivalMode';
 import { RapierPhysicsWorld } from '../sim/physics/RapierPhysicsWorld';
 import { PlayerController } from '../sim/vehicles/controllers/PlayerController';
+import type { WeaponMount } from '../sim/combat/WeaponMount';
 import { Vehicle } from '../sim/vehicles/Vehicle';
 import type { PlayerId } from '../sim/vehicles/VehicleCommand';
 import { AiStateLabels } from '../ui/AiStateLabels';
@@ -27,6 +28,12 @@ import { populateDebugScene } from './debugScene';
 const MUZZLE_SIGN_HEIGHT = 1.0;
 /** Height (u) measured for edge arrows: about a hull's middle. */
 const EDGE_HEIGHT = 0.8;
+
+/** Which gun fired: enough to find its mount. */
+interface ShotRef {
+  readonly shooter: EntityId;
+  readonly hardpoint: string;
+}
 
 /** What a run needs from the app that outlives it. */
 export interface SessionDeps {
@@ -200,13 +207,35 @@ export class GameSession {
   }
 
   /** Whether a shot is a cannon shell or an MG tracer, from the shooter's weapon on that hardpoint. */
-  private lookOf(shot: { shooter: EntityId; hardpoint: string }): ImpactLook {
-    const shooter = this.simulation.world.get(shot.shooter);
-    const mount =
-      shooter instanceof Vehicle
-        ? shooter.mounts.find((candidate) => candidate.hardpoint.id === shot.hardpoint)
-        : undefined;
-    return mount?.weapon.def.projectile.look ?? 'tracer';
+  private lookOf(shot: ShotRef): ImpactLook {
+    return this.mountOf(shot)?.mount.weapon.def.projectile.look ?? 'tracer';
+  }
+
+  /**
+   * Where the gun's barrel meets its hardpoint (the hardpoint's place on the
+   * turret or hull): casings are thrown from here (M6-2b).
+   */
+  private breechOf(shot: ShotRef): Vec2 | undefined {
+    const found = this.mountOf(shot);
+    if (found === undefined) {
+      return undefined;
+    }
+    const { vehicle, mount } = found;
+    const facing = vehicle.mountFacing(mount);
+    const { forward, right } = mount.hardpoint.at;
+    return vehicle
+      .mountOrigin(mount)
+      .add(Vec2.fromHeading(facing).scale(forward))
+      .add(Vec2.fromHeading(facing + Math.PI / 2).scale(right));
+  }
+
+  private mountOf(shot: ShotRef): { vehicle: Vehicle; mount: WeaponMount } | undefined {
+    const vehicle = this.simulation.world.get(shot.shooter);
+    if (!(vehicle instanceof Vehicle)) {
+      return undefined;
+    }
+    const mount = vehicle.mounts.find((candidate) => candidate.hardpoint.id === shot.hardpoint);
+    return mount === undefined ? undefined : { vehicle, mount };
   }
 
   /** Walls (no target) are stone. */
@@ -242,6 +271,7 @@ export class GameSession {
         shot.origin,
         shot.heading,
         this.lookOf(shot),
+        this.breechOf(shot) ?? shot.origin,
       );
       this.telegraphs.end(shot.shooter, shot.hardpoint);
       this.stats.onShotFired(shot);

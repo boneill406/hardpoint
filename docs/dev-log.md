@@ -41,6 +41,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-2b · Shell casings
+- **`stepCasing`** (`render/vfx/casingMotion.ts`, pure): gravity 12 u/s², each floor bounce keeps 45 % of vertical and 60 % of horizontal speed; **two bounces** (Brendan), then it settles and stops. `casingOpacity`: solid for 3 s, then fades over 1.5 s ("take a little while to fade", Brendan).
+- **`Casings`** (`render/vfx`): pooled cylinders per kind, reused oldest-first (80 MG at 12 rounds/s covers ~6.5 s of fire; 12 cannon). MG: 0.16 × 0.055 u brass, thrown 1.8–3 u/s to the gun's right and 1.8–2.8 u/s up, tumbling fast. Cannon: 0.42 × 0.13 u case, thrown back 1.4–2.2 u/s and up 2.2–3.2 u/s out of the turret's back (0.9 u behind the breech). Each lies at a random angle once settled. Sizes are enlarged from life so they read from the game camera.
+- **Breech:** the session works it out from the sim (`mountOrigin` + the hardpoint's offset along its facing), since `ShotFired.origin` is the *clear* muzzle point and may be cut short by an obstacle.
+- Checked in a test page: MG brass scatters to the right, the case goes out back, both settle, then fade. Not yet seen in a fight.
+- **Tests:** exactly two bounces then rest, never below the floor, speed lost per bounce, resting stays put; opacity hold and fade.
+
 ## 2026-11-25 · M6-3 · Explosions
 - **Trigger:** a `Hit` with `destroyed` on a tank (surface `metal`) → `Renderer.explode(id, point)`, placed at the tank's last drawn position (events are delivered before the frame renders, so the view still holds it), falling back to the hit point.
 - **Pieces** (data in `effects.ts`): `fireball` (12 warm additive puffs, swelling and darkening to red), `blastSparks` (34 stretched sparks), `debris` (14 dark bits falling), an explosion light (`MuzzleLights.flash` now takes a strength and length: 5× for 0.35 s), a **smoke column** (`SmokeColumns`: one shared particle system; each column emits 14 puffs/s for 2 s at the wreck, rising, swelling ×2.6, fading over 1.2–1.8 s; `emissionThisFrame` keeps the rate exact at any frame rate), and a **burn mark** (`Scorches`: 16 pooled floor discs, the soft texture as opacity, held then faded over 25 s, oldest reused).

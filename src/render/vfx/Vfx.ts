@@ -13,6 +13,7 @@ import {
   type ParticleTexture,
 } from './effects';
 import { addFade } from './particleFade';
+import { Casings, type CasingKind } from './Casings';
 import { MuzzleLights } from './MuzzleLights';
 import { Scorches } from './Scorches';
 import { SmokeColumns } from './SmokeColumns';
@@ -45,6 +46,7 @@ export class Vfx {
   private readonly lights: MuzzleLights;
   private readonly columns: SmokeColumns;
   private readonly scorches: Scorches;
+  private readonly casings: Casings;
 
   /** `trailHeight`: the height (u) cannon shells fly at, where their smoke is laid. */
   constructor(scene: Scene, trailHeight: number) {
@@ -53,6 +55,7 @@ export class Vfx {
     this.lights = new MuzzleLights(scene);
     this.columns = new SmokeColumns(scene, this.textures.smoke, SMOKE_COLUMN);
     this.scorches = new Scorches(scene, this.textures.soft);
+    this.casings = new Casings(scene);
     for (const [name, def] of Object.entries(EFFECTS) as [EffectName, BurstEffectDef][]) {
       const systems = Array.from({ length: POOL_SIZE }, (_, i) =>
         this.createSystem(scene, `${name}-${i}`, def),
@@ -85,6 +88,11 @@ export class Vfx {
     this.lights.flash(point, height);
   }
 
+  /** A gun fired: throw its spent casing out of the breech (M6-2b). */
+  eject(kind: CasingKind, breech: Vec2, height: number, heading: number): void {
+    this.casings.eject(kind, breech, height, heading);
+  }
+
   /**
    * A tank was destroyed at `point` (M6-3, plan D12): fireball, sparks and
    * debris at hull height, a bright flash of light, a column of smoke for
@@ -105,6 +113,7 @@ export class Vfx {
     this.lights.update(frameSeconds);
     this.columns.update(frameSeconds);
     this.scorches.update(frameSeconds);
+    this.casings.update(frameSeconds);
   }
 
   /** Removes every particle in flight (a new run starts). */
@@ -113,6 +122,7 @@ export class Vfx {
     this.lights.clear();
     this.columns.clear();
     this.scorches.clear();
+    this.casings.clear();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.reset();
@@ -125,6 +135,7 @@ export class Vfx {
     this.lights.dispose();
     this.columns.dispose();
     this.scorches.dispose();
+    this.casings.dispose();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.dispose(false);

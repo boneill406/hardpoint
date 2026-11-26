@@ -397,3 +397,47 @@ export const SMOKE_COLUMN: SmokeColumnDef = {
 
 /** A burn mark left on the floor where a tank died (M6-3): it fades out over `fadeSeconds`. */
 export const SCORCH = { radius: 1.6, opacity: 0.55, fadeSeconds: 25, max: 16 } as const;
+
+/** How one kind of casing looks and leaves the gun (M6-2b, plan D11). Speeds in u/s. */
+export interface CasingKindDef {
+  /** Size, enlarged from real life so it reads from the game camera. */
+  readonly length: number;
+  readonly diameter: number;
+  /** Thrown out to the gun's right (MG) and back (cannon), and up; random between. */
+  readonly side: readonly [number, number];
+  readonly back: readonly [number, number];
+  readonly up: readonly [number, number];
+  /** Tumble while flying, rad/s. */
+  readonly spin: number;
+  /** Casings of this kind kept; the oldest is reused. */
+  readonly pool: number;
+  readonly colour: readonly [number, number, number];
+}
+
+export const CASINGS = {
+  mg: {
+    length: 0.16,
+    diameter: 0.055,
+    side: [1.8, 3],
+    back: [-0.4, 0.4],
+    up: [1.8, 2.8],
+    spin: 18,
+    pool: 80,
+    colour: [0.85, 0.66, 0.28],
+  } satisfies CasingKindDef,
+  cannon: {
+    length: 0.42,
+    diameter: 0.13,
+    side: [-0.5, 0.5],
+    back: [1.4, 2.2],
+    up: [2.2, 3.2],
+    spin: 9,
+    pool: 12,
+    colour: [0.78, 0.6, 0.26],
+  } satisfies CasingKindDef,
+  /** Shared flight: two bounces (Brendan), then they lie a while and fade. */
+  physics: { gravity: 12, restitution: 0.45, friction: 0.6, maxBounces: 2 },
+  /** Seconds solid (flight included), then seconds fading. */
+  lie: 3,
+  fade: 1.5,
+} as const;
