@@ -41,6 +41,16 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-2c · Casing polish
+- **Brendan's notes:** the cannon case should come out a moment after firing, during the reload; it should bounce once more; settling "clicks into a position unrelated to its motion"; MG brass should come out of the coax's side (left).
+- **Delay:** `TickQueue` (`src/app`, pure, tested) holds casings by sim tick; the cannon's is due 0.4 s (24 ticks) after the shot, MG brass at once. Pause and hit-stop hold it back too. Thrown from the breech's position at that moment.
+- **Bounces per kind:** `CasingKindDef.bounces`: MG 2, cannon 3.
+- **No snap:** the snap was my random yaw on settling. Tumbling is now a quaternion turn about a random axis, slowing to 55 % at each bounce; on settling the casing slerps over 0.2 s (`settleEase`) into lying flat pointing the way its long axis already pointed (`lyingYaw`, flattened onto the floor). Casings leave the breech lying across the gun rather than upright.
+- **MG brass to the left:** the coax sits 0.2 u left of the cannon; `side` is now signed (negative = left).
+- **Tests:** `TickQueue`; `lyingYaw` (follows the axis, upright fallback); `settleEase`; three bounces for the cannon case.
+- **Check-chain failures explained:** my combined check-and-commit commands run outside the sandbox (for `gh`), where `$TMPDIR` is a different folder (known environment issue), so logs and scripts written to `$TMPDIR` inside weren't there. Checks now run from a script in the session scratchpad (same absolute path both ways) that names any failing step.
+- **The flake, found:** with the script naming the step, the culprit was `tests/sim/core/determinism.test.ts` timing out at Vitest's 5 s default while the full suite ran in parallel (two 600-tick real-physics runs). `testTimeout` raised to 20 s in `vitest.config.ts`; a real hang still fails.
+
 ## 2026-11-25 · M6-2b · Shell casings
 - **`stepCasing`** (`render/vfx/casingMotion.ts`, pure): gravity 12 u/s², each floor bounce keeps 45 % of vertical and 60 % of horizontal speed; **two bounces** (Brendan), then it settles and stops. `casingOpacity`: solid for 3 s, then fades over 1.5 s ("take a little while to fade", Brendan).
 - **`Casings`** (`render/vfx`): pooled cylinders per kind, reused oldest-first (80 MG at 12 rounds/s covers ~6.5 s of fire; 12 cannon). MG: 0.16 × 0.055 u brass, thrown 1.8–3 u/s to the gun's right and 1.8–2.8 u/s up, tumbling fast. Cannon: 0.42 × 0.13 u case, thrown back 1.4–2.2 u/s and up 2.2–3.2 u/s out of the turret's back (0.9 u behind the breech). Each lies at a random angle once settled. Sizes are enlarged from life so they read from the game camera.

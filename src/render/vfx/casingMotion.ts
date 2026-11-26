@@ -67,3 +67,22 @@ export function casingOpacity(age: number, lie: number, fade: number): number {
   }
   return Math.max(0, 1 - (age - lie) / fade);
 }
+
+/**
+ * Which way (yaw, radians; Babylon's: 0 = +z, positive toward +x) a casing
+ * should lie once it settles, given the direction its long axis points as it
+ * lands: the same way, flattened onto the floor, so settling never jumps to an
+ * unrelated angle. A casing landing exactly upright keeps `fallback`.
+ */
+export function lyingYaw(axis: { x: number; y: number; z: number }, fallback: number): number {
+  if (Math.hypot(axis.x, axis.z) < 1e-6) {
+    return fallback;
+  }
+  return Math.atan2(axis.x, axis.z);
+}
+
+/** 0..1 eased progress of settling into lying flat (fast start, gentle finish). */
+export function settleEase(t: number): number {
+  const clamped = Math.min(1, Math.max(0, t));
+  return 1 - (1 - clamped) * (1 - clamped);
+}

@@ -403,7 +403,7 @@ export interface CasingKindDef {
   /** Size, enlarged from real life so it reads from the game camera. */
   readonly length: number;
   readonly diameter: number;
-  /** Thrown out to the gun's right (MG) and back (cannon), and up; random between. */
+  /** Thrown sideways (positive = the gun's right, negative = left), back and up; random between. */
   readonly side: readonly [number, number];
   readonly back: readonly [number, number];
   readonly up: readonly [number, number];
@@ -411,6 +411,10 @@ export interface CasingKindDef {
   readonly spin: number;
   /** Casings of this kind kept; the oldest is reused. */
   readonly pool: number;
+  /** Floor bounces before it settles (Brendan: MG 2, cannon 3). */
+  readonly bounces: number;
+  /** Seconds after the shot before it's thrown out (the cannon's comes out during the reload). */
+  readonly delay: number;
   readonly colour: readonly [number, number, number];
 }
 
@@ -418,11 +422,14 @@ export const CASINGS = {
   mg: {
     length: 0.16,
     diameter: 0.055,
-    side: [1.8, 3],
+    // Out of the coax's own side: it sits left of the cannon (Brendan).
+    side: [-3, -1.8],
     back: [-0.4, 0.4],
     up: [1.8, 2.8],
     spin: 18,
     pool: 80,
+    bounces: 2,
+    delay: 0,
     colour: [0.85, 0.66, 0.28],
   } satisfies CasingKindDef,
   cannon: {
@@ -433,10 +440,16 @@ export const CASINGS = {
     up: [2.2, 3.2],
     spin: 9,
     pool: 12,
+    bounces: 3,
+    delay: 0.4,
     colour: [0.78, 0.6, 0.26],
   } satisfies CasingKindDef,
-  /** Shared flight: two bounces (Brendan), then they lie a while and fade. */
-  physics: { gravity: 12, restitution: 0.45, friction: 0.6, maxBounces: 2 },
+  /** Shared flight; each kind sets its own bounce count. */
+  physics: { gravity: 12, restitution: 0.45, friction: 0.6 },
+  /** Spin kept on each bounce, so the tumbling slows before it settles. */
+  spinKept: 0.55,
+  /** Seconds to ease from its last tumble into lying flat (no snap). */
+  settle: 0.2,
   /** Seconds solid (flight included), then seconds fading. */
   lie: 3,
   fade: 1.5,

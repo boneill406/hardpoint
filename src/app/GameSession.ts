@@ -1,5 +1,8 @@
 import type { Renderer } from '../render/Renderer';
-import { SHAKE_TRAUMA, type ImpactLook, type ImpactSurface } from '../render/vfx/effects';
+import type { CasingKind } from '../render/vfx/Casings';
+import { CASINGS, SHAKE_TRAUMA, type ImpactLook, type ImpactSurface } from '../render/vfx/effects';
+import { TICK_RATE } from '../sim/core/time';
+import { TickQueue } from './TickQueue';
 import type { SimEvents } from '../sim/core/SimEvents';
 import { Prop } from '../sim/arena/Prop';
 import type { EntityId } from '../sim/core/Entity';
@@ -64,6 +67,8 @@ export class GameSession {
   private readonly overlay: HealthOverlay | undefined;
   private readonly aiLabels: AiStateLabels | undefined;
   private readonly edges: EdgeIndicators;
+  /** Casings waiting to be thrown out (the cannon's comes a moment after the shot). */
+  private readonly casings = new TickQueue<ShotRef & { readonly kind: CasingKind }>();
   /** What each tank and prop is made of, for impact effects. */
   private readonly surfaces = new Map<EntityId, ImpactSurface>();
 
@@ -119,6 +124,7 @@ export class GameSession {
 
   /** Once per frame after rendering: overlays that follow entities on screen. */
   updateOverlays(frameSeconds: number): void {
+    this.ejectDueCasings();
     const { renderer } = this.deps;
     const vehicles = this.simulation.world.ofType(Vehicle);
     const projector = {
@@ -212,6 +218,31 @@ export class GameSession {
   }
 
   /**
+   * Every shot leaves a casing (M6-2b): MG brass at once, the cannon's case
+   * `CASINGS.cannon.delay` later, during the reload (Brendan). Delays count sim
+   * ticks, so pause and hit-stop hold them back too.
+   */
+  private scheduleCasing(shot: ShotRef): void {
+    const kind: CasingKind = this.lookOf(shot) === 'shell' ? 'cannon' : 'mg';
+    const delayTicks = Math.round(CASINGS[kind].delay * TICK_RATE);
+    this.casings.add(this.simulation.tickCount + delayTicks, { ...shot, kind });
+    if (delayTicks === 0) {
+      this.ejectDueCasings();
+    }
+  }
+
+  /** Throws out casings now due, from where each gun's breech is *now* (the tank may have moved). */
+  private ejectDueCasings(): void {
+    for (const due of this.casings.takeDue(this.simulation.tickCount)) {
+      const found = this.mountOf(due);
+      const breech = this.breechOf(due);
+      if (found !== undefined && breech !== undefined) {
+        this.deps.renderer.ejectCasing(due.kind, breech, found.vehicle.mountFacing(found.mount));
+      }
+    }
+  }
+
+  /**
    * Where the gun's barrel meets its hardpoint (the hardpoint's place on the
    * turret or hull): casings are thrown from here (M6-2b).
    */
@@ -271,8 +302,8 @@ export class GameSession {
         shot.origin,
         shot.heading,
         this.lookOf(shot),
-        this.breechOf(shot) ?? shot.origin,
       );
+      this.scheduleCasing(shot);
       this.telegraphs.end(shot.shooter, shot.hardpoint);
       this.stats.onShotFired(shot);
     });

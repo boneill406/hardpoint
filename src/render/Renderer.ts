@@ -23,6 +23,7 @@ import { ArenaView } from './views/ArenaView';
 import { impactEffects, SHAKE, type ImpactLook, type ImpactSurface } from './vfx/effects';
 import { CameraShake } from './camera/CameraShake';
 import { castsShadow } from './shadows';
+import type { CasingKind } from './vfx/Casings';
 import type { TrailedShell } from './vfx/ShellTrails';
 import { Vfx } from './vfx/Vfx';
 import { TankView } from './views/TankView';
@@ -272,7 +273,6 @@ export class Renderer {
     origin: Vec2,
     heading: number,
     look: ImpactLook,
-    breech: Vec2,
   ): void {
     const view = this.bridge.viewOf(shooter);
     if (view instanceof TankView) {
@@ -284,17 +284,23 @@ export class Renderer {
       this.vfx.burst('muzzleCannon', origin, height, forward);
       this.vfx.burst('muzzleSmoke', origin, height, forward);
       this.vfx.flashLight(origin, height);
-      // The cannon's case leaves out of the back of the turret, behind the breech.
-      this.vfx.eject(
-        'cannon',
-        breech.sub(forward.scale(CANNON_CASE_BEHIND_BREECH)),
-        height,
-        heading,
-      );
     } else {
       this.vfx.burst('muzzleMg', origin, height, forward);
-      this.vfx.eject('mg', breech, height, heading);
     }
+  }
+
+  /**
+   * A spent casing leaves a gun whose breech is at `breech`, facing `heading`
+   * (M6-2b): MG brass from the breech, the cannon's case out of the back of the
+   * turret. The session decides when (the cannon's comes during the reload).
+   */
+  ejectCasing(kind: CasingKind, breech: Vec2, heading: number): void {
+    const look = kind === 'cannon' ? 'shell' : 'tracer';
+    const from =
+      kind === 'cannon'
+        ? breech.sub(Vec2.fromHeading(heading).scale(CANNON_CASE_BEHIND_BREECH))
+        : breech;
+    this.vfx.eject(kind, from, FLIGHT_HEIGHT[look], heading);
   }
 
   /**

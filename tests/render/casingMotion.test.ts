@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { casingOpacity, stepCasing, type CasingState } from '../../src/render/vfx/casingMotion';
+import {
+  casingOpacity,
+  lyingYaw,
+  settleEase,
+  stepCasing,
+  type CasingState,
+} from '../../src/render/vfx/casingMotion';
 
 const PHYSICS = { gravity: 12, restitution: 0.45, friction: 0.6, maxBounces: 2, restHeight: 0.03 };
 
@@ -56,5 +62,34 @@ describe('casingOpacity', () => {
     expect(casingOpacity(2.9, 3, 1.5)).toBe(1);
     expect(casingOpacity(3.75, 3, 1.5)).toBeCloseTo(0.5, 9);
     expect(casingOpacity(4.5, 3, 1.5)).toBe(0);
+  });
+});
+
+describe('lyingYaw', () => {
+  it('lies the way its axis already points, flattened onto the floor', () => {
+    expect(lyingYaw({ x: 0, y: 0.5, z: 1 }, 9)).toBeCloseTo(0, 9);
+    expect(lyingYaw({ x: 1, y: -0.8, z: 0 }, 9)).toBeCloseTo(Math.PI / 2, 9);
+  });
+
+  it('an exactly upright casing keeps the fallback', () => {
+    expect(lyingYaw({ x: 0, y: 1, z: 0 }, 1.25)).toBe(1.25);
+  });
+});
+
+describe('settleEase', () => {
+  it('runs 0 → 1, fast first, clamped', () => {
+    expect(settleEase(0)).toBe(0);
+    expect(settleEase(0.5)).toBeCloseTo(0.75, 9);
+    expect(settleEase(1)).toBe(1);
+    expect(settleEase(2)).toBe(1);
+  });
+});
+
+describe('a cannon case with three bounces', () => {
+  it('bounces three times before settling', () => {
+    let state = thrown;
+    for (let i = 0; i < 300; i++) state = stepCasing(state, 1 / 60, { ...PHYSICS, maxBounces: 3 });
+    expect(state.bounces).toBe(3);
+    expect(state.resting).toBe(true);
   });
 });
