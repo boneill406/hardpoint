@@ -41,6 +41,11 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-7a · Shadows; stronger cannon shake
+- **Shadows:** a `ShadowGenerator` (2048², percentage-closer filtering, medium quality, bias 0.004, normal bias 0.02, darkness 0.28) on the existing sun, positioned 60 u back along its direction. Casters opt in through `render/shadows.ts` (`castShadow`: a weak-set registry; casters also receive): every tank part (after the model is built), pillars and crates (`PropView`), walls (`ArenaView`). The shadow map's `renderListPredicate` checks the registry each frame, so tanks and crates that appear or vanish mid-run need no wiring. Floor and terrain receive. `?shadows=off` for the M7 performance check.
+- Checked headless on the title screen: soft shadows from every prop, wall and the tank, falling up-screen and left. Not yet checked for acne or cost with wave 5 on screen.
+- **Cannon shake (Brendan: "not really noticeable"):** trauma 0.22 → 0.4. Shake is trauma², so 0.22 moved the camera ~0.03 u; 0.4 moves it ~0.1 u, still below being hit (0.45). Brendan liked the rest of the shake and the hull flash.
+
 ## 2026-11-25 · M6-1b · Screen shake, hit-stop, hit flash
 - **`CameraShake`** (`render/camera`, pure, tested): trauma 0..1, decays 2 / s; offset = 0.6 u × trauma² along two summed sines (smooth, repeatable). `SliceCamera.follow(target, dt, shake)` adds it after clamping. Trauma (`SHAKE_TRAUMA`): your cannon 0.22, you hit 0.45, any kill within 12 u of you 0.5. `?shake=off`.
 - **Hit-stop** (`app/HitStop`, pure, tested): 60 ms, only when *you* destroy a tank (plan D7 (b)). The frame loop skips ticking while frozen; rendering continues; fire presses during the freeze are kept for the next tick (only menus drop them). `?hitstop=off`.

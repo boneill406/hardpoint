@@ -1,3 +1,4 @@
+import { castShadow } from '../../shadows';
 import {
   Color3,
   DynamicTexture,
@@ -111,6 +112,9 @@ export class PrimitiveTankModel implements TankModel {
       if (weapon !== undefined) {
         this.guns[hardpoint.id] = this.buildGun(hardpoint, weapon, palette);
       }
+    }
+    for (const mesh of this.root.getChildMeshes()) {
+      castShadow(mesh);
     }
   }
 

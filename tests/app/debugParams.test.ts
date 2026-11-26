@@ -4,7 +4,7 @@ import { readDebugParams } from '../../src/app/debugParams';
 describe('readDebugParams', () => {
   it('reads valid parameters with no warnings', () => {
     const params = readDebugParams(
-      '?fps=20&interp=off&pad=direct&grid=on&cam=proto&armor=struck&hp=off&enemies=3&dummies=on&ai=on&nav=on&mode=sandbox&wave=4&seed=42&shake=off&hitstop=off',
+      '?fps=20&interp=off&pad=direct&grid=on&cam=proto&armor=struck&hp=off&enemies=3&dummies=on&ai=on&nav=on&mode=sandbox&wave=4&seed=42&shake=off&hitstop=off&shadows=off',
     );
     expect(params).toEqual({
       fps: 20,
@@ -23,6 +23,7 @@ describe('readDebugParams', () => {
       nav: true,
       shake: false,
       hitstop: false,
+      shadows: false,
       warnings: [],
     });
   });
@@ -45,6 +46,7 @@ describe('readDebugParams', () => {
       nav: false,
       shake: true,
       hitstop: true,
+      shadows: true,
       warnings: [],
     });
   });
@@ -63,7 +65,7 @@ describe('readDebugParams', () => {
       '?fsp=20&fps=-3&grid=yes&pad=toString&armor=angle&enemies=4',
     );
     expect(warnings).toEqual([
-      'Unknown debug parameter "fsp" (known: fps, interp, pad, grid, cam, armor, hp, enemies, dummies, ai, nav, mode, wave, seed, shake, hitstop)',
+      'Unknown debug parameter "fsp" (known: fps, interp, pad, grid, cam, armor, hp, enemies, dummies, ai, nav, mode, wave, seed, shake, hitstop, shadows)',
       'Ignoring ?fps=-3: expected a positive number',
       'Ignoring ?pad=toString: expected tank | direct | triggers',
       'Ignoring ?armor=angle: expected direction | struck',

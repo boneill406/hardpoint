@@ -46,6 +46,8 @@ export interface DebugParams {
   readonly nav: boolean;
   /** Screen shake (M6-1b); `?shake=off` turns it off. */
   readonly shake: boolean;
+  /** Sun shadows (M6-7a); `?shadows=off` for the performance check. */
+  readonly shadows: boolean;
   /** Hit-stop on the player's kills (M6-1b, plan D7); `?hitstop=off` to compare. */
   readonly hitstop: boolean;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
@@ -74,6 +76,7 @@ const KNOWN = [
   'seed',
   'shake',
   'hitstop',
+  'shadows',
 ];
 const MODES: readonly GameModeName[] = ['waves', 'sandbox'];
 /** Must match the number of waves in `defs/waves.ts` (a test checks). */
@@ -154,7 +157,17 @@ export function readDebugParams(search: string): DebugParams {
     warn('seed', seedText, 'a whole number ≥ 0');
   }
 
-  for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav', 'shake', 'hitstop']) {
+  for (const name of [
+    'interp',
+    'grid',
+    'hp',
+    'dummies',
+    'ai',
+    'nav',
+    'shake',
+    'hitstop',
+    'shadows',
+  ]) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
       warn(name, value, 'on | off');
@@ -178,6 +191,7 @@ export function readDebugParams(search: string): DebugParams {
     nav: params.get('nav') === 'on',
     shake: params.get('shake') !== 'off',
     hitstop: params.get('hitstop') !== 'off',
+    shadows: params.get('shadows') !== 'off',
     warnings,
   };
 }

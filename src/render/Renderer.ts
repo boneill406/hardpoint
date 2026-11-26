@@ -2,6 +2,7 @@ import {
   Color3,
   Color4,
   DirectionalLight,
+  ShadowGenerator,
   Engine,
   HemisphericLight,
   Matrix,
@@ -21,6 +22,7 @@ import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
 import { impactEffects, SHAKE, type ImpactLook, type ImpactSurface } from './vfx/effects';
 import { CameraShake } from './camera/CameraShake';
+import { castsShadow } from './shadows';
 import type { TrailedShell } from './vfx/ShellTrails';
 import { Vfx } from './vfx/Vfx';
 import { TankView } from './views/TankView';
@@ -46,7 +48,24 @@ export interface RendererOptions extends RenderBridgeOptions {
   readonly ai: boolean;
   /** Screen shake on (`?shake=off` turns it off, M6-1b). */
   readonly shake: boolean;
+  /** Sun shadows on (`?shadows=off` turns them off, for the M7 performance check). */
+  readonly shadows: boolean;
 }
+
+/**
+ * The sun (M6-7a): high, in front of the camera and to the right, so shadows
+ * fall up-screen and to the left, short enough not to hide tanks behind cover.
+ * 2048² over a ~48 u arena is ~2.3 cm per texel.
+ */
+const SUN = {
+  direction: new Vector3(-0.4, -1, 0.6).normalize(),
+  distance: 60,
+  mapSize: 2048,
+  bias: 0.004,
+  normalBias: 0.02,
+  /** 0 = black shadows, 1 = none: keep them soft so tanks in shade stay readable. */
+  darkness: 0.28,
+};
 
 /** What the debug views need each frame; ignored when they are off. */
 export interface DebugState {
@@ -77,7 +96,7 @@ export class Renderer {
     this.scene = new Scene(this.engine);
     this.scene.clearColor = new Color4(0.07, 0.08, 0.09, 1);
 
-    this.createLights();
+    this.createLights(options.shadows);
     this.arenaView = new ArenaView(this.scene, options.arena, options.grid);
 
     const { arena } = options;
@@ -320,12 +339,36 @@ export class Renderer {
     );
   }
 
-  private createLights(): void {
+  private createLights(shadows: boolean): void {
     const ambient = new HemisphericLight('ambient', new Vector3(0, 1, 0), this.scene);
     ambient.intensity = 0.55;
     ambient.groundColor = new Color3(0.2, 0.2, 0.25);
 
-    const sun = new DirectionalLight('sun', new Vector3(-0.4, -1, 0.6), this.scene);
+    const sun = new DirectionalLight('sun', SUN.direction, this.scene);
     sun.intensity = 0.8;
+    if (shadows) {
+      this.createShadows(sun);
+    }
+  }
+
+  /**
+   * One shadow map from the sun (M6-7a, GDD §7): tanks, props and walls cast
+   * (`castShadow`), the floor and they themselves receive. Soft-edged (PCF).
+   * The map's caster list is rebuilt each frame from the registry, so new and
+   * removed views need no wiring.
+   */
+  private createShadows(sun: DirectionalLight): void {
+    // A directional light's shadow camera sits back along its direction.
+    sun.position = SUN.direction.scale(-SUN.distance);
+    const generator = new ShadowGenerator(SUN.mapSize, sun);
+    generator.usePercentageCloserFiltering = true;
+    generator.filteringQuality = ShadowGenerator.QUALITY_MEDIUM;
+    generator.bias = SUN.bias;
+    generator.normalBias = SUN.normalBias;
+    generator.darkness = SUN.darkness;
+    const map = generator.getShadowMap();
+    if (map !== null) {
+      map.renderListPredicate = (mesh): boolean => castsShadow(mesh);
+    }
   }
 }

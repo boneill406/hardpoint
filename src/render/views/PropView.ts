@@ -1,3 +1,4 @@
+import { castShadow } from '../shadows';
 import { Color3, MeshBuilder, StandardMaterial } from '@babylonjs/core';
 import type { Mesh, Scene } from '@babylonjs/core';
 import type { Prop, PropKind } from '../../sim/arena/Prop';
@@ -31,6 +32,7 @@ export class PropView implements EntityView {
     material.diffuseColor = look.color;
     material.specularColor = Color3.Black();
     this.mesh.material = material;
+    castShadow(this.mesh);
   }
 
   update(transform: Transform): void {

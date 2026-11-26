@@ -297,7 +297,7 @@ export const SHAKE = { decayPerSecond: 2, maxOffset: 0.6, frequency: 9 } as cons
 
 /** Trauma per event (GDD §8: cannon fire small, player hit medium, nearby kill medium). */
 export const SHAKE_TRAUMA = {
-  playerCannon: 0.22,
+  playerCannon: 0.4,
   playerHit: 0.45,
   nearbyKill: 0.5,
   /** A kill counts as "nearby" within this distance (u) of the player. */

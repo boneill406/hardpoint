@@ -133,6 +133,7 @@ async function start(): Promise<void> {
     nav: debug.nav,
     ai: debug.ai,
     shake: debug.shake,
+    shadows: debug.shadows,
   });
   window.addEventListener('resize', () => renderer.resize());
 

@@ -2,6 +2,7 @@ import { Color3, MeshBuilder, StandardMaterial, Vector3 } from '@babylonjs/core'
 import type { Mesh, Scene } from '@babylonjs/core';
 import type { Arena } from '../../sim/arena/Arena';
 import type { BoxDef } from '../../sim/arena/ArenaDef';
+import { castShadow } from '../shadows';
 import { toBabylonPosition, toBabylonRotationY } from '../coords';
 
 /** Spacing of the debug grid lines (`?grid=on`), in units. Helps judge scale and speed. */
@@ -87,12 +88,14 @@ export class ArenaView {
     terrain.position.y = -0.02; // just below the arena floor, so the floor always wins
     terrain.material = flatMaterial(scene, 'terrain-mat', new Color3(0.2, 0.2, 0.18));
     terrain.isPickable = false;
+    terrain.receiveShadows = true;
     this.meshes.push(terrain);
   }
 
   private createFloor(scene: Scene, arena: Arena): void {
     const { width, depth } = arena.def;
     const floor = MeshBuilder.CreateGround('arena-floor', { width, height: depth }, scene);
+    floor.receiveShadows = true;
     floor.material = flatMaterial(scene, 'arena-floor-mat', new Color3(0.32, 0.31, 0.27));
     this.meshes.push(floor);
   }
@@ -102,6 +105,7 @@ export class ArenaView {
     arena.walls.forEach((wall, i) => {
       const mesh = boxMesh(scene, `arena-wall-${i}`, wall, arena.def.wall.height);
       mesh.material = material;
+      castShadow(mesh);
       this.meshes.push(mesh);
     });
   }
