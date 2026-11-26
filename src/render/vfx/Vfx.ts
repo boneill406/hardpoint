@@ -1,16 +1,21 @@
-import { Color4, ParticleSystem, Vector3 } from '@babylonjs/core';
+import { ParticleSystem, Vector3 } from '@babylonjs/core';
 import type { Scene, Texture } from '@babylonjs/core';
-import type { Vec2 } from '../../sim/core/Vec2';
+import { Vec2 } from '../../sim/core/Vec2';
 import { toBabylonPosition } from '../coords';
 import {
   EFFECTS,
+  EXPLOSION_BURSTS,
+  EXPLOSION_LIGHT,
   SHELL_TRAIL,
+  SMOKE_COLUMN,
   type BurstEffectDef,
   type EffectName,
   type ParticleTexture,
-  type Rgba,
 } from './effects';
+import { addFade } from './particleFade';
 import { MuzzleLights } from './MuzzleLights';
+import { Scorches } from './Scorches';
+import { SmokeColumns } from './SmokeColumns';
 import { ShellTrails, type TrailedShell } from './ShellTrails';
 import { createParticleTextures } from './particleTextures';
 import { sprayCone } from './sprayCone';
@@ -38,12 +43,16 @@ export class Vfx {
   private readonly pools = new Map<EffectName, Pool>();
   private readonly trails: ShellTrails;
   private readonly lights: MuzzleLights;
+  private readonly columns: SmokeColumns;
+  private readonly scorches: Scorches;
 
   /** `trailHeight`: the height (u) cannon shells fly at, where their smoke is laid. */
   constructor(scene: Scene, trailHeight: number) {
     this.textures = createParticleTextures(scene);
     this.trails = new ShellTrails(scene, this.textures.smoke, SHELL_TRAIL, trailHeight);
     this.lights = new MuzzleLights(scene);
+    this.columns = new SmokeColumns(scene, this.textures.smoke, SMOKE_COLUMN);
+    this.scorches = new Scorches(scene, this.textures.soft);
     for (const [name, def] of Object.entries(EFFECTS) as [EffectName, BurstEffectDef][]) {
       const systems = Array.from({ length: POOL_SIZE }, (_, i) =>
         this.createSystem(scene, `${name}-${i}`, def),
@@ -76,16 +85,34 @@ export class Vfx {
     this.lights.flash(point, height);
   }
 
+  /**
+   * A tank was destroyed at `point` (M6-3, plan D12): fireball, sparks and
+   * debris at hull height, a bright flash of light, a column of smoke for
+   * ~2 s, and a burn mark on the floor.
+   */
+  explode(point: Vec2): void {
+    for (const effect of EXPLOSION_BURSTS) {
+      this.burst(effect, point, 0.8, Vec2.ZERO);
+    }
+    this.lights.flash(point, 1.2, EXPLOSION_LIGHT.intensity, EXPLOSION_LIGHT.duration);
+    this.columns.start(point);
+    this.scorches.add(point);
+  }
+
   /** Once per frame: shell trails along this frame's movement, and fading muzzle lights. */
   update(shells: readonly TrailedShell[], frameSeconds: number): void {
     this.trails.update(shells);
     this.lights.update(frameSeconds);
+    this.columns.update(frameSeconds);
+    this.scorches.update(frameSeconds);
   }
 
   /** Removes every particle in flight (a new run starts). */
   clear(): void {
     this.trails.clear();
     this.lights.clear();
+    this.columns.clear();
+    this.scorches.clear();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.reset();
@@ -96,6 +123,8 @@ export class Vfx {
   dispose(): void {
     this.trails.dispose();
     this.lights.dispose();
+    this.columns.dispose();
+    this.scorches.dispose();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.dispose(false);
@@ -134,13 +163,4 @@ export class Vfx {
     system.start();
     return system;
   }
-}
-
-/** Start colour, held until `fadeFrom` of the particle's life, then a blend to the end colour. */
-export function addFade(system: ParticleSystem, start: Rgba, end: Rgba, fadeFrom: number): void {
-  system.addColorGradient(0, new Color4(...start));
-  if (fadeFrom > 0) {
-    system.addColorGradient(fadeFrom, new Color4(...start));
-  }
-  system.addColorGradient(1, new Color4(...end));
 }

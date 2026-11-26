@@ -179,6 +179,9 @@ export class GameSession {
   private feelHit(hit: SimEvents['Hit']): void {
     const { renderer, onPlayerKill } = this.deps;
     renderer.hitFlash(hit.target);
+    if (hit.destroyed && this.surfaces.get(hit.target) === 'metal') {
+      renderer.explode(hit.target, hit.point);
+    }
     const player = this.playerTank.id;
     if (hit.target === player) {
       renderer.shake(SHAKE_TRAUMA.playerHit);

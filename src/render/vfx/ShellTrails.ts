@@ -5,7 +5,7 @@ import { Vec2 } from '../../sim/core/Vec2';
 import { toBabylonPosition } from '../coords';
 import type { TrailDef } from './effects';
 import { pointsAlong } from './firingMotion';
-import { addFade } from './Vfx';
+import { addFade } from './particleFade';
 
 /** Puffs alive at once across all trails (a few shells' worth). */
 const CAPACITY = 3000;

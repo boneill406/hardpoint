@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  emissionThisFrame,
   flashIntensity,
   hitFlash,
   pointsAlong,
   recoilOffset,
+  scorchOpacity,
 } from '../../src/render/vfx/firingMotion';
 
 describe('recoilOffset', () => {
@@ -60,5 +62,31 @@ describe('hitFlash', () => {
     expect(hitFlash(0, 0.12)).toBe(1);
     expect(hitFlash(0.06, 0.12)).toBeCloseTo(0.25, 9);
     expect(hitFlash(0.12, 0.12)).toBe(0);
+  });
+});
+
+describe('emissionThisFrame', () => {
+  it('emits whole particles and carries the rest, so the rate is exact over time', () => {
+    let carry = 0;
+    let total = 0;
+    for (let i = 0; i < 60; i++) {
+      const frame = emissionThisFrame(14, 1 / 60, carry);
+      total += frame.count;
+      carry = frame.carry;
+    }
+    expect(total).toBe(14);
+  });
+
+  it('at a slow frame rate it emits several at once', () => {
+    expect(emissionThisFrame(14, 0.5, 0).count).toBe(7);
+  });
+});
+
+describe('scorchOpacity', () => {
+  it('holds full for half its time, then fades to nothing', () => {
+    expect(scorchOpacity(0, 0.5, 20)).toBe(0.5);
+    expect(scorchOpacity(10, 0.5, 20)).toBe(0.5);
+    expect(scorchOpacity(15, 0.5, 20)).toBeCloseTo(0.25, 9);
+    expect(scorchOpacity(20, 0.5, 20)).toBe(0);
   });
 });

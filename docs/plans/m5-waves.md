@@ -111,7 +111,7 @@ Repair after each of waves 1–4: 20 % (GDD). Counts stay 1 → 5; numbers are f
 | End | Player destroyed → defeat that tick, in any phase; wave 5 cleared → victory; nothing spawns after the run ends |
 | Determinism | Same seed + same commands → same run (wave timings, spawns) |
 | Stats | Kills only for your destroying hits; accuracy per weapon (crate hits don't count); damage taken sums `Hit`s on you |
-| UI maths | Edge-arrow clamping (on-screen → none; off each edge and corner → clamped point and angle); menu navigation wraps; `GameFlow` transitions (title → playing, pause/resume, blur pauses, summary → restart builds a new sim) |
+| UI math | Edge-arrow clamping (on-screen → none; off each edge and corner → clamped point and angle); menu navigation wraps; `GameFlow` transitions (title → playing, pause/resume, blur pauses, summary → restart builds a new sim) |
 | Integration | Real Rapier, slice arena, scripted player that never dies (huge armor) and an "assistant" that destroys enemies: all 5 waves run to victory with the right spawn counts |
 
 ## Trade-offs to record

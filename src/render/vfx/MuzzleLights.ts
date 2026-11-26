@@ -11,6 +11,9 @@ const POOL_SIZE = 2;
 interface Slot {
   readonly light: PointLight;
   age: number;
+  /** This flash's peak brightness and length: a muzzle flash, or an explosion's (M6-3). */
+  intensity: number;
+  duration: number;
 }
 
 /**
@@ -32,11 +35,16 @@ export class MuzzleLights {
       light.specular = Color3.Black();
       light.range = MUZZLE_LIGHT.range;
       light.intensity = 0;
-      return { light, age: Number.POSITIVE_INFINITY };
+      return { light, age: Number.POSITIVE_INFINITY, intensity: 0, duration: 1 };
     });
   }
 
-  flash(point: Vec2, height: number): void {
+  flash(
+    point: Vec2,
+    height: number,
+    intensity: number = MUZZLE_LIGHT.intensity,
+    duration: number = MUZZLE_LIGHT.duration,
+  ): void {
     const slot = this.slots[this.next];
     if (slot === undefined) {
       return;
@@ -44,13 +52,14 @@ export class MuzzleLights {
     this.next = (this.next + 1) % this.slots.length;
     slot.light.position = toBabylonPosition(point, height);
     slot.age = 0;
+    slot.intensity = intensity;
+    slot.duration = duration;
   }
 
   update(frameSeconds: number): void {
     for (const slot of this.slots) {
       slot.age += frameSeconds;
-      slot.light.intensity =
-        MUZZLE_LIGHT.intensity * flashIntensity(slot.age, MUZZLE_LIGHT.duration);
+      slot.light.intensity = slot.intensity * flashIntensity(slot.age, slot.duration);
     }
   }
 

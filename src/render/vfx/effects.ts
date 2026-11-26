@@ -46,6 +46,9 @@ export type EffectName =
   | 'muzzleCannon'
   | 'muzzleMg'
   | 'muzzleSmoke'
+  | 'fireball'
+  | 'blastSparks'
+  | 'debris'
   | 'flash'
   | 'sparks'
   | 'sparksSmall'
@@ -56,6 +59,53 @@ export type EffectName =
   | 'splinters';
 
 export const EFFECTS: Readonly<Record<EffectName, BurstEffectDef>> = {
+  // A destroyed tank (M6-3): a ball of fire that swells and darkens to red as it rises.
+  fireball: {
+    texture: 'soft',
+    count: 12,
+    lifetime: [0.3, 0.6],
+    size: [0.9, 1.5],
+    growth: 2,
+    speed: [1, 3.5],
+    lift: 0.8,
+    spread: 1,
+    gravity: 1.5,
+    colour: { start: [0.85, 0.45, 0.12, 0.85], end: [0.45, 0.08, 0.02, 0] },
+    blend: 'add',
+    stretched: false,
+    fadeFrom: 0.2,
+  },
+  // Hot sparks thrown out of the blast in every direction.
+  blastSparks: {
+    texture: 'spark',
+    count: 34,
+    lifetime: [0.3, 0.7],
+    size: [0.14, 0.24],
+    growth: 0.4,
+    speed: [5, 12],
+    lift: 0.5,
+    spread: 1,
+    gravity: -9,
+    colour: { start: [1, 0.85, 0.5, 1], end: [1, 0.35, 0.05, 0] },
+    blend: 'add',
+    stretched: true,
+  },
+  // Dark bits of tank flung out and falling.
+  debris: {
+    texture: 'soft',
+    count: 14,
+    lifetime: [0.6, 1.1],
+    size: [0.12, 0.2],
+    growth: 1,
+    speed: [3, 7],
+    lift: 0.7,
+    spread: 1,
+    gravity: -14,
+    colour: { start: [0.12, 0.11, 0.1, 1], end: [0.12, 0.11, 0.1, 0] },
+    blend: 'alpha',
+    stretched: false,
+    fadeFrom: 0.7,
+  },
   // Cannon muzzle flash (M6-2a): a short, hot tongue of fire thrown forward out of the brake.
   muzzleCannon: {
     texture: 'soft',
@@ -306,3 +356,48 @@ export const SHAKE_TRAUMA = {
 
 /** A tank that takes damage glows white-hot for this long (M6-1b, plan D8). */
 export const HIT_FLASH = { duration: 0.12, strength: 0.85 } as const;
+
+/** The bursts a destroyed tank sets off at once (M6-3, plan D12). */
+export const EXPLOSION_BURSTS: readonly EffectName[] = [
+  'fireball',
+  'blastSparks',
+  'debris',
+  'flash',
+];
+
+/** The explosion's light: much brighter and longer than a muzzle flash. */
+export const EXPLOSION_LIGHT = { intensity: 5, duration: 0.35 } as const;
+
+/**
+ * Smoke rising from a destroyed tank (M6-3): puffs emitted for `seconds` at
+ * `rate` a second, rising and swelling. Kept thin so it never hides the fight
+ * (plan D19).
+ */
+export interface SmokeColumnDef {
+  readonly seconds: number;
+  readonly rate: number;
+  readonly lifetime: readonly [number, number];
+  readonly size: readonly [number, number];
+  readonly growth: number;
+  /** Upward speed, u/s. */
+  readonly rise: readonly [number, number];
+  /** Sideways jitter of each puff's start (u). */
+  readonly jitter: number;
+  readonly colour: { readonly start: Rgba; readonly end: Rgba };
+  readonly fadeFrom: number;
+}
+
+export const SMOKE_COLUMN: SmokeColumnDef = {
+  seconds: 2,
+  rate: 14,
+  lifetime: [1.2, 1.8],
+  size: [0.75, 1.0],
+  growth: 2.6,
+  rise: [1.2, 2.2],
+  jitter: 0.5,
+  colour: { start: [0.18, 0.17, 0.16, 0.62], end: [0.35, 0.34, 0.32, 0] },
+  fadeFrom: 0.25,
+};
+
+/** A burn mark left on the floor where a tank died (M6-3): it fades out over `fadeSeconds`. */
+export const SCORCH = { radius: 1.6, opacity: 0.55, fadeSeconds: 25, max: 16 } as const;

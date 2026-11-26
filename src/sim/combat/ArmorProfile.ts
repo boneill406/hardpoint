@@ -14,7 +14,7 @@ export interface ArmorHit {
 
 /**
  * Directional armor (architecture.md §3, GDD §5): picks the face a hit counts
- * against and its damage multiplier. Pure maths on headings, so the same hit
+ * against and its damage multiplier. Pure math on headings, so the same hit
  * always lands on the same face (no mesh or physics lookups).
  */
 export class ArmorProfile {

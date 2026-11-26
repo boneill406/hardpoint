@@ -59,7 +59,7 @@ Everything in M6 is **render, audio or app side**. The simulation doesn't change
 | 2 | M6-2a Muzzle flash light and sprite, cannon recoil, **cannon smoke trail** (D9, D10) | `m6-2a-muzzle` | ✅ |
 | 3 | M6-1b Screen shake, hit-stop, hit flash (D6–D8) | `m6-1b-impact-feel` | ✅ |
 | 4 | M6-7a Shadows (D16) (moved up by Brendan, 2026-11-25) | `m6-7a-shadows` | ✅ |
-| 5 | M6-3 Explosions, smoke column, scorch (D12) | `m6-3-explosions` | ⬜ |
+| 5 | M6-3 Explosions, smoke column, scorch (D12) | `m6-3-explosions` | ✅ |
 | 6 | M6-2b Shell casings (D11) | `m6-2b-casings` | ⬜ |
 | 7 | M6-4 Crate chunks, tread marks, MG heat glow (D14) | `m6-4-details` | ⬜ |
 | 8 | M6-6 Sounds (D4, D5) | `m6-6-sound` | ⬜ |
@@ -68,7 +68,7 @@ Everything in M6 is **render, audio or app side**. The simulation doesn't change
 | 11 | Follow-ups pass (D18) and readability check (D19); done-when | — | ⬜ |
 
 ## Tests
-Effects aren't unit-tested (rendering rule), but the maths behind them is, as with the HUD: shake decay, recoil spring, casing arcs and bounce, trail fade, distance falloff and pan for sound, voice limiting, hit-stop timing in `GameFlow`/frame logic, pool reuse (never more than the cap). Everything else is checked in play.
+Effects aren't unit-tested (rendering rule), but the math behind them is, as with the HUD: shake decay, recoil spring, casing arcs and bounce, trail fade, distance falloff and pan for sound, voice limiting, hit-stop timing in `GameFlow`/frame logic, pool reuse (never more than the cap). Everything else is checked in play.
 
 ## Trade-offs to record
 Effects as TypeScript defs (not presets or the editor) · CC0 asset packs · hit-stop by holding ticks · no wrecks · casings and chunks not collidable · bloom threshold high.

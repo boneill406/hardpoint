@@ -41,6 +41,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-3 · Explosions
+- **Trigger:** a `Hit` with `destroyed` on a tank (surface `metal`) → `Renderer.explode(id, point)`, placed at the tank's last drawn position (events are delivered before the frame renders, so the view still holds it), falling back to the hit point.
+- **Pieces** (data in `effects.ts`): `fireball` (12 warm additive puffs, swelling and darkening to red), `blastSparks` (34 stretched sparks), `debris` (14 dark bits falling), an explosion light (`MuzzleLights.flash` now takes a strength and length: 5× for 0.35 s), a **smoke column** (`SmokeColumns`: one shared particle system; each column emits 14 puffs/s for 2 s at the wreck, rising, swelling ×2.6, fading over 1.2–1.8 s; `emissionThisFrame` keeps the rate exact at any frame rate), and a **burn mark** (`Scorches`: 16 pooled floor discs, the soft texture as opacity, held then faded over 25 s, oldest reused).
+- `addFade` moved to its own `particleFade.ts` (it had made `Vfx` and the trail/column modules import each other).
+- **Look fixes while checking (test page at the game camera):** the fireball blew out to white (overlapping additive puffs plus the impact `flash`): darker orange start, fewer puffs, no `flash`. Smoke column thickened. Not yet seen in a fight.
+- **Tests:** `emissionThisFrame` (exact rate over a second, several per slow frame), `scorchOpacity` (hold, fade, gone).
+- **"math", not "maths"** (Brendan): replaced in code comments and docs; saved as a standing preference.
+
 ## 2026-11-25 · M6-7a · Shadows; stronger cannon shake
 - **Shadows:** a `ShadowGenerator` (2048², percentage-closer filtering, medium quality, bias 0.004, normal bias 0.02, darkness 0.28) on the existing sun, positioned 60 u back along its direction. Casters opt in through `render/shadows.ts` (`castShadow`: a weak-set registry; casters also receive): every tank part (after the model is built), pillars and crates (`PropView`), walls (`ArenaView`). The shadow map's `renderListPredicate` checks the registry each frame, so tanks and crates that appear or vanish mid-run need no wiring. Floor and terrain receive. `?shadows=off` for the M7 performance check.
 - Checked headless on the title screen: soft shadows from every prop, wall and the tank, falling up-screen and left. Not yet checked for acne or cost with wave 5 on screen.

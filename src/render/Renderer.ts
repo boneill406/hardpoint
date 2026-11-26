@@ -241,6 +241,15 @@ export class Renderer {
     }
   }
 
+  /**
+   * A tank was destroyed (M6-3): explode where it was last drawn (events are
+   * delivered before this frame's render, so its view still has last frame's
+   * position), or at `fallback` (the killing hit) if it was never drawn.
+   */
+  explode(id: EntityId, fallback: Vec2): void {
+    this.vfx.explode(this.bridge.drawnTransform(id)?.position ?? fallback);
+  }
+
   /** A tank took damage (`Hit`): it flashes white-hot. */
   hitFlash(id: EntityId): void {
     const view = this.bridge.viewOf(id);

@@ -1,4 +1,4 @@
-// Pure maths for how a tank *looks* when it moves: tread scroll and hull pitch.
+// Pure math for how a tank *looks* when it moves: tread scroll and hull pitch.
 // Render-only (no sim effect), but unit-tested because the prototype got the
 // tread signs wrong and these are easy to get backwards.
 

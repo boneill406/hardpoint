@@ -1,4 +1,4 @@
-// Pure maths for firing effects (M6-2a): recoil, flash light, trail spacing.
+// Pure math for firing effects (M6-2a): recoil, flash light, trail spacing.
 // Render-only, unit-tested like `tankMotion.ts`.
 
 /**
@@ -64,4 +64,28 @@ export function hitFlash(age: number, duration: number): number {
   }
   const remaining = 1 - age / duration;
   return remaining * remaining;
+}
+
+/**
+ * Whole particles to emit this frame at `rate` per second, carrying the
+ * fraction over to the next frame so the long-run rate is exact at any frame
+ * rate (M6-3 smoke columns).
+ */
+export function emissionThisFrame(
+  rate: number,
+  frameSeconds: number,
+  carry: number,
+): { count: number; carry: number } {
+  const due = carry + rate * Math.max(0, frameSeconds);
+  const count = Math.floor(due);
+  return { count, carry: due - count };
+}
+
+/** A scorch mark's opacity `age` s after the kill: full for the first half, then fading to 0 at `fadeSeconds`. */
+export function scorchOpacity(age: number, opacity: number, fadeSeconds: number): number {
+  if (age < 0 || age >= fadeSeconds) {
+    return 0;
+  }
+  const half = fadeSeconds / 2;
+  return age <= half ? opacity : opacity * (1 - (age - half) / half);
 }
