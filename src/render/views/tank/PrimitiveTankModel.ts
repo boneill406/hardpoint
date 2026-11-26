@@ -114,6 +114,13 @@ export class PrimitiveTankModel implements TankModel {
     }
   }
 
+  setFlash(amount: number): void {
+    const glow = Math.max(0, Math.min(1, amount));
+    for (const material of [...this.materials.values(), ...this.treadMaterials]) {
+      material.emissiveColor.set(glow, glow * 0.92, glow * 0.8);
+    }
+  }
+
   dispose(): void {
     // false: also dispose child meshes; materials and textures are tracked separately.
     this.root.dispose(false, false);

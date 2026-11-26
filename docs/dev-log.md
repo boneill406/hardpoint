@@ -41,6 +41,13 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-1b · Screen shake, hit-stop, hit flash
+- **`CameraShake`** (`render/camera`, pure, tested): trauma 0..1, decays 2 / s; offset = 0.6 u × trauma² along two summed sines (smooth, repeatable). `SliceCamera.follow(target, dt, shake)` adds it after clamping. Trauma (`SHAKE_TRAUMA`): your cannon 0.22, you hit 0.45, any kill within 12 u of you 0.5. `?shake=off`.
+- **Hit-stop** (`app/HitStop`, pure, tested): 60 ms, only when *you* destroy a tank (plan D7 (b)). The frame loop skips ticking while frozen; rendering continues; fire presses during the freeze are kept for the next tick (only menus drop them). `?hitstop=off`.
+- **Hit flash:** `TankModel.setFlash(amount)` (new on the interface; `PrimitiveTankModel` sets every material's emissive), driven by `TankView.hitFlash()` on each `Hit`: 0.85 strength, fading quadratically over 0.12 s (`hitFlash`).
+- **Plan:** shadows (M6-7a) moved up to straight after this task (Brendan); bloom is its own task.
+- Not seen in play yet: sizes and amounts are starting values in `effects.ts`.
+
 ## 2026-11-25 · M6-2a · Muzzle flash, recoil, cannon smoke trail
 - **Recoil:** `TankView.recoil(hardpoint)` on `ShotFired`; `recoilOffset(age, kick, returnTime)` (pure): snap back by the kick, ease home (quadratic). Cannon 0.3 u over 0.28 s, MG 0.04 u over 0.06 s (`RECOIL` by barrel look). Moves the model's gun node; the sim's barrel is unchanged.
 - **Muzzle flash:** `muzzleCannon` (fire thrown forward), `muzzleSmoke` and `muzzleMg` bursts along the shot's heading; for the cannon, a pooled warm `PointLight` (2 in the pool, 2.2 intensity, 7 u range, 0.08 s; `flashIntensity`). Lights stay enabled at zero brightness to avoid shader recompiles.

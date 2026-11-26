@@ -1,3 +1,4 @@
+import type { ShakeOffset } from './CameraShake';
 import { TargetCamera, Vector3 } from '@babylonjs/core';
 import type { Scene } from '@babylonjs/core';
 import { Vec2 } from '../../sim/core/Vec2';
@@ -63,6 +64,8 @@ interface ViewExtents {
  * trapezoid, wider at the top, so near the side walls the top corners show
  * ground beyond the arena (ArenaView draws terrain there, never void).
  */
+const NO_SHAKE: ShakeOffset = { x: 0, y: 0 };
+
 export class SliceCamera {
   readonly camera: TargetCamera;
   private focus: Vec2 | undefined;
@@ -114,7 +117,7 @@ export class SliceCamera {
    * Eases the focus toward `target` (the followed tank's drawn position) and
    * places the camera. The first call snaps, so the game doesn't open with a pan.
    */
-  follow(target: Vec2, frameSeconds: number): void {
+  follow(target: Vec2, frameSeconds: number, shake: ShakeOffset = NO_SHAKE): void {
     const desired = this.clampToBounds(target);
     if (this.focus === undefined) {
       this.focus = desired;
@@ -122,7 +125,8 @@ export class SliceCamera {
       const ease = 1 - Math.exp(-FOLLOW_RATE * Math.max(0, frameSeconds));
       this.focus = this.focus.lerp(desired, ease);
     }
-    this.place(this.focus);
+    // Shake (M6-1b) nudges the view after clamping, so it shakes against walls too.
+    this.place(this.focus.add(new Vec2(shake.x, shake.y)));
   }
 
   /**

@@ -56,3 +56,12 @@ export function pointsAlong(
   }
   return { points, carry: length - (at - spacing) };
 }
+
+/** How white-hot a damaged tank glows (0..1) `age` s after a hit: full at once, a quick fade over `duration`. */
+export function hitFlash(age: number, duration: number): number {
+  if (age < 0 || age >= duration) {
+    return 0;
+  }
+  const remaining = 1 - age / duration;
+  return remaining * remaining;
+}

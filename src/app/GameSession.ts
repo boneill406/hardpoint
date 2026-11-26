@@ -1,5 +1,6 @@
 import type { Renderer } from '../render/Renderer';
-import type { ImpactLook, ImpactSurface } from '../render/vfx/effects';
+import { SHAKE_TRAUMA, type ImpactLook, type ImpactSurface } from '../render/vfx/effects';
+import type { SimEvents } from '../sim/core/SimEvents';
 import { Prop } from '../sim/arena/Prop';
 import type { EntityId } from '../sim/core/Entity';
 import { Simulation } from '../sim/core/Simulation';
@@ -33,6 +34,8 @@ export interface SessionDeps {
   readonly renderer: Renderer;
   readonly hud: Hud;
   readonly playerId: PlayerId;
+  /** The player destroyed a tank: the app's hit-stop (M6-1b). */
+  readonly onPlayerKill: () => void;
   /** Called once when the sim reports `RunEnded`. */
   readonly onRunEnded: (outcome: RunOutcome) => void;
 }
@@ -172,6 +175,27 @@ export class GameSession {
     }
   }
 
+  /** Hit flash on the tank hit; shake when the player is hit or a tank dies nearby; hit-stop on the player's kills (M6-1b). */
+  private feelHit(hit: SimEvents['Hit']): void {
+    const { renderer, onPlayerKill } = this.deps;
+    renderer.hitFlash(hit.target);
+    const player = this.playerTank.id;
+    if (hit.target === player) {
+      renderer.shake(SHAKE_TRAUMA.playerHit);
+    }
+    if (!hit.destroyed) {
+      return;
+    }
+    const near =
+      hit.point.distanceTo(this.playerTank.transform.position) <= SHAKE_TRAUMA.nearbyRadius;
+    if (near && hit.target !== player) {
+      renderer.shake(SHAKE_TRAUMA.nearbyKill);
+    }
+    if (hit.attacker === player && hit.target !== player) {
+      onPlayerKill();
+    }
+  }
+
   /** Whether a shot is a cannon shell or an MG tracer, from the shooter's weapon on that hardpoint. */
   private lookOf(shot: { shooter: EntityId; hardpoint: string }): ImpactLook {
     const shooter = this.simulation.world.get(shot.shooter);
@@ -206,6 +230,9 @@ export class GameSession {
       this.telegraphs.end(shooter, hardpoint),
     );
     events.on('ShotFired', (shot) => {
+      if (shot.shooter === this.playerTank.id && this.lookOf(shot) === 'shell') {
+        renderer.shake(SHAKE_TRAUMA.playerCannon);
+      }
       renderer.shotFired(
         shot.shooter,
         shot.hardpoint,
@@ -219,6 +246,7 @@ export class GameSession {
     events.on('Hit', (hit) => {
       this.overlay?.recordHit(hit.point, hit.damage);
       this.stats.onHit(hit);
+      this.feelHit(hit);
     });
     events.on('BreatherStarted', ({ repaired }) => hud.flashRepair(repaired));
     events.on('WaveCleared', () => this.stats.onWaveCleared());

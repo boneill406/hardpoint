@@ -19,7 +19,8 @@ import { RenderBridge, type RenderBridgeOptions } from './RenderBridge';
 import { AiDebugView } from './debug/AiDebugView';
 import { NavGridView } from './debug/NavGridView';
 import { ArenaView } from './views/ArenaView';
-import { impactEffects, type ImpactLook, type ImpactSurface } from './vfx/effects';
+import { impactEffects, SHAKE, type ImpactLook, type ImpactSurface } from './vfx/effects';
+import { CameraShake } from './camera/CameraShake';
 import type { TrailedShell } from './vfx/ShellTrails';
 import { Vfx } from './vfx/Vfx';
 import { TankView } from './views/TankView';
@@ -43,6 +44,8 @@ export interface RendererOptions extends RenderBridgeOptions {
   readonly nav: boolean;
   /** `?ai=on`: draw enemy paths and firing spots. */
   readonly ai: boolean;
+  /** Screen shake on (`?shake=off` turns it off, M6-1b). */
+  readonly shake: boolean;
 }
 
 /** What the debug views need each frame; ignored when they are off. */
@@ -63,6 +66,8 @@ export class Renderer {
   private readonly bridge: RenderBridge;
   private readonly arenaView: ArenaView;
   private readonly vfx: Vfx;
+  private readonly shaker = new CameraShake(SHAKE);
+  private readonly shakeOn: boolean;
   private readonly navView: NavGridView | undefined;
   private readonly aiView: AiDebugView | undefined;
 
@@ -89,6 +94,7 @@ export class Renderer {
 
     this.bridge = new RenderBridge(this.scene, options);
     this.vfx = new Vfx(this.scene, FLIGHT_HEIGHT.shell);
+    this.shakeOn = options.shake;
     this.navView = options.nav ? new NavGridView(this.scene) : undefined;
     this.aiView = options.ai ? new AiDebugView(this.scene) : undefined;
   }
@@ -110,7 +116,7 @@ export class Renderer {
     this.vfx.update(this.drawnShells(entities), frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
-      this.sliceCamera.follow(followed.position, frameSeconds);
+      this.sliceCamera.follow(followed.position, frameSeconds, this.shaker.update(frameSeconds));
     }
     // Our own frame loop drives rendering (the sim's fixed ticks come first), so do what
     // Babylon's runRenderLoop would: beginFrame measures the frame time. Without it Babylon
@@ -144,6 +150,7 @@ export class Renderer {
   resetWorld(): void {
     this.bridge.clear();
     this.vfx.clear();
+    this.shaker.reset();
     this.arenaView.clearWarnings();
     this.sliceCamera.reset();
   }
@@ -206,6 +213,21 @@ export class Renderer {
       x: (projected.x / width) * canvas.clientWidth,
       y: (projected.y / heightPx) * canvas.clientHeight,
     };
+  }
+
+  /** Adds screen-shake trauma (0..1, M6-1b); ignored with `?shake=off`. */
+  shake(trauma: number): void {
+    if (this.shakeOn) {
+      this.shaker.add(trauma);
+    }
+  }
+
+  /** A tank took damage (`Hit`): it flashes white-hot. */
+  hitFlash(id: EntityId): void {
+    const view = this.bridge.viewOf(id);
+    if (view instanceof TankView) {
+      view.hitFlash();
+    }
   }
 
   /**

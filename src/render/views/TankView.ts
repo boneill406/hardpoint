@@ -8,8 +8,8 @@ import { toBabylonPosition, toBabylonRotationY } from '../coords';
 import type { EntityView, FrameTiming } from './EntityView';
 import { PrimitiveTankModel } from './tank/PrimitiveTankModel';
 import type { TankModel } from './tank/TankModel';
-import { RECOIL } from '../vfx/effects';
-import { recoilOffset } from '../vfx/firingMotion';
+import { HIT_FLASH, RECOIL } from '../vfx/effects';
+import { hitFlash, recoilOffset } from '../vfx/firingMotion';
 import type { TransformNode } from '@babylonjs/core';
 
 interface GunRecoil {
@@ -40,6 +40,7 @@ export class TankView implements EntityView {
   private pitch: SpringState = { angle: 0, velocity: 0 };
   /** Per gun: its resting position along the barrel, its recoil, and seconds since it last fired. */
   private readonly guns = new Map<string, GunRecoil>();
+  private flashAge = Number.POSITIVE_INFINITY;
 
   constructor(
     scene: Scene,
@@ -60,6 +61,11 @@ export class TankView implements EntityView {
     }
   }
 
+  /** This tank just took damage (`Hit`, M6-1b): glow white-hot for a moment. */
+  hitFlash(): void {
+    this.flashAge = 0;
+  }
+
   /** The gun on `hardpoint` just fired (`ShotFired`, M6-2a): kick it back. */
   recoil(hardpoint: string): void {
     const gun = this.guns.get(hardpoint);
@@ -75,6 +81,15 @@ export class TankView implements EntityView {
     this.animateTreads(frame.seconds);
     this.animatePitch(frame.seconds);
     this.animateRecoil(frame.seconds);
+    this.animateFlash(frame.seconds);
+  }
+
+  private animateFlash(frameSeconds: number): void {
+    if (this.flashAge > HIT_FLASH.duration) {
+      return;
+    }
+    this.flashAge += frameSeconds;
+    this.model.setFlash(HIT_FLASH.strength * hitFlash(this.flashAge, HIT_FLASH.duration));
   }
 
   /** Each gun slides back along its barrel after a shot and eases home (render-only; barrels stay rigid in the sim). */

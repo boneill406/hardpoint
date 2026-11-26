@@ -291,3 +291,18 @@ export const MUZZLE_LIGHT = {
   range: 7,
   duration: 0.08,
 } as const;
+
+/** Screen shake (M6-1b, plan D6): trauma decays over ~0.5 s; full trauma nudges the camera 0.6 u. */
+export const SHAKE = { decayPerSecond: 2, maxOffset: 0.6, frequency: 9 } as const;
+
+/** Trauma per event (GDD §8: cannon fire small, player hit medium, nearby kill medium). */
+export const SHAKE_TRAUMA = {
+  playerCannon: 0.22,
+  playerHit: 0.45,
+  nearbyKill: 0.5,
+  /** A kill counts as "nearby" within this distance (u) of the player. */
+  nearbyRadius: 12,
+} as const;
+
+/** A tank that takes damage glows white-hot for this long (M6-1b, plan D8). */
+export const HIT_FLASH = { duration: 0.12, strength: 0.85 } as const;

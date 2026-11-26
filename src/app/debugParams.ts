@@ -44,6 +44,10 @@ export interface DebugParams {
   readonly ai: boolean;
   /** `?nav=on` tints the cells enemies may not drive on. */
   readonly nav: boolean;
+  /** Screen shake (M6-1b); `?shake=off` turns it off. */
+  readonly shake: boolean;
+  /** Hit-stop on the player's kills (M6-1b, plan D7); `?hitstop=off` to compare. */
+  readonly hitstop: boolean;
   /** Problems with the URL (unknown names or values), for the console. Defaults are used instead. */
   readonly warnings: readonly string[];
 }
@@ -68,6 +72,8 @@ const KNOWN = [
   'mode',
   'wave',
   'seed',
+  'shake',
+  'hitstop',
 ];
 const MODES: readonly GameModeName[] = ['waves', 'sandbox'];
 /** Must match the number of waves in `defs/waves.ts` (a test checks). */
@@ -148,7 +154,7 @@ export function readDebugParams(search: string): DebugParams {
     warn('seed', seedText, 'a whole number ≥ 0');
   }
 
-  for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav']) {
+  for (const name of ['interp', 'grid', 'hp', 'dummies', 'ai', 'nav', 'shake', 'hitstop']) {
     const value = params.get(name);
     if (value !== null && !ON_OFF.includes(value)) {
       warn(name, value, 'on | off');
@@ -170,6 +176,8 @@ export function readDebugParams(search: string): DebugParams {
     dummies: params.get('dummies') === 'on',
     ai: params.get('ai') === 'on',
     nav: params.get('nav') === 'on',
+    shake: params.get('shake') !== 'off',
+    hitstop: params.get('hitstop') !== 'off',
     warnings,
   };
 }

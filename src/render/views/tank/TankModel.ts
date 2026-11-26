@@ -36,5 +36,7 @@ export interface TankModel {
   readonly halfTrackSpacing: number;
   /** Length (u) of one repeat of the tread pattern. */
   readonly treadPeriod: number;
+  /** 0 = normal, 1 = glowing white-hot: the hit flash (M6-1b). */
+  setFlash(amount: number): void;
   dispose(): void;
 }

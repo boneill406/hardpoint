@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { flashIntensity, pointsAlong, recoilOffset } from '../../src/render/vfx/firingMotion';
+import {
+  flashIntensity,
+  hitFlash,
+  pointsAlong,
+  recoilOffset,
+} from '../../src/render/vfx/firingMotion';
 
 describe('recoilOffset', () => {
   it('snaps back by the full kick at once, then eases forward to rest', () => {
@@ -47,5 +52,13 @@ describe('pointsAlong', () => {
 
   it('a standing shell emits nothing', () => {
     expect(pointsAlong({ x: 1, z: 1 }, { x: 1, z: 1 }, 0.3, 0).points).toEqual([]);
+  });
+});
+
+describe('hitFlash', () => {
+  it('is full on the hit and gone after the duration, fading fast', () => {
+    expect(hitFlash(0, 0.12)).toBe(1);
+    expect(hitFlash(0.06, 0.12)).toBeCloseTo(0.25, 9);
+    expect(hitFlash(0.12, 0.12)).toBe(0);
   });
 });

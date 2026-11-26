@@ -23,6 +23,7 @@ import { waveHudState } from '../ui/waveHud';
 import { readDebugParams, type DebugParams } from './debugParams';
 import { GameFlow, type FlowState } from './GameFlow';
 import { GameSession } from './GameSession';
+import { HitStop } from './HitStop';
 import { formatAccuracy, formatRunTime, type RunStatsSummary } from './RunStats';
 
 /**
@@ -32,6 +33,9 @@ import { formatAccuracy, formatRunTime, type RunStatsSummary } from './RunStats'
  * renders between the last two ticks. Menus, pause and restart (M5-4) live
  * here; each run's simulation lives in a `GameSession`.
  */
+
+/** Hit-stop on the player's kills (GDD §8: ~60 ms). */
+const HIT_STOP_SECONDS = 0.06;
 
 /** The one local player in the slice. */
 const PLAYER_ID: PlayerId = 1;
@@ -128,6 +132,7 @@ async function start(): Promise<void> {
     camera: CAMERA_PRESETS[debug.cam],
     nav: debug.nav,
     ai: debug.ai,
+    shake: debug.shake,
   });
   window.addEventListener('resize', () => renderer.resize());
 
@@ -139,6 +144,7 @@ async function start(): Promise<void> {
   const hud = new Hud(document.body);
   const banner = new Banner(document.body);
   // The sandbox has no run to start or end: straight into play.
+  const hitStop = new HitStop(debug.hitstop);
   const flow = new GameFlow(debug.mode === 'waves' ? 'title' : 'playing');
 
   const deps = {
@@ -147,6 +153,7 @@ async function start(): Promise<void> {
     hud,
     playerId: PLAYER_ID,
     onRunEnded: (outcome: 'victory' | 'defeat') => flow.runEnded(outcome),
+    onPlayerKill: () => hitStop.trigger(HIT_STOP_SECONDS),
   };
   // Physics loads asynchronously; the first session must exist before the first frame.
   let session = await GameSession.create(seedFor(debug), deps);
@@ -253,7 +260,9 @@ async function start(): Promise<void> {
       ? fireLatch.apply(intentToCommand(intent, session.playerTank.transform))
       : IDLE_COMMAND;
     const { simulation } = session;
-    if (flow.ticking) {
+    hitStop.update(elapsedSeconds);
+    // Hit-stop holds the sim like pause does; the frame still renders (M6-1b).
+    if (flow.ticking && !hitStop.frozen) {
       const steps = clock.advance(elapsedSeconds);
       for (let i = 0; i < steps; i++) {
         simulation.tick(new Map([[PLAYER_ID, command]]));
@@ -261,8 +270,8 @@ async function start(): Promise<void> {
       if (steps > 0) {
         fireLatch.consumed();
       }
-    } else {
-      fireLatch.consumed();
+    } else if (!flow.ticking) {
+      fireLatch.consumed(); // menus: drop presses; a hit-stop keeps them for the next tick
     }
     simulation.events.flush();
     flow.update(elapsedSeconds);
