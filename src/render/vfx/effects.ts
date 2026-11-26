@@ -358,12 +358,8 @@ export const SHAKE_TRAUMA = {
 export const HIT_FLASH = { duration: 0.12, strength: 0.85 } as const;
 
 /** The bursts a destroyed tank sets off at once (M6-3, plan D12). */
-export const EXPLOSION_BURSTS: readonly EffectName[] = [
-  'fireball',
-  'blastSparks',
-  'debris',
-  'flash',
-];
+// No impact `flash` here: on top of the fireball it blew the centre out to white; the light gives the pop.
+export const EXPLOSION_BURSTS: readonly EffectName[] = ['fireball', 'blastSparks', 'debris'];
 
 /** The explosion's light: much brighter and longer than a muzzle flash. */
 export const EXPLOSION_LIGHT = { intensity: 5, duration: 0.35 } as const;
