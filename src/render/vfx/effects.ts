@@ -441,7 +441,7 @@ export const CASINGS = {
     spin: 9,
     pool: 12,
     bounces: 3,
-    delay: 0.4,
+    delay: 0.3,
     colour: [0.78, 0.6, 0.26],
   } satisfies CasingKindDef,
   /** Shared flight; each kind sets its own bounce count. */
@@ -453,4 +453,33 @@ export const CASINGS = {
   /** Seconds solid (flight included), then seconds fading. */
   lie: 3,
   fade: 1.5,
+} as const;
+
+/** A broken crate (M6-4, plan D14): a few tumbling chunks that bounce once, lie and fade. Not collidable. */
+export const CRATE_CHUNKS = {
+  count: 6,
+  /** Edge length range (u). */
+  size: [0.25, 0.45],
+  /** Outward and upward throw (u/s). */
+  out: [1.5, 4],
+  up: [2.5, 5],
+  spin: 10,
+  colour: [0.55, 0.4, 0.22],
+  pool: 36,
+  physics: { gravity: 12, restitution: 0.35, friction: 0.5, maxBounces: 1 },
+  lie: 2.5,
+  fade: 1.2,
+} as const;
+
+/** Tread marks (M6-4, plan D14): faint dark prints left every `spacing` u under each track. */
+export const TREAD_MARKS = {
+  spacing: 0.45,
+  /** Print size (u): about a track's width, a little longer than the spacing so they join. */
+  width: 0.32,
+  length: 0.5,
+  opacity: 0.32,
+  hold: 3,
+  fade: 4,
+  /** Prints alive at once; the oldest are reused. */
+  capacity: 1200,
 } as const;

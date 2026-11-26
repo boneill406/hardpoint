@@ -6,10 +6,13 @@ import type { Transform } from '../../sim/core/Transform';
 import { toBabylonPosition, toBabylonRotationY } from '../coords';
 import type { EntityView } from './EntityView';
 
+/** A crate's drawn height (u): it hides a hull but not a turret. Also used for its break-apart (M6-4). */
+export const CRATE_HEIGHT = 1.1;
+
 /** Cosmetic heights (u): pillars stand above a tank, crates hide a hull but not a turret. */
 const LOOK: Readonly<Record<PropKind, { readonly height: number; readonly color: Color3 }>> = {
   pillar: { height: 2.5, color: new Color3(0.5, 0.5, 0.52) },
-  crate: { height: 1.1, color: new Color3(0.55, 0.4, 0.22) },
+  crate: { height: CRATE_HEIGHT, color: new Color3(0.55, 0.4, 0.22) },
 };
 
 /**

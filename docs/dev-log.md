@@ -41,6 +41,14 @@ Workarounds for Brendan's machine and Claude Code's sandbox, so they aren't redi
 
 ## Entries
 
+## 2026-11-25 · M6-4 · Crate chunks, tread marks, MG heat glow; cannon case at 0.3 s
+- **Cannon case delay** 0.4 → 0.3 s (Brendan).
+- **Crate chunks:** the session remembers each crate's position and size from `EntitySpawned` (props don't move); on its `EntityDestroyed`, `Renderer.breakCrate` fires wood dust and splinters and `CrateChunks` throws 6 boxes (0.25–0.45 u) out and up from the crate's volume: tumbling, one bounce (`stepCasing`), lie 2.5 s, fade 1.2 s. Pool of 36. `CRATE_HEIGHT` now exported by `PropView`.
+- **Tread marks:** `TreadMarks` lays a 0.32 × 0.5 u dark print under each track (`trackPoints`, tested) whenever that track has moved 0.45 u, so pivoting in place prints too. One ground mesh drawn as 1200 thin instances (matrix + colour buffers, per-print alpha from `markOpacity`: 0.32 held 3 s, faded over 4 s), reused oldest-first. **Bug found while checking:** the mesh was culled because its bounding box came from the parked (y −100) prints; `alwaysSelectAsActiveMesh`.
+- **MG heat glow:** each gun's barrel tube now has its own material (same steel), so one can glow alone; `TankModel.setGunHeat(hardpoint, heat)` adds `heatGlow(heat)` (none below 25 %, red to bright orange at full) on top of the hit flash; `TankView` reads each weapon's heat limiter every frame. From the game camera the coax is thin and partly hidden, so the glow reads as an orange glint at the tip; first strength was too faint, raised.
+- Checked in a test page: chunks burst and settle, tread arcs clean (bold; opacity is one number), heat glint visible. Not yet seen in a fight.
+- **Tests:** `trackPoints` (sides by heading), `markOpacity`, `heatGlow`.
+
 ## 2026-11-25 · M6-2c · Casing polish
 - **Brendan's notes:** the cannon case should come out a moment after firing, during the reload; it should bounce once more; settling "clicks into a position unrelated to its motion"; MG brass should come out of the coax's side (left).
 - **Delay:** `TickQueue` (`src/app`, pure, tested) holds casings by sim tick; the cannon's is due 0.4 s (24 ticks) after the shot, MG brass at once. Pause and hit-stop hold it back too. Thrown from the breech's position at that moment.

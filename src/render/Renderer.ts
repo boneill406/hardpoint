@@ -25,6 +25,8 @@ import { CameraShake } from './camera/CameraShake';
 import { castsShadow } from './shadows';
 import type { CasingKind } from './vfx/Casings';
 import type { TrailedShell } from './vfx/ShellTrails';
+import type { TrackedTank } from './vfx/TreadMarks';
+import { CRATE_HEIGHT } from './views/PropView';
 import { Vfx } from './vfx/Vfx';
 import { TankView } from './views/TankView';
 import { Projectile } from '../sim/combat/Projectile';
@@ -136,7 +138,7 @@ export class Renderer {
   ): void {
     this.bridge.sync(entities, alpha, frameSeconds);
     this.arenaView.update(frameSeconds);
-    this.vfx.update(this.drawnShells(entities), frameSeconds);
+    this.vfx.update(this.drawnShells(entities), this.drawnTanks(entities), frameSeconds);
     const followed = this.bridge.drawnTransform(followId);
     if (followed !== undefined) {
       this.sliceCamera.follow(followed.position, frameSeconds, this.shaker.update(frameSeconds));
@@ -147,6 +149,24 @@ export class Renderer {
     this.engine.beginFrame();
     this.scene.render();
     this.engine.endFrame();
+  }
+
+  /** Tanks as drawn this frame (interpolated), for their tread marks. */
+  private drawnTanks(entities: readonly Entity[]): TrackedTank[] {
+    const tanks: TrackedTank[] = [];
+    for (const entity of entities) {
+      const view = this.bridge.viewOf(entity.id);
+      const drawn = this.bridge.drawnTransform(entity.id);
+      if (view instanceof TankView && drawn !== undefined) {
+        tanks.push({
+          id: entity.id,
+          position: drawn.position,
+          heading: drawn.heading,
+          trackOffset: view.trackOffset,
+        });
+      }
+    }
+    return tanks;
   }
 
   /** Cannon shells as drawn this frame (interpolated), for their smoke trails. */
@@ -252,6 +272,11 @@ export class Renderer {
    */
   explode(id: EntityId, fallback: Vec2): void {
     this.vfx.explode(this.bridge.drawnTransform(id)?.position ?? fallback);
+  }
+
+  /** A crate was destroyed (M6-4): it breaks into chunks, dust and splinters. */
+  breakCrate(point: Vec2, width: number, depth: number): void {
+    this.vfx.breakCrate(point, width, depth, CRATE_HEIGHT);
   }
 
   /** A tank took damage (`Hit`): it flashes white-hot. */

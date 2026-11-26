@@ -83,3 +83,17 @@ export function stepPitchSpring(
   }
   return { angle, velocity };
 }
+
+/**
+ * The colour a hot barrel glows (M6-4, from the prototype): nothing below a
+ * quarter heat, then red rising to bright orange at full heat (strong: the
+ * coax barrel is thin from the game camera). RGB 0..1,
+ * added to the barrel's emissive.
+ */
+export function heatGlow(heat: number): readonly [number, number, number] {
+  const t = Math.min(1, Math.max(0, (heat - 0.25) / 0.75));
+  if (t === 0) {
+    return [0, 0, 0];
+  }
+  return [0.5 + 0.5 * t, 0.06 + 0.5 * t * t, 0.04 * t];
+}

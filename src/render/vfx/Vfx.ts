@@ -14,7 +14,9 @@ import {
 } from './effects';
 import { addFade } from './particleFade';
 import { Casings, type CasingKind } from './Casings';
+import { CrateChunks } from './CrateChunks';
 import { MuzzleLights } from './MuzzleLights';
+import { TreadMarks, type TrackedTank } from './TreadMarks';
 import { Scorches } from './Scorches';
 import { SmokeColumns } from './SmokeColumns';
 import { ShellTrails, type TrailedShell } from './ShellTrails';
@@ -47,6 +49,8 @@ export class Vfx {
   private readonly columns: SmokeColumns;
   private readonly scorches: Scorches;
   private readonly casings: Casings;
+  private readonly chunks: CrateChunks;
+  private readonly treads: TreadMarks;
 
   /** `trailHeight`: the height (u) cannon shells fly at, where their smoke is laid. */
   constructor(scene: Scene, trailHeight: number) {
@@ -56,6 +60,8 @@ export class Vfx {
     this.columns = new SmokeColumns(scene, this.textures.smoke, SMOKE_COLUMN);
     this.scorches = new Scorches(scene, this.textures.soft);
     this.casings = new Casings(scene);
+    this.chunks = new CrateChunks(scene);
+    this.treads = new TreadMarks(scene);
     for (const [name, def] of Object.entries(EFFECTS) as [EffectName, BurstEffectDef][]) {
       const systems = Array.from({ length: POOL_SIZE }, (_, i) =>
         this.createSystem(scene, `${name}-${i}`, def),
@@ -88,6 +94,17 @@ export class Vfx {
     this.lights.flash(point, height);
   }
 
+  /**
+   * A crate was destroyed (M6-4): wood dust and splinters, and chunks thrown
+   * out of a `width` × `depth` × `height` crate at `point`.
+   */
+  breakCrate(point: Vec2, width: number, depth: number, height: number): void {
+    this.burst('woodDust', point, height / 2, Vec2.ZERO);
+    this.burst('splinters', point, height / 2, Vec2.ZERO);
+    const at = toBabylonPosition(point);
+    this.chunks.burst(at.x, at.z, width, depth, height);
+  }
+
   /** A gun fired: throw its spent casing out of the breech (M6-2b). */
   eject(kind: CasingKind, breech: Vec2, height: number, heading: number): void {
     this.casings.eject(kind, breech, height, heading);
@@ -108,8 +125,14 @@ export class Vfx {
   }
 
   /** Once per frame: shell trails along this frame's movement, and fading muzzle lights. */
-  update(shells: readonly TrailedShell[], frameSeconds: number): void {
+  update(
+    shells: readonly TrailedShell[],
+    tanks: readonly TrackedTank[],
+    frameSeconds: number,
+  ): void {
     this.trails.update(shells);
+    this.treads.update(tanks, frameSeconds);
+    this.chunks.update(frameSeconds);
     this.lights.update(frameSeconds);
     this.columns.update(frameSeconds);
     this.scorches.update(frameSeconds);
@@ -123,6 +146,8 @@ export class Vfx {
     this.columns.clear();
     this.scorches.clear();
     this.casings.clear();
+    this.chunks.clear();
+    this.treads.clear();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.reset();
@@ -136,6 +161,8 @@ export class Vfx {
     this.columns.dispose();
     this.scorches.dispose();
     this.casings.dispose();
+    this.chunks.dispose();
+    this.treads.dispose();
     for (const pool of this.pools.values()) {
       for (const system of pool.systems) {
         system.dispose(false);

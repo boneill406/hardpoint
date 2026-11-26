@@ -82,6 +82,20 @@ export class TankView implements EntityView {
     this.animatePitch(frame.seconds);
     this.animateRecoil(frame.seconds);
     this.animateFlash(frame.seconds);
+    this.showHeat();
+  }
+
+  /** Barrels glow with their weapon's heat (the MG, M6-4); weapons without heat stay cold. */
+  private showHeat(): void {
+    for (const mount of this.vehicle.mounts) {
+      const heat = mount.weapon.describe().find((status) => status.kind === 'heat');
+      this.model.setGunHeat(mount.hardpoint.id, heat?.kind === 'heat' ? heat.heat : 0);
+    }
+  }
+
+  /** Half the distance between the track centrelines (u): where tread marks are laid (M6-4). */
+  get trackOffset(): number {
+    return this.model.halfTrackSpacing;
   }
 
   private animateFlash(frameSeconds: number): void {

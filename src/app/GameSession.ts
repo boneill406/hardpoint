@@ -69,6 +69,11 @@ export class GameSession {
   private readonly edges: EdgeIndicators;
   /** Casings waiting to be thrown out (the cannon's comes a moment after the shot). */
   private readonly casings = new TickQueue<ShotRef & { readonly kind: CasingKind }>();
+  /** Where each crate stands and its size, to break it apart when it's destroyed (M6-4). */
+  private readonly crates = new Map<
+    EntityId,
+    { readonly position: Vec2; readonly width: number; readonly depth: number }
+  >();
   /** What each tank and prop is made of, for impact effects. */
   private readonly surfaces = new Map<EntityId, ImpactSurface>();
 
@@ -185,6 +190,9 @@ export class GameSession {
       this.surfaces.set(id, 'metal');
     } else if (entity instanceof Prop) {
       this.surfaces.set(id, entity.destructible ? 'wood' : 'stone');
+      if (entity.destructible) {
+        this.crates.set(id, { position: entity.transform.position, ...entity.size });
+      }
     }
   }
 
@@ -279,6 +287,14 @@ export class GameSession {
     const { events } = this.simulation;
     const { renderer, hud, onRunEnded } = this.deps;
     events.on('EntitySpawned', ({ id }) => this.noteSurface(id));
+    events.on('EntityDestroyed', ({ id }) => {
+      // A crate is gone from the world by now; break it where we saw it (props don't move).
+      const crate = this.crates.get(id);
+      if (crate !== undefined) {
+        renderer.breakCrate(crate.position, crate.width, crate.depth);
+        this.crates.delete(id);
+      }
+    });
     events.on('ProjectileImpact', ({ point, look, target, normal }) =>
       renderer.impact(point, look, this.surfaceOf(target), normal),
     );

@@ -1,4 +1,5 @@
 import { castShadow } from '../../shadows';
+import { heatGlow } from './tankMotion';
 import {
   Color3,
   DynamicTexture,
@@ -75,6 +76,10 @@ export class PrimitiveTankModel implements TankModel {
   readonly halfTrackSpacing: number;
   readonly treadPeriod = TREAD_PERIOD;
   private readonly materials = new Map<string, StandardMaterial>();
+  /** Each gun's own barrel material, so one barrel can glow with heat (M6-4). */
+  private readonly gunMaterials = new Map<string, StandardMaterial>();
+  private readonly gunHeat = new Map<string, number>();
+  private flash = 0;
   private readonly treadMaterials: StandardMaterial[] = [];
   private readonly textures: DynamicTexture[] = [];
 
@@ -119,9 +124,31 @@ export class PrimitiveTankModel implements TankModel {
   }
 
   setFlash(amount: number): void {
-    const glow = Math.max(0, Math.min(1, amount));
+    this.flash = Math.max(0, Math.min(1, amount));
+    this.applyEmissive();
+  }
+
+  setGunHeat(hardpoint: string, heat: number): void {
+    if ((this.gunHeat.get(hardpoint) ?? 0) === heat) {
+      return;
+    }
+    this.gunHeat.set(hardpoint, heat);
+    this.applyEmissive();
+  }
+
+  /** Every material's glow: the hit flash, plus heat on a hot barrel. */
+  private applyEmissive(): void {
+    const glow = this.flash;
     for (const material of [...this.materials.values(), ...this.treadMaterials]) {
       material.emissiveColor.set(glow, glow * 0.92, glow * 0.8);
+    }
+    for (const [hardpoint, material] of this.gunMaterials) {
+      const [r, g, b] = heatGlow(this.gunHeat.get(hardpoint) ?? 0);
+      material.emissiveColor.set(
+        Math.min(1, glow + r),
+        Math.min(1, glow * 0.92 + g),
+        Math.min(1, glow * 0.8 + b),
+      );
     }
   }
 
@@ -322,19 +349,27 @@ export class PrimitiveTankModel implements TankModel {
       hardpoint.height,
       hardpoint.at.forward + weapon.barrel.length,
     );
+    // Each gun's tube gets its own material (same steel look), so it can glow with heat alone.
+    const tube = this.material(`barrel-${hardpoint.id}`, palette.steel);
+    this.gunMaterials.set(hardpoint.id, tube);
     switch (weapon.barrel.look) {
       case 'tube-brake':
-        this.buildTubeBrake(gun, weapon.barrel.length, palette);
+        this.buildTubeBrake(gun, weapon.barrel.length, palette, tube);
         break;
       case 'thin-tube':
-        this.buildThinTube(gun, weapon.barrel.length, palette);
+        this.buildThinTube(gun, weapon.barrel.length, palette, tube);
         break;
     }
     return gun;
   }
 
   /** A tube from the hardpoint to a box muzzle brake at the tip (the cannon). */
-  private buildTubeBrake(gun: TransformNode, length: number, palette: Palette): void {
+  private buildTubeBrake(
+    gun: TransformNode,
+    length: number,
+    palette: Palette,
+    tubeMaterial: StandardMaterial,
+  ): void {
     const { brake } = TUBE_BRAKE;
     const tubeLength = length - brake.depth / 2;
     const tube = MeshBuilder.CreateCylinder(
@@ -342,7 +377,7 @@ export class PrimitiveTankModel implements TankModel {
       { diameter: TUBE_BRAKE.radius * 2, height: tubeLength, tessellation: 12 },
       this.scene,
     );
-    tube.material = this.material('steel', palette.steel);
+    tube.material = tubeMaterial;
     tube.parent = gun;
     tube.rotation.x = Math.PI / 2;
     tube.position.z = -brake.depth / 2 - tubeLength / 2;
@@ -357,7 +392,12 @@ export class PrimitiveTankModel implements TankModel {
   }
 
   /** A thin tube with a small round brake (the coaxial MG; Brendan asked for the brake). */
-  private buildThinTube(gun: TransformNode, length: number, palette: Palette): void {
+  private buildThinTube(
+    gun: TransformNode,
+    length: number,
+    palette: Palette,
+    tubeMaterial: StandardMaterial,
+  ): void {
     const { brake } = THIN_TUBE;
     const tubeLength = length - brake.depth;
     const tube = MeshBuilder.CreateCylinder(
@@ -365,7 +405,7 @@ export class PrimitiveTankModel implements TankModel {
       { diameter: THIN_TUBE.diameter, height: tubeLength, tessellation: 8 },
       this.scene,
     );
-    tube.material = this.material('steel', palette.steel);
+    tube.material = tubeMaterial;
     tube.parent = gun;
     tube.rotation.x = Math.PI / 2;
     tube.position.z = -brake.depth - tubeLength / 2;

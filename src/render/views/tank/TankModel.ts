@@ -38,5 +38,7 @@ export interface TankModel {
   readonly treadPeriod: number;
   /** 0 = normal, 1 = glowing white-hot: the hit flash (M6-1b). */
   setFlash(amount: number): void;
+  /** 0 cold … 1 full: that gun's barrel glows with heat (M6-4). Adds to the hit flash. */
+  setGunHeat(hardpoint: string, heat: number): void;
   dispose(): void;
 }
